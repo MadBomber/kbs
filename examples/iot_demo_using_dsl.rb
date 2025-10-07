@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require_relative '../kbs_dsl'
+require_relative '../lib/kbs/dsl'
 include KBS::DSL::ConditionHelpers
 
 kb = KBS.knowledge_base do

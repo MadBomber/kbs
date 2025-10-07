@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require_relative '../kbs'
+require_relative '../lib/kbs'
 
 class TradingDemo
   def initialize

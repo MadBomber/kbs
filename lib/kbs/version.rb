@@ -1,5 +1,5 @@
 # frozen_string_literal: true
 
-module Kbs
-  VERSION = "0.1.0"
+module KBS
+  VERSION = "0.0.1"
 end

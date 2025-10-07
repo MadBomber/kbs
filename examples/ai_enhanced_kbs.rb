@@ -9,7 +9,7 @@ rescue LoadError => e
   puts "Continuing with mock AI implementations..."
 end
 
-require_relative 'kbs'
+require_relative '../lib/kbs'
 require 'json'
 require 'date'
 
