@@ -14,6 +14,10 @@ module KBS
       @attributes[key]
     end
 
+    def []=(key, value)
+      @attributes[key] = value
+    end
+
     def matches?(pattern)
       return false if pattern[:type] && pattern[:type] != @type
 

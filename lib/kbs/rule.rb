@@ -2,20 +2,31 @@
 
 module KBS
   class Rule
-    attr_reader :name, :conditions, :action, :priority
+    attr_reader :name, :priority
+    attr_accessor :conditions, :action
 
-    def initialize(name, conditions: [], action: nil, priority: 0)
+    def initialize(name, conditions: [], action: nil, priority: 0, &block)
       @name = name
       @conditions = conditions
       @action = action
       @priority = priority
       @fired_count = 0
+
+      yield self if block_given?
     end
 
     def fire(facts)
       @fired_count += 1
+      return unless @action
+
       bindings = extract_bindings(facts)
-      @action.call(facts, bindings) if @action
+
+      # Support both 1-parameter and 2-parameter actions
+      if @action.arity == 1 || @action.arity == -1
+        @action.call(facts)
+      else
+        @action.call(facts, bindings)
+      end
     end
 
     private

@@ -49,6 +49,13 @@ module KBS
         @engine.working_memory.facts
       end
 
+      def query(type, pattern = {})
+        @engine.working_memory.facts.select do |fact|
+          next false unless fact.type == type
+          pattern.all? { |key, value| fact.attributes[key] == value }
+        end
+      end
+
       def print_facts
         puts "Working Memory Contents:"
         puts "-" * 40

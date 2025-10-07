@@ -3,7 +3,9 @@
 module KBS
   module DSL
     class RuleBuilder
-      attr_reader :name, :description, :priority, :conditions, :action_block
+      include ConditionHelpers
+
+      attr_reader :name, :description, :conditions, :action_block
 
       def initialize(name)
         @name = name
@@ -36,9 +38,16 @@ module KBS
         self
       end
 
-      def without
-        @negated = true
-        self
+      def without(type = nil, pattern = {}, &block)
+        if type
+          # Direct negation: without(:problem)
+          @negated = true
+          on(type, pattern, &block)
+        else
+          # Chaining: without.on(:problem)
+          @negated = true
+          self
+        end
       end
 
       def perform(&block)
@@ -80,6 +89,10 @@ module KBS
       end
 
       def execute(&block)
+        perform(&block)
+      end
+
+      def then(&block)
         perform(&block)
       end
 

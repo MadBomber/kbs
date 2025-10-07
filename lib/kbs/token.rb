@@ -9,6 +9,7 @@ module KBS
       @fact = fact
       @node = node
       @children = []
+      @fired = false
     end
 
     def facts
@@ -23,6 +24,14 @@ module KBS
 
     def to_s
       "Token(#{facts.map(&:to_s).join(', ')})"
+    end
+
+    def fired?
+      @fired
+    end
+
+    def mark_fired!
+      @fired = true
     end
   end
 end

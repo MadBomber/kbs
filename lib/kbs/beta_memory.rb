@@ -32,6 +32,17 @@ module KBS
       end
     end
 
+    def deactivate(token)
+      remove_token(token)
+      @successors.each do |s|
+        if s.respond_to?(:left_deactivate)
+          s.left_deactivate(token)
+        elsif s.respond_to?(:deactivate)
+          s.deactivate(token)
+        end
+      end
+    end
+
     def add_token(token)
       @tokens << token
       unlink! if @tokens.empty?

@@ -48,7 +48,7 @@ module KBS
     def run
       @production_nodes.values.each do |node|
         node.tokens.each do |token|
-          node.rule.fire(token.facts)
+          node.fire_rule(token)
         end
       end
     end
@@ -59,16 +59,31 @@ module KBS
       current_beta = @root_beta_memory
 
       rule.conditions.each_with_index do |condition, index|
+        # Build alpha memory pattern - merge condition type
         pattern = condition.pattern.merge(type: condition.type)
         alpha_memory = get_or_create_alpha_memory(pattern)
 
+        # Build join tests - if pattern has :type that differs from condition.type,
+        # add it as an attribute test since it was overwritten in the merge
+        tests = []
+        if condition.pattern[:type] && condition.pattern[:type] != condition.type
+          # The pattern's :type should be checked as an attribute constraint
+          tests << {
+            token_field_index: index,
+            token_field: :type,
+            fact_field: :type,
+            operation: :eq,
+            expected_value: condition.pattern[:type]
+          }
+        end
+
         if condition.negated
-          negation_node = NegationNode.new(alpha_memory, current_beta, [])
+          negation_node = NegationNode.new(alpha_memory, current_beta, tests)
           new_beta = BetaMemory.new
           negation_node.successors << new_beta
           current_beta = new_beta
         else
-          join_node = JoinNode.new(alpha_memory, current_beta, [])
+          join_node = JoinNode.new(alpha_memory, current_beta, tests)
           new_beta = BetaMemory.new
           join_node.successors << new_beta
           current_beta = new_beta

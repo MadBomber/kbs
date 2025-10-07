@@ -88,15 +88,28 @@ module KBS
 
     def perform_join_tests(token, fact)
       @tests.all? do |test|
-        token_value = token.facts[test[:token_field_index]]&.attributes&.[](test[:token_field])
         fact_value = fact.attributes[test[:fact_field]]
 
-        if test[:operation] == :eq
-          token_value == fact_value
-        elsif test[:operation] == :ne
-          token_value != fact_value
+        # If test has expected_value, compare against that constant
+        if test.key?(:expected_value)
+          if test[:operation] == :eq
+            fact_value == test[:expected_value]
+          elsif test[:operation] == :ne
+            fact_value != test[:expected_value]
+          else
+            true
+          end
         else
-          true
+          # Otherwise compare with token value
+          token_value = token.facts[test[:token_field_index]]&.attributes&.[](test[:token_field])
+
+          if test[:operation] == :eq
+            token_value == fact_value
+          elsif test[:operation] == :ne
+            token_value != fact_value
+          else
+            true
+          end
         end
       end
     end

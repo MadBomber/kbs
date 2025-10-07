@@ -23,8 +23,30 @@ module KBS
         ->(v) { values.include?(v) }
       end
 
-      def range(min, max)
-        ->(v) { v >= min && v <= max }
+      def range(min_or_range, max = nil)
+        if min_or_range.is_a?(Range)
+          ->(v) { min_or_range.include?(v) }
+        else
+          ->(v) { v >= min_or_range && v <= max }
+        end
+      end
+
+      def between(min, max)
+        range(min, max)
+      end
+
+      def any(*values)
+        if values.empty?
+          # Match anything
+          ->(v) { true }
+        else
+          # Match one of the values
+          one_of(*values)
+        end
+      end
+
+      def matches(pattern)
+        ->(v) { v.match?(pattern) }
       end
 
       def satisfies(&block)
