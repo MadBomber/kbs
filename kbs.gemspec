@@ -6,10 +6,22 @@ Gem::Specification.new do |spec|
   spec.name = "kbs"
   spec.version = KBS::VERSION
   spec.authors = ["Dewayne VanHoozer"]
-  spec.email = ["dewayne@vanhoozer.me"]
+  spec.email = ["dvanhoozer@gmail.com"]
 
-  spec.summary = "Knowledge-Based System using RETE II algorithm for forward-chaining inference"
-  spec.description = "A Ruby implementation of a Knowledge-Based System featuring the RETE II algorithm with unlinking optimization, declarative DSL for rule definition, and Blackboard architecture for multi-agent coordination. Supports SQLite and Redis persistence backends."
+  spec.summary = "Production-ready Knowledge-Based System with RETE II inference, Blackboard architecture, and AI integration"
+  spec.description = <<~DESC
+    A comprehensive Ruby implementation of a Knowledge-Based System featuring:
+
+    • RETE II Algorithm: Optimized forward-chaining inference engine with unlinking optimization for high-performance pattern matching
+    • Declarative DSL: Readable, expressive syntax for rule definition with built-in condition helpers
+    • Blackboard Architecture: Multi-agent coordination with message passing and knowledge source registration
+    • Flexible Persistence: SQLite (durable), Redis (fast), and hybrid storage backends with audit trails
+    • Concurrent Execution: Thread-safe auto-inference mode for real-time processing
+    • AI Integration: Native support for LLM integration (Ollama, OpenAI) for hybrid symbolic/neural reasoning
+    • Production Features: Session management, fact history, query API, statistics tracking
+
+    Perfect for expert systems, trading algorithms, IoT monitoring, portfolio management, and AI-enhanced decision systems.
+  DESC
   spec.homepage = "https://github.com/madbomber/kbs"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.2.0"
