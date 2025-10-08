@@ -14,7 +14,36 @@ begin
     url: 'redis://localhost:6379/1' # Use DB 1 for demo
   )
 
+  # Clear previous demo data
+  redis_store.redis.flushdb
+  puts "(Cleared previous Redis data)"
+
   engine = KBS::Blackboard::Engine.new(store: redis_store)
+
+  # Add trading rules
+  spread_rule = KBS::Rule.new('tight_spread_opportunity') do |r|
+    r.conditions << KBS::Condition.new(:market_price, { symbol: 'AAPL' })
+    r.conditions << KBS::Condition.new(:order, { symbol: 'AAPL', type: 'BUY' })
+    r.action = ->(facts) {
+      price = facts.find { |f| f.type == :market_price }
+      order = facts.find { |f| f.type == :order }
+      spread = 0.02 # Tight spread
+      puts "\n💹 TRADING SIGNAL: Tight spread opportunity for #{price[:symbol]}"
+      puts "   Price: $#{price[:price]}, Spread: $#{spread}"
+      puts "   Order: #{order[:type]} #{order[:quantity]} @ $#{order[:limit]}"
+    }
+  end
+
+  high_volume_rule = KBS::Rule.new('high_volume_alert') do |r|
+    r.conditions << KBS::Condition.new(:market_price, { volume: ->(v) { v > 800 } })
+    r.action = ->(facts) {
+      price = facts.first
+      puts "\n📊 HIGH VOLUME: #{price[:symbol]} trading at #{price[:volume]} shares"
+    }
+  end
+
+  engine.add_rule(spread_rule)
+  engine.add_rule(high_volume_rule)
 
   puts "\nAdding high-frequency market data..."
   price1 = engine.add_fact(:market_price, { symbol: "AAPL", price: 150.25, volume: 1000 })
@@ -25,6 +54,9 @@ begin
   puts "  AAPL Price: #{price1.uuid}"
   puts "  GOOGL Price: #{price2.uuid}"
   puts "  Order: #{order.uuid}"
+
+  puts "\nRunning inference engine..."
+  engine.run
 
   puts "\nPosting trading messages..."
   engine.post_message("MarketDataFeed", "prices", { symbol: "AAPL", bid: 150.24, ask: 150.26 }, priority: 10)
@@ -63,7 +95,37 @@ begin
     db_path: ':memory:' # In-memory SQLite for demo
   )
 
+  # Clear previous demo data from Redis
+  hybrid_store.redis_store.redis.flushdb
+  puts "(Cleared previous Redis data)"
+
   engine = KBS::Blackboard::Engine.new(store: hybrid_store)
+
+  # Add monitoring rules
+  temp_alert = KBS::Rule.new('temperature_alert') do |r|
+    r.conditions << KBS::Condition.new(:sensor, {
+      type: 'temperature',
+      value: ->(v) { v > 25 }
+    })
+    r.action = ->(facts) {
+      sensor = facts.first
+      puts "\n🌡️  TEMPERATURE ALERT: #{sensor[:location]} at #{sensor[:value]}°C (threshold: 25°C)"
+    }
+  end
+
+  cpu_warning = KBS::Rule.new('cpu_warning') do |r|
+    r.conditions << KBS::Condition.new(:sensor, {
+      type: 'cpu_usage',
+      value: ->(v) { v > 40 }
+    })
+    r.action = ->(facts) {
+      sensor = facts.first
+      puts "\n⚙️  CPU WARNING: #{sensor[:location]} at #{sensor[:value]}% (threshold: 40%)"
+    }
+  end
+
+  engine.add_rule(temp_alert)
+  engine.add_rule(cpu_warning)
 
   puts "\nAdding facts (stored in Redis)..."
   sensor1 = engine.add_fact(:sensor, { location: "trading_floor", type: "temperature", value: 22 })
@@ -73,8 +135,14 @@ begin
   puts "  Sensor 1: #{sensor1.uuid}"
   puts "  Sensor 2: #{sensor2.uuid}"
 
+  puts "\nRunning inference engine..."
+  engine.run
+
   puts "\nUpdating sensor value (audit logged to SQLite)..."
   sensor1[:value] = 28
+
+  puts "\nRunning inference again after update..."
+  engine.run
 
   puts "\nFact History from SQLite Audit Log:"
   history = engine.blackboard.get_history(limit: 5)

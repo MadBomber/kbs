@@ -2,6 +2,7 @@
 
 require 'redis'
 require 'json'
+require 'securerandom'
 require_relative 'store'
 
 module KBS
@@ -11,7 +12,7 @@ module KBS
         attr_reader :redis, :session_id
 
         def initialize(url: 'redis://localhost:6379/0', session_id: nil, redis: nil)
-          @session_id = session_id
+          @session_id = session_id || SecureRandom.uuid
           @redis = redis || Redis.new(url: url)
           @transaction_depth = 0
         end

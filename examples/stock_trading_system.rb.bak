@@ -29,16 +29,13 @@ module StockTradingSystem
         rule "golden_cross_signal" do
           desc "Buy signal when 50-day MA crosses above 200-day MA"
           priority 12
-          
-          when :technical_indicator, indicator: "moving_average"
-          when :stock, volume: greater_than(1000000)
-          
-          not.when :position do
-            symbol satisfies { |s| s }
-            status "open"
-          end
-          
-          then do |facts, bindings|
+
+          on :technical_indicator, indicator: "moving_average"
+          on :stock, volume: greater_than(1000000)
+
+          without :position, status: "open"
+
+          perform do |facts, bindings|
             indicator = facts.find { |f| f.type == :technical_indicator }
             stock = facts.find { |f| f.type == :stock }
             
