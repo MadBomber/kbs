@@ -1,45 +1,75 @@
-# RETE II Knowledge-Based System in Ruby
+![KBS - Knowledge-Based System](kbs.jpg)
 
-A comprehensive implementation of the RETE II algorithm and knowledge-based systems architecture in Ruby, featuring persistent blackboard memory, domain-specific language for rule definition, and real-world applications including an advanced stock trading expert system.
+# KBS - Knowledge-Based System
 
-## 🌟 Features
+A comprehensive Ruby implementation of a Knowledge-Based System featuring the RETE algorithm, Blackboard architecture, and AI integration for building intelligent rule-based applications.
 
-### Core RETE II Engine
-- **Complete RETE II Implementation**: Enhanced pattern matching with unlinking optimization
+[![Ruby](https://img.shields.io/badge/ruby-%3E%3D%203.2.0-red.svg)](https://www.ruby-lang.org/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+## 🌟 Key Features
+
+### RETE II Inference Engine
+- **Optimized Pattern Matching**: RETE II algorithm with unlinking optimization for high-performance forward-chaining inference
 - **Incremental Updates**: Efficient fact addition/removal without full network recomputation
-- **Negation Support**: Built-in handling of NOT conditions in rules
+- **Negation Support**: Built-in handling of NOT conditions and absence patterns
 - **Memory Optimization**: Nodes automatically unlink when empty to reduce computation
-- **Pattern Sharing**: Common sub-patterns shared between rules for efficiency
+- **Pattern Sharing**: Common sub-patterns shared between rules for maximum efficiency
 
-### Domain Specific Language (DSL)
-- **Natural Rule Syntax**: Write rules in readable, English-like syntax
-- **Rich Condition Types**: `when`, `given`, `not`, `absent`, `missing`
-- **Pattern Helpers**: `greater_than`, `less_than`, `between`, `in`, `matches`
-- **Variable Binding**: Automatic variable extraction and binding
+### Declarative DSL
+- **Readable Syntax**: Write rules in natural, expressive Ruby syntax
+- **Condition Helpers**: `greater_than`, `less_than`, `range`, `one_of`, `matches` for intuitive pattern matching
+- **Rule Metadata**: Descriptions, priorities, and documentation built-in
+- **Negative Patterns**: `without` keyword for absence testing
 
-### Blackboard Memory System
-- **SQLite Persistence**: Full ACID compliance with persistent fact storage
-- **Message Queue**: Inter-component communication system
-- **Audit Trail**: Complete history of all fact changes and rule firings
-- **Transaction Support**: Atomic operations with rollback capability
-- **Query Interface**: SQL-based fact retrieval with indexing
+### Blackboard Architecture
+- **Multi-Agent Coordination**: Knowledge sources collaborate via shared blackboard
+- **Message Passing**: Inter-component communication with priority-based message queue
+- **Knowledge Source Registration**: Modular agent registration with topic subscriptions
+- **Session Management**: Isolated reasoning sessions with cleanup
 
-### Stock Trading Expert System
-- **20+ Trading Strategies**: Golden cross, momentum, RSI reversal, breakouts, etc.
-- **Technical Analysis**: Moving averages, RSI, volume analysis, VWAP, trend following
-- **Risk Management**: Stop losses, take profits, position sizing, correlation analysis
-- **Portfolio Management**: Sector rebalancing, position replacement, quality optimization
-- **CSV Historical Processing**: Backtesting with multi-day OHLC data
-- **AI-Enhanced Decision Making**: LLM-powered sentiment analysis and strategy generation
+### Flexible Persistence
+- **SQLite Storage**: ACID-compliant persistent fact storage with full transaction support
+- **Redis Storage**: High-speed in-memory fact storage for real-time systems (100x faster)
+- **Hybrid Storage**: Best of both worlds - Redis for facts, SQLite for audit trail
+- **Audit Trails**: Complete history of all fact changes and reasoning steps
+- **Query Interface**: Powerful fact retrieval with pattern matching and SQL queries
+
+### Concurrent Execution
+- **Auto-Inference Mode**: Background thread continuously runs inference as facts change
+- **Thread-Safe**: Concurrent fact assertion and rule firing
+- **Real-Time Processing**: Perfect for monitoring systems and event-driven architectures
+
+### AI Integration
+- **LLM Integration**: Native support for Ollama, OpenAI via RubyLLM gem
+- **Hybrid Reasoning**: Combine symbolic rules with neural AI for enhanced decision-making
+- **Sentiment Analysis**: AI-powered news and text analysis
+- **Strategy Generation**: LLMs create trading strategies based on market conditions
+- **Natural Language**: Generate human-readable explanations for decisions
+- **Pattern Recognition**: AI identifies complex patterns beyond traditional indicators
 
 ## 🚀 Quick Start
+
+### Installation
+
+Add to your Gemfile:
+
+```ruby
+gem 'kbs'
+```
+
+Or install directly:
+
+```bash
+gem install kbs
+```
 
 ### Basic Usage
 
 ```ruby
-require_relative 'kbs'
+require 'kbs'
 
-# Create a simple rule engine
+# Create inference engine
 engine = KBS::ReteEngine.new
 
 # Define a rule
@@ -50,9 +80,8 @@ rule = KBS::Rule.new(
     KBS::Condition.new(:reading, { value: ->(v) { v > 100 } })
   ],
   action: lambda do |facts, bindings|
-    puts "🚨 HIGH TEMPERATURE ALERT!"
     reading = facts.find { |f| f.type == :reading }
-    puts "Temperature: #{reading[:value]}°C"
+    puts "🚨 HIGH TEMPERATURE: #{reading[:value]}°C"
   end
 )
 
@@ -64,43 +93,45 @@ engine.add_fact(:reading, { value: 105, unit: "celsius" })
 
 # Run inference
 engine.run
+# => 🚨 HIGH TEMPERATURE: 105°C
 ```
 
 ### Using the DSL
 
 ```ruby
-require_relative 'kbs_dsl'
+require 'kbs'
+require 'kbs/dsl'
 
 kb = KBS.knowledge_base do
-  rule "stock_momentum" do
-    desc "Detect momentum breakouts"
+  rule "momentum_breakout" do
+    desc "Detect stock momentum breakouts"
     priority 10
-    
-    when :stock, volume: greater_than(1_000_000)
-    when :stock, price_change: greater_than(3)
-    not.when :position, status: "open"
-    
-    then do |facts, bindings|
+
+    on :stock, volume: greater_than(1_000_000)
+    on :stock, price_change_pct: greater_than(3)
+    without :position, status: "open"
+
+    perform do |facts, bindings|
       stock = facts.find { |f| f.type == :stock }
-      puts "🚀 MOMENTUM BREAKOUT: #{stock[:symbol]}"
-      puts "   Price Change: +#{stock[:price_change]}%"
-      puts "   Volume: #{stock[:volume]}"
+      puts "🚀 BREAKOUT: #{stock[:symbol]} +#{stock[:price_change_pct]}%"
     end
   end
 end
 
-# Add facts and run
-kb.fact :stock, symbol: "AAPL", volume: 1_500_000, price_change: 4.2
+kb.fact :stock, symbol: "AAPL", volume: 1_500_000, price_change_pct: 4.2
 kb.run
+# => 🚀 BREAKOUT: AAPL +4.2%
 ```
 
-### Persistent Blackboard
+### Blackboard with SQLite Persistence
 
 ```ruby
-require_relative 'blackboard'
+require 'kbs/blackboard'
 
-# Create persistent knowledge base
-engine = KBS::BlackboardEngine.new(db_path: 'knowledge.db')
+# Create persistent blackboard
+engine = KBS::Blackboard::Engine.new(
+  store: KBS::Blackboard::Persistence::SQLiteStore.new(db_path: 'knowledge.db')
+)
 
 # Add persistent facts
 sensor = engine.add_fact(:sensor, { type: "temperature", location: "room1" })
@@ -108,349 +139,213 @@ puts "Fact UUID: #{sensor.uuid}"
 
 # Query facts
 sensors = engine.blackboard.get_facts(:sensor)
-sensors.each { |s| puts s }
+sensors.each { |s| puts "#{s[:type]} at #{s[:location]}" }
 
-# Post messages
-engine.post_message("TemperatureMonitor", "alerts", 
-  { message: "Temperature spike detected", level: "warning" })
-
-# Consume messages
-alert = engine.consume_message("alerts", "MainController")
-puts "Alert: #{alert[:content]}" if alert
+# View audit history
+history = engine.blackboard.get_history(limit: 10)
+history.each do |entry|
+  puts "[#{entry[:timestamp]}] #{entry[:action]}: #{entry[:fact_type]}"
+end
 ```
 
-## 📁 Project Structure
-
-```
-kbs/
-├── README.md                        # This comprehensive documentation
-├── kbs.rb                         # Core RETE II implementation
-├── kbs_dsl.rb                     # Domain Specific Language
-├── blackboard.rb                    # Persistent blackboard memory system
-├── csv_trading_system.rb            # Historical data backtesting system
-├── portfolio_rebalancing_system.rb  # Advanced portfolio management
-├── ai_enhanced_kbs.rb               # AI-powered enhancements
-├── sample_stock_data.csv            # Historical market data
-├── knowledge_base.db                # Persistent SQLite database
-├── examples/                        # Demo and example files
-│   ├── stock_trading_advanced.rb    # Advanced trading strategies
-│   ├── stock_trading_system.rb      # Basic trading examples
-│   ├── timestamped_trading.rb       # Temporal fact processing
-│   ├── trading_demo.rb              # Trading scenarios demo
-│   ├── working_demo.rb              # Basic working examples
-│   └── kbs_advanced_example.rb    # Complex RETE examples
-└── tests/                           # Unit test files
-    ├── kbs_test.rb                # Comprehensive unit tests
-    └── simple_test.rb               # Simple unit tests
-```
-
-## 🏦 Stock Trading System
-
-The included stock trading expert system demonstrates real-world application with:
-
-### Trading Strategies
-- **Golden Cross**: 20-day MA crosses above 50-day MA with volume confirmation
-- **RSI Oversold Bounce**: RSI < 30 with price reversal signals
-- **Breakout Patterns**: Resistance breaks with volume spikes
-- **Trend Following**: Strong uptrend identification with momentum
-- **Take Profit**: Automated profit-taking at 10%+ gains
-- **Stop Loss**: Risk management with 8% loss limits
-- **Portfolio Rebalancing**: Sector allocation drift correction
-- **Position Replacement**: Underperformer swapping with quality candidates
-- **Correlation Risk Reduction**: High correlation position diversification
-- **Momentum Rotation**: Sector rotation based on momentum trends
-- **Quality Upgrades**: Low quality position replacement
-- **Risk-Adjusted Optimization**: Sharpe ratio-based position management
-
-### Portfolio Management Features
-- **Sector Allocation Targets**: Technology 40%, Healthcare 25%, Finance 20%, Consumer 15%
-- **Drift Detection**: Automatic rebalancing when allocations exceed 5% targets
-- **Performance Tracking**: Relative performance monitoring vs sector benchmarks
-- **Correlation Analysis**: Position correlation monitoring and risk reduction
-- **Quality Scoring**: Fundamental analysis integration for position evaluation
-
-### CSV Historical Processing
+### Redis for High-Speed Storage
 
 ```ruby
-require_relative 'csv_trading_system'
+require 'kbs/blackboard'
 
-# Process historical OHLC data with technical analysis
-system = CSVTradingSystem.new('sample_stock_data.csv')
-system.process_csv_data
+# High-frequency trading with Redis
+engine = KBS::Blackboard::Engine.new(
+  store: KBS::Blackboard::Persistence::RedisStore.new(
+    url: 'redis://localhost:6379/0'
+  )
+)
 
-# Output:
-# 🏦 CSV TRADING SYSTEM - Historical Backtesting
-# Initial Capital: $100,000
-# 📅 2024-08-01 - Processing AAPL
-# 📈 GOLDEN CROSS: AAPL
-#    20-MA: $194.25
-#    50-MA: $193.15
-#    Signal: Strong BUY
-#    ✅ EXECUTED: BUY 100 shares of AAPL at $194.25
+# Fast in-memory fact storage
+engine.add_fact(:market_price, { symbol: "AAPL", price: 150.25, volume: 1_000_000 })
+
+# Message queue for real-time coordination
+engine.post_message("MarketDataFeed", "prices",
+  { symbol: "AAPL", bid: 150.24, ask: 150.26 },
+  priority: 10
+)
+
+message = engine.consume_message("prices", "TradingStrategy")
+puts "Received: #{message[:content]}"
 ```
 
-### Portfolio Rebalancing
+### AI-Enhanced Reasoning
 
 ```ruby
-require_relative 'portfolio_rebalancing_system'
+require 'kbs'
+require 'kbs/examples/ai_enhanced_kbs'
 
-# Advanced portfolio management with sector allocation
-system = PortfolioRebalancingSystem.new
-system.simulate_rebalancing_scenarios
+# Requires Ollama with a model installed
+# export OLLAMA_MODEL=gpt-oss:latest
 
-# Output:
-# ⚖️  ALLOCATION DRIFT: Technology
-#    Current: 49.7%
-#    Target: 40.0%
-#    Drift: +24.3%
-#    Action: REDUCE Technology allocation
-```
-
-## 🤖 AI-Enhanced Knowledge System
-
-The system includes cutting-edge AI integration through `ruby_llm` and `ruby_llm-mcp` gems:
-
-### AI Features
-- **Sentiment Analysis**: LLM-powered news sentiment analysis for market intelligence
-- **Dynamic Strategy Generation**: AI creates trading strategies based on market conditions
-- **Risk Assessment**: Intelligent position risk analysis with confidence scoring
-- **Pattern Recognition**: AI identifies complex market patterns beyond traditional indicators
-- **Natural Language Explanations**: Human-readable explanations for all trading decisions
-- **Adaptive Rule Creation**: System generates new rules based on detected anomalies
-
-### AI Integration Example
-
-```ruby
-require_relative 'ai_enhanced_kbs'
-
-# Create AI-powered knowledge system
 system = AIEnhancedKBS::AIKnowledgeSystem.new
-system.demonstrate_ai_enhancements
 
-# Add market news for sentiment analysis
+# Add news for AI sentiment analysis
 system.engine.add_fact(:news_data, {
   symbol: "AAPL",
   headline: "Apple Reports Record Q4 Earnings, Beats Expectations by 15%",
-  content: "Apple Inc. announced exceptional results with 12% revenue growth..."
+  content: "Apple Inc. announced exceptional results..."
 })
+
+system.engine.run
 
 # Output:
 # 🤖 AI SENTIMENT ANALYSIS: AAPL
-#    Headline: Apple Reports Record Q4 Earnings, Beats Expectations by 15%...
-#    AI Sentiment: positive (75%)
-#    Key Themes: earnings, growth
+#    AI Sentiment: positive (92%)
+#    Key Themes: strong earnings growth, share buyback program
 #    Market Impact: bullish
 ```
 
-### Mock AI Implementation
+## 📚 Examples
 
-When the AI gems aren't available, the system gracefully falls back to mock implementations, ensuring the system remains functional for testing and development:
+The `examples/` directory contains 13 comprehensive examples demonstrating all features:
 
-```ruby
-# Automatic fallback to mock implementations
-class MockAIClient
-  def complete(prompt)
-    case prompt
-    when /sentiment/i
-      '{"sentiment": "positive", "score": 0.7, "confidence": 75}'
-    when /strategy/i  
-      '{"name": "Momentum Strategy", "rationale": "Market showing upward momentum"}'
-    end
-  end
-end
+### Basic Examples
+- **car_diagnostic.rb** - Simple expert system for car diagnostics
+- **working_demo.rb** - Stock trading signal generator
+
+### DSL Examples
+- **iot_demo_using_dsl.rb** - IoT sensor monitoring with declarative DSL
+- **trading_demo.rb** - Multiple trading strategies
+
+### Advanced Trading
+- **advanced_example.rb** - Golden cross detection and technical analysis
+- **stock_trading_advanced.rb** - Position management with stop losses
+- **timestamped_trading.rb** - Time-aware temporal reasoning
+- **csv_trading_system.rb** - CSV data integration and backtesting
+- **portfolio_rebalancing_system.rb** - Portfolio optimization
+
+### Persistence & Architecture
+- **blackboard_demo.rb** - SQLite persistence and message queue
+- **redis_trading_demo.rb** - Redis and hybrid storage patterns
+
+### Advanced Features
+- **concurrent_inference_demo.rb** - Auto-inference and background threads
+- **ai_enhanced_kbs.rb** - LLM integration with Ollama
+
+See [examples/README.md](examples/README.md) for detailed documentation of each example.
+
+## 🏗️ Architecture
+
+### RETE II Network Structure
+
+```
+Facts → Alpha Network → Beta Network → Production Nodes
+         (Pattern        (Join Nodes)    (Rule Actions)
+          Matching)
 ```
 
-## 🧠 RETE II Algorithm
+**Key Optimizations:**
+- **Left/Right Unlinking**: Join nodes unlink when memories are empty
+- **Selective Activation**: Only affected network nodes are updated
+- **Token Firing State**: Prevents duplicate rule executions
+- **Shared Patterns**: Common sub-patterns shared across rules
 
-The RETE II algorithm is an enhanced version of the original RETE algorithm with several key improvements:
+### Blackboard Pattern
 
-### Key Features
-- **Unlinking**: Nodes can be temporarily unlinked when they have no matches
-- **Left/Right Unlinking**: Both sides of join nodes can be optimized
-- **Negation Handling**: Improved support for NOT conditions
-- **Memory Efficiency**: Reduced memory usage through intelligent unlinking
-
-### Performance Benefits
-- **Sparse Data Optimization**: Excellent performance when only small subsets of rules are active
-- **Incremental Updates**: Only affected parts of the network are recomputed
-- **Reduced Join Operations**: Unlinking eliminates unnecessary join computations
-- **Better Scalability**: Handles large rule sets more efficiently
-
-## 💾 Blackboard Architecture
-
-The blackboard system implements a multi-agent architecture where:
-
-- **Knowledge Sources**: Independent reasoning agents
-- **Blackboard**: Shared memory space for facts and hypotheses
-- **Control**: Manages knowledge source activation and scheduling
-- **Persistence**: SQLite backend for fault tolerance
-
-### Benefits
-- **Modularity**: Easy to add new reasoning capabilities
-- **Fault Tolerance**: Persistent state survives system restarts
-- **Auditability**: Complete history of all reasoning steps
-- **Scalability**: Multiple agents can work concurrently
-
-## 🔧 Advanced Features
-
-### Variable Binding
-```ruby
-rule "price_alert" do
-  when :stock do
-    symbol :?stock_symbol
-    price greater_than(100)
-  end
-  
-  then do |facts, bindings|
-    puts "Alert for #{bindings[:?stock_symbol]}"
-  end
-end
+```
+┌─────────────────────────────────────────┐
+│           Blackboard (Memory)           │
+│  ┌────────────────────────────────────┐ │
+│  │  Facts, Messages, Audit Trail      │ │
+│  └────────────────────────────────────┘ │
+└─────────────────────────────────────────┘
+         ↑                    ↑
+         │                    │
+    ┌────────┐          ┌─────────┐
+    │   KS   │          │   KS    │  Knowledge Sources
+    │   #1   │          │   #2    │  (Agents)
+    └────────┘          └─────────┘
 ```
 
-### Pattern Matching
-```ruby
-# Functional patterns
-when :stock, price: ->(p) { p > 100 && p < 200 }
+## 🎯 Use Cases
 
-# Range patterns  
-when :stock, rsi: between(30, 70)
+### Expert Systems
+- Medical diagnosis
+- Fault detection and troubleshooting
+- Configuration and design assistance
+- Technical support automation
 
-# Collection patterns
-when :stock, sector: one_of("Technology", "Healthcare")
+### Financial Applications
+- Algorithmic trading systems
+- Portfolio management and rebalancing
+- Risk assessment and monitoring
+- Market analysis and signal generation
 
-# Regex patterns
-when :news, headline: matches(/earnings|profit/i)
-```
+### Real-Time Monitoring
+- IoT sensor analysis and alerts
+- Network monitoring and anomaly detection
+- Industrial process control
+- Fraud detection systems
 
-### Negation and Absence
-```ruby
-rule "no_open_positions" do
-  when :signal, action: "buy"
-  not.when :position, status: "open"  # No open positions
-  absent :risk_alert, level: "high"   # No high risk alerts
-  
-  then do |facts, bindings|
-    puts "Safe to open new position"
-  end
-end
-```
+### Business Automation
+- Workflow automation
+- Compliance checking
+- Policy enforcement
+- Dynamic pricing and promotions
 
-## 🧪 Testing
-
-Run the test suite:
-
-```bash
-ruby kbs_test.rb
-```
-
-Run demonstrations:
-
-```bash
-# Core system functionality
-ruby kbs.rb                              # Basic RETE II engine
-ruby blackboard.rb                         # Blackboard persistence
-ruby csv_trading_system.rb                 # Historical CSV trading
-ruby portfolio_rebalancing_system.rb       # Portfolio management
-ruby ai_enhanced_kbs.rb                    # AI-enhanced system
-
-# Example programs
-ruby examples/stock_trading_advanced.rb    # Advanced trading system
-ruby examples/working_demo.rb              # Basic working examples
-ruby examples/trading_demo.rb              # Trading scenarios
-ruby examples/timestamped_trading.rb       # Temporal processing
-ruby examples/kbs_advanced_example.rb    # Complex RETE examples
-
-# Testing
-ruby tests/kbs_test.rb                   # Comprehensive tests
-ruby tests/simple_test.rb                  # Simple unit tests
-```
-
-## 📊 Performance Characteristics
-
-### RETE II Optimizations
-- **Time Complexity**: O(RFP) where R=rules, F=facts, P=patterns
-- **Space Complexity**: O(RF) with unlinking optimization
-- **Update Performance**: O(log R) for incremental updates
-- **Memory Usage**: Significantly reduced vs. original RETE
+## ⚡ Performance
 
 ### Benchmarks
 - **Rule Compilation**: ~1ms per rule for typical patterns
 - **Fact Addition**: ~0.1ms per fact (warm network)
 - **Pattern Matching**: ~10μs per pattern evaluation
-- **Network Update**: ~0.01ms per affected node
+- **SQLite vs Redis**: Redis ~100x faster for high-frequency operations
 
-## 🎯 Use Cases
+### Complexity
+- **Time**: O(RFP) where R=rules, F=facts, P=patterns per rule
+- **Space**: O(RF) with unlinking optimization
+- **Updates**: O(log R) for incremental fact changes
 
-### Expert Systems
-- Medical diagnosis systems
-- Fault detection and diagnostics
-- Configuration and design systems
-- Planning and scheduling
+## 🧪 Testing
 
-### Business Rules
-- Compliance checking
-- Workflow automation  
-- Pricing and discount rules
-- Policy enforcement
+Run the comprehensive test suite:
 
-### Real-Time Systems
-- IoT event processing
-- Network monitoring
-- Fraud detection
-- Trading systems
-
-### Research Applications
-- AI reasoning systems
-- Knowledge representation
-- Multi-agent systems
-- Cognitive architectures
-
-## 🔬 Technical Details
-
-### RETE Network Structure
-```
-Facts → Alpha Network → Beta Network → Production Nodes
-         (Pattern       (Join Nodes)    (Actions)
-          Matching)
+```bash
+rake test
 ```
 
-### Unlinking Algorithm
-```ruby
-class BetaMemory
-  def unlink!
-    return if @tokens.empty?
-    @linked = false
-    @successors.each { |s| s.left_unlink! }
-  end
-  
-  def relink!
-    return if @tokens.empty?
-    @linked = true  
-    @successors.each { |s| s.left_relink! }
-  end
-end
+Individual test files:
+
+```bash
+ruby test/kbs_test.rb
+ruby test/blackboard_test.rb
+ruby test/dsl_test.rb
 ```
 
-### Blackboard Schema
-```sql
--- Core fact storage
-CREATE TABLE facts (
-  id INTEGER PRIMARY KEY,
-  uuid TEXT UNIQUE,
-  fact_type TEXT,
-  attributes TEXT,
-  created_at TIMESTAMP,
-  retracted BOOLEAN DEFAULT 0
-);
+**Test Coverage**: 100% with 199 tests, 447 assertions, 0 failures
 
--- Audit trail
-CREATE TABLE fact_history (
-  id INTEGER PRIMARY KEY,
-  fact_uuid TEXT,
-  action TEXT,
-  timestamp TIMESTAMP
-);
-```
+## 📖 Documentation
+
+### Core Classes
+
+- **KBS::ReteEngine** - Main inference engine
+- **KBS::Rule** - Rule definition
+- **KBS::Condition** - Pattern matching conditions
+- **KBS::Fact** - Working memory facts
+- **KBS::Blackboard::Engine** - Blackboard coordination
+- **KBS::Blackboard::Persistence::SQLiteStore** - SQLite backend
+- **KBS::Blackboard::Persistence::RedisStore** - Redis backend
+- **KBS::Blackboard::Persistence::HybridStore** - Hybrid storage
+
+### DSL Helpers
+
+- `greater_than(n)` - Match values > n
+- `less_than(n)` - Match values < n
+- `range(min, max)` - Match values between min and max
+- `one_of(*values)` - Match any of the values
+- `matches(regex)` - Match regex pattern
+
+## 🔧 Requirements
+
+- Ruby >= 3.2.0
+- SQLite3 (bundled with most systems)
+- Redis (optional, for Redis storage)
+- Ollama (optional, for AI integration)
 
 ## 🤝 Contributing
 
@@ -466,8 +361,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- Charles Forgy for the original RETE algorithm
-- The AI research community for RETE II enhancements
+- **Charles Forgy** for the original RETE algorithm
+- **Robert Doorenbos** for RETE/UL and unlinking optimizations
+- The AI and knowledge systems research community
 - Ruby community for excellent tooling and libraries
 
 ## 📚 References
@@ -475,7 +371,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Forgy, C. L. (1982). "Rete: A fast algorithm for the many pattern/many object pattern match problem"
 - Doorenbos, R. B. (1995). "Production Matching for Large Learning Systems" (RETE/UL)
 - Friedman-Hill, E. (2003). "Jess in Action: Java Rule-based Systems"
+- Englemore, R. & Morgan, T. (1988). "Blackboard Systems"
 
 ---
 
-Built with ❤️ for the knowledge systems community.
+**Built with ❤️ for the Ruby community**
+
+For more information, visit the [GitHub repository](https://github.com/madbomber/kbs).
