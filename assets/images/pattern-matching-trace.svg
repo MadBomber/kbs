@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 800" style="background: transparent;">
+  <defs>
+    <style>
+      .title { font: bold 18px monospace; fill: #e0e0e0; }
+      .phase-title { font: bold 16px monospace; fill: #bb86fc; }
+      .step-label { font: bold 13px monospace; fill: #cf6679; }
+      .node-label { font: 12px monospace; fill: #e0e0e0; }
+      .code-label { font: 11px monospace; fill: #03dac6; }
+      .comment { font: italic 11px monospace; fill: #888; }
+      .box { fill: #2d2d2d; stroke: #bb86fc; stroke-width: 2; }
+      .alpha-box { fill: #3d2d4d; stroke: #bb86fc; stroke-width: 2; }
+      .beta-box { fill: #2d3d3d; stroke: #03dac6; stroke-width: 2; }
+      .negation-box { fill: #4d2d2d; stroke: #cf6679; stroke-width: 2; }
+      .production-box { fill: #2d2d3d; stroke: #ffd700; stroke-width: 2; }
+      .flow-arrow { stroke: #cf6679; stroke-width: 2.5; fill: none; marker-end: url(#arrow); }
+      .inhibit-arrow { stroke: #ff5555; stroke-width: 2.5; fill: none; marker-end: url(#inhibit); stroke-dasharray: 5,3; }
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#cf6679" />
+    </marker>
+    <marker id="inhibit" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#ff5555" />
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="500" y="25" class="title" text-anchor="middle">Pattern Matching Trace: Negation Example</text>
+  <text x="500" y="45" class="code-label" text-anchor="middle">Rule: Alert when AAPL stock exists but NO alert exists</text>
+
+  <!-- Network Structure -->
+  <text x="30" y="80" class="phase-title">Network Structure:</text>
+
+  <!-- Root Beta Memory -->
+  <rect x="30" y="95" width="140" height="60" class="beta-box" rx="5"/>
+  <text x="100" y="120" class="node-label" text-anchor="middle">Root Beta</text>
+  <text x="100" y="137" class="code-label" text-anchor="middle">[dummy token]</text>
+
+  <!-- Alpha 1: stock -->
+  <rect x="220" y="95" width="140" height="60" class="alpha-box" rx="5"/>
+  <text x="290" y="115" class="node-label" text-anchor="middle">Alpha Memory 1</text>
+  <text x="290" y="132" class="code-label" text-anchor="middle">stock(symbol:</text>
+  <text x="290" y="147" class="code-label" text-anchor="middle">"AAPL")</text>
+
+  <!-- Join Node 1 -->
+  <rect x="30" y="185" width="140" height="50" class="box" rx="5"/>
+  <text x="100" y="215" class="node-label" text-anchor="middle">Join Node 1</text>
+
+  <!-- Beta Memory 1 -->
+  <rect x="30" y="265" width="140" height="60" class="beta-box" rx="5"/>
+  <text x="100" y="290" class="node-label" text-anchor="middle">Beta Memory 1</text>
+  <text x="100" y="307" class="code-label" text-anchor="middle">[partial matches]</text>
+
+  <!-- Alpha 2: alert -->
+  <rect x="220" y="265" width="140" height="60" class="alpha-box" rx="5"/>
+  <text x="290" y="285" class="node-label" text-anchor="middle">Alpha Memory 2</text>
+  <text x="290" y="302" class="code-label" text-anchor="middle">alert(symbol:</text>
+  <text x="290" y="317" class="code-label" text-anchor="middle">"AAPL")</text>
+
+  <!-- Negation Node -->
+  <rect x="30" y="355" width="140" height="50" class="negation-box" rx="5"/>
+  <text x="100" y="385" class="node-label" text-anchor="middle">Negation Node</text>
+
+  <!-- Production Node -->
+  <rect x="30" y="435" width="140" height="50" class="production-box" rx="5"/>
+  <text x="100" y="465" class="node-label" text-anchor="middle">Production Node</text>
+
+  <!-- Network connections -->
+  <path d="M 100 155 L 100 185" class="flow-arrow"/>
+  <path d="M 290 155 L 150 185" class="flow-arrow"/>
+  <path d="M 100 235 L 100 265" class="flow-arrow"/>
+  <path d="M 100 325 L 100 355" class="flow-arrow"/>
+  <path d="M 290 325 L 150 365" class="flow-arrow"/>
+  <path d="M 100 405 L 100 435" class="flow-arrow"/>
+
+  <!-- Phase 1: Add stock fact -->
+  <text x="450" y="80" class="phase-title">Phase 1: Add Stock Fact</text>
+  <rect x="450" y="95" width="520" height="140" class="box" rx="5"/>
+
+  <text x="470" y="115" class="step-label">1. engine.add_fact(:stock, symbol: "AAPL", price: 150)</text>
+
+  <text x="470" y="138" class="code-label">✓ Matches Alpha Memory 1 → activates</text>
+  <text x="470" y="155" class="code-label">✓ Join Node 1: joins stock fact with root token</text>
+  <text x="470" y="172" class="code-label">✓ Creates Token(parent: root, fact: stock_fact)</text>
+  <text x="470" y="189" class="code-label">✓ Propagates to Beta Memory 1</text>
+
+  <text x="470" y="210" class="step-label">2. Negation Node.left_activate(token)</text>
+  <text x="470" y="227" class="code-label">✓ Checks Alpha Memory 2: NO alert facts found</text>
+
+  <!-- Success indicator -->
+  <rect x="450" y="250" width="520" height="50" class="production-box" rx="5"/>
+  <text x="710" y="275" class="step-label" text-anchor="middle">✓ RULE FIRES: "No alert for AAPL!"</text>
+  <text x="710" y="292" class="comment" text-anchor="middle">Token propagates to Production Node</text>
+
+  <!-- Phase 2: Add alert fact -->
+  <text x="450" y="330" class="phase-title">Phase 2: Add Alert Fact (Inhibit)</text>
+  <rect x="450" y="345" width="520" height="140" class="box" rx="5"/>
+
+  <text x="470" y="365" class="step-label">3. engine.add_fact(:alert, symbol: "AAPL", level: "warning")</text>
+
+  <text x="470" y="388" class="code-label">✓ Matches Alpha Memory 2 → activates</text>
+  <text x="470" y="405" class="code-label">✓ Negation Node.right_activate(alert_fact)</text>
+  <text x="470" y="422" class="code-label">✓ Finds existing token in Beta Memory 1</text>
+  <text x="470" y="439" class="code-label">✓ Alert fact now INHIBITS the negation condition</text>
+
+  <text x="470" y="460" class="step-label">4. Negation Node deactivates token</text>
+  <text x="470" y="477" class="code-label">✓ Removes token from Production Node</text>
+
+  <!-- Blocked indicator -->
+  <rect x="450" y="500" width="520" height="50" class="negation-box" rx="5"/>
+  <text x="710" y="525" class="step-label" text-anchor="middle">✗ RULE BLOCKED: Alert exists, rule does not fire</text>
+  <text x="710" y="542" class="comment" text-anchor="middle">Negation condition no longer satisfied</text>
+
+  <!-- Phase 3: Remove alert fact -->
+  <text x="450" y="580" class="phase-title">Phase 3: Remove Alert Fact (Reactivate)</text>
+  <rect x="450" y="595" width="520" height="130" class="box" rx="5"/>
+
+  <text x="470" y="615" class="step-label">5. engine.remove_fact(alert_fact)</text>
+
+  <text x="470" y="638" class="code-label">✓ Alpha Memory 2 deactivates alert fact</text>
+  <text x="470" y="655" class="code-label">✓ Negation Node.right_deactivate(alert_fact)</text>
+  <text x="470" y="672" class="code-label">✓ No more inhibiting facts → condition satisfied again</text>
+  <text x="470" y="689" class="code-label">✓ Creates new token and propagates to Production Node</text>
+
+  <text x="470" y="710" class="step-label">6. engine.run()</text>
+
+  <!-- Success indicator -->
+  <rect x="450" y="740" width="520" height="50" class="production-box" rx="5"/>
+  <text x="710" y="765" class="step-label" text-anchor="middle">✓ RULE FIRES AGAIN: "No alert for AAPL!"</text>
+  <text x="710" y="782" class="comment" text-anchor="middle">Negation condition satisfied once more</text>
+
+  <!-- Legend -->
+  <text x="30" y="540" class="comment">Purple: Alpha Memories</text>
+  <text x="30" y="560" class="comment">Teal: Beta Memories</text>
+  <text x="30" y="580" class="comment">Pink: Negation Node</text>
+  <text x="30" y="600" class="comment">Gold: Production Node</text>
+</svg>

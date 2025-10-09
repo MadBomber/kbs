@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 700" style="background: transparent;">
+  <defs>
+    <style>
+      .title { font: bold 16px monospace; fill: #e0e0e0; }
+      .layer-title { font: bold 14px monospace; fill: #bb86fc; }
+      .label { font: 12px monospace; fill: #e0e0e0; }
+      .layer-box { fill: #2d2d2d; stroke: #bb86fc; stroke-width: 2; }
+      .storage-box { fill: #2d3d3d; stroke: #03dac6; stroke-width: 2; }
+      .arrow { stroke: #bb86fc; stroke-width: 3; fill: none; marker-end: url(#arrowhead); }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#bb86fc" />
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="400" y="30" class="title" text-anchor="middle">KBS System Layers</text>
+
+  <!-- Application Layer -->
+  <rect x="100" y="60" width="600" height="70" class="layer-box" rx="8"/>
+  <text x="400" y="90" class="layer-title" text-anchor="middle">Application Layer</text>
+  <text x="400" y="110" class="label" text-anchor="middle">(Your Rules, Facts, and Business Logic)</text>
+
+  <!-- Arrow -->
+  <path d="M 400 130 L 400 160" class="arrow"/>
+
+  <!-- DSL Layer -->
+  <rect x="100" y="160" width="600" height="70" class="layer-box" rx="8"/>
+  <text x="400" y="190" class="layer-title" text-anchor="middle">DSL Layer</text>
+  <text x="400" y="210" class="label" text-anchor="middle">(Declarative Rule Definition and Pattern Matching)</text>
+
+  <!-- Arrow -->
+  <path d="M 400 230 L 400 260" class="arrow"/>
+
+  <!-- RETE Engine -->
+  <rect x="100" y="260" width="600" height="70" class="layer-box" rx="8"/>
+  <text x="400" y="290" class="layer-title" text-anchor="middle">RETE Engine</text>
+  <text x="400" y="310" class="label" text-anchor="middle">(Alpha/Beta Networks, Join Nodes, Productions)</text>
+
+  <!-- Arrow -->
+  <path d="M 400 330 L 400 360" class="arrow"/>
+
+  <!-- Working Memory Layer -->
+  <rect x="100" y="360" width="600" height="70" class="layer-box" rx="8"/>
+  <text x="400" y="390" class="layer-title" text-anchor="middle">Working Memory Layer</text>
+  <text x="400" y="410" class="label" text-anchor="middle">(Transient or Persistent Fact Storage)</text>
+
+  <!-- Fork Arrow -->
+  <path d="M 400 430 L 400 460" class="arrow"/>
+  <path d="M 400 460 L 250 460 L 250 500" class="arrow"/>
+  <path d="M 400 460 L 550 460 L 550 500" class="arrow"/>
+
+  <!-- In-Memory Store -->
+  <rect x="120" y="500" width="260" height="120" class="storage-box" rx="8"/>
+  <text x="250" y="530" class="layer-title" text-anchor="middle">In-Memory Store</text>
+  <text x="250" y="555" class="label" text-anchor="middle">(WorkingMemory)</text>
+  <text x="250" y="580" class="label" text-anchor="middle">✓ Fast</text>
+  <text x="250" y="600" class="label" text-anchor="middle">✓ Simple</text>
+
+  <!-- Blackboard System -->
+  <rect x="420" y="500" width="260" height="120" class="storage-box" rx="8"/>
+  <text x="550" y="530" class="layer-title" text-anchor="middle">Blackboard System</text>
+  <text x="550" y="555" class="label" text-anchor="middle">(SQLite/Redis/Hybrid)</text>
+  <text x="550" y="580" class="label" text-anchor="middle">✓ Persistent</text>
+  <text x="550" y="600" class="label" text-anchor="middle">✓ Auditable</text>
+
+  <!-- Legend -->
+  <text x="400" y="660" class="label" text-anchor="middle" style="font-style: italic; fill: #888;">Fact flow from top to bottom, storage choice at bottom</text>
+</svg>

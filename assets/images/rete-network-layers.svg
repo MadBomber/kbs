@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" style="background: transparent;">
+  <defs>
+    <style>
+      .title { font: bold 18px monospace; fill: #e0e0e0; }
+      .layer-label { font: bold 14px monospace; fill: #bb86fc; }
+      .node-label { font: 12px monospace; fill: #e0e0e0; }
+      .node-box { fill: #2d2d2d; stroke: #bb86fc; stroke-width: 2; }
+      .beta-box { fill: #2d2d2d; stroke: #03dac6; stroke-width: 2; }
+      .production-box { fill: #2d2d2d; stroke: #cf6679; stroke-width: 2; }
+      .connection { stroke: #bb86fc; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .beta-connection { stroke: #03dac6; stroke-width: 2; fill: none; marker-end: url(#arrowhead-teal); }
+      .section-label { font: bold 16px monospace; fill: #bb86fc; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#bb86fc" />
+    </marker>
+    <marker id="arrowhead-teal" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#03dac6" />
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="400" y="30" class="title" text-anchor="middle">RETE Network Architecture</text>
+
+  <!-- Layer 1: Alpha Network -->
+  <text x="20" y="80" class="section-label">Layer 1: ALPHA NETWORK</text>
+  <text x="20" y="100" class="node-label">(Pattern Matching)</text>
+
+  <!-- Alpha Memory Nodes -->
+  <rect x="50" y="120" width="180" height="80" class="node-box" rx="5"/>
+  <text x="140" y="145" class="layer-label" text-anchor="middle">Alpha Memory 1</text>
+  <text x="140" y="165" class="node-label" text-anchor="middle">Pattern: stock(</text>
+  <text x="140" y="182" class="node-label" text-anchor="middle">symbol: "AAPL")</text>
+
+  <rect x="270" y="120" width="180" height="80" class="node-box" rx="5"/>
+  <text x="360" y="145" class="layer-label" text-anchor="middle">Alpha Memory 2</text>
+  <text x="360" y="165" class="node-label" text-anchor="middle">Pattern: alert(</text>
+  <text x="360" y="182" class="node-label" text-anchor="middle">symbol: "AAPL")</text>
+
+  <rect x="490" y="120" width="180" height="80" class="node-box" rx="5"/>
+  <text x="580" y="145" class="layer-label" text-anchor="middle">Alpha Memory 3</text>
+  <text x="580" y="165" class="node-label" text-anchor="middle">Pattern: order(</text>
+  <text x="580" y="182" class="node-label" text-anchor="middle">quantity: 100)</text>
+
+  <!-- Layer 2: Beta Network -->
+  <text x="20" y="280" class="section-label">Layer 2: BETA NETWORK</text>
+  <text x="20" y="300" class="node-label">(Join Processing)</text>
+
+  <!-- Root Beta Memory -->
+  <rect x="50" y="240" width="140" height="60" class="beta-box" rx="5"/>
+  <text x="120" y="262" class="layer-label" text-anchor="middle">Root Beta</text>
+  <text x="120" y="282" class="layer-label" text-anchor="middle">Memory</text>
+
+  <!-- Connection from Root to Join Node 1 -->
+  <path d="M 120 300 L 120 330" class="beta-connection"/>
+  <path d="M 140 200 L 210 330" class="connection"/>
+
+  <!-- Join Node 1 -->
+  <rect x="160" y="330" width="120" height="60" class="node-box" rx="5"/>
+  <text x="220" y="355" class="layer-label" text-anchor="middle">Join Node 1</text>
+  <text x="220" y="375" class="node-label" text-anchor="middle">(stock ⋈ root)</text>
+
+  <!-- Beta Memory 1 -->
+  <rect x="170" y="410" width="100" height="50" class="beta-box" rx="5"/>
+  <text x="220" y="440" class="layer-label" text-anchor="middle">Beta Mem 1</text>
+
+  <!-- Connection from Join Node 1 to Beta Memory 1 -->
+  <path d="M 220 390 L 220 410" class="beta-connection"/>
+
+  <!-- Connection from Beta Memory 1 to Join Node 2 -->
+  <path d="M 220 460 L 220 490" class="beta-connection"/>
+  <path d="M 360 200 L 330 490" class="connection"/>
+
+  <!-- Join Node 2 -->
+  <rect x="270" y="490" width="120" height="60" class="node-box" rx="5"/>
+  <text x="330" y="515" class="layer-label" text-anchor="middle">Join Node 2</text>
+  <text x="330" y="535" class="node-label" text-anchor="middle">(alert ⋈ β1)</text>
+
+  <!-- Layer 3: Production Nodes -->
+  <text x="480" y="440" class="section-label">Layer 3: PRODUCTION</text>
+  <text x="480" y="460" class="node-label">(Rule Firing)</text>
+
+  <!-- Production Node -->
+  <rect x="480" y="490" width="160" height="80" class="production-box" rx="5"/>
+  <text x="560" y="515" class="layer-label" text-anchor="middle">Production Node</text>
+  <text x="560" y="535" class="node-label" text-anchor="middle">Rule:</text>
+  <text x="560" y="552" class="node-label" text-anchor="middle">"alert_action"</text>
+
+  <!-- Connection from Join Node 2 to Production Node -->
+  <path d="M 390 520 L 480 520" class="connection"/>
+
+  <!-- Legend -->
+  <text x="50" y="585" class="node-label">Purple: Alpha/Join Nodes</text>
+  <text x="280" y="585" class="node-label">Teal: Beta Memories</text>
+  <text x="500" y="585" class="node-label">Pink: Production Nodes</text>
+</svg>

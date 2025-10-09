@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 700" style="background: transparent;">
+  <defs>
+    <style>
+      .title { font: bold 18px monospace; fill: #e0e0e0; }
+      .step-label { font: bold 14px monospace; fill: #bb86fc; }
+      .node-label { font: 12px monospace; fill: #e0e0e0; }
+      .code-label { font: 11px monospace; fill: #03dac6; }
+      .box { fill: #2d2d2d; stroke: #bb86fc; stroke-width: 2; }
+      .highlight-box { fill: #3d2d4d; stroke: #bb86fc; stroke-width: 3; }
+      .flow-arrow { stroke: #cf6679; stroke-width: 3; fill: none; marker-end: url(#flow-arrow); }
+      .data-arrow { stroke: #03dac6; stroke-width: 2; fill: none; marker-end: url(#data-arrow); stroke-dasharray: 5,5; }
+    </style>
+    <marker id="flow-arrow" markerWidth="12" markerHeight="12" refX="10" refY="3" orient="auto">
+      <polygon points="0 0, 12 3, 0 6" fill="#cf6679" />
+    </marker>
+    <marker id="data-arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#03dac6" />
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="450" y="30" class="title" text-anchor="middle">Fact Assertion Flow</text>
+  <text x="450" y="50" class="code-label" text-anchor="middle">engine.add_fact(:stock, symbol: "AAPL", price: 150)</text>
+
+  <!-- Step 1: WorkingMemory.add_fact -->
+  <rect x="50" y="80" width="280" height="80" class="highlight-box" rx="5"/>
+  <text x="190" y="105" class="step-label" text-anchor="middle">1. WorkingMemory.add_fact(fact)</text>
+  <text x="190" y="130" class="code-label" text-anchor="middle">@facts &lt;&lt; fact</text>
+  <text x="190" y="147" class="code-label" text-anchor="middle">notify_observers(:add, fact)</text>
+
+  <!-- Arrow to Step 2 -->
+  <path d="M 190 160 L 190 200" class="flow-arrow"/>
+
+  <!-- Step 2: ReteEngine.update -->
+  <rect x="50" y="200" width="280" height="80" class="highlight-box" rx="5"/>
+  <text x="190" y="225" class="step-label" text-anchor="middle">2. ReteEngine.update(:add, fact)</text>
+  <text x="190" y="250" class="code-label" text-anchor="middle">For each alpha_memory:</text>
+  <text x="190" y="267" class="code-label" text-anchor="middle">if fact.matches?(pattern)</text>
+
+  <!-- Arrow to Step 3 -->
+  <path d="M 190 280 L 190 320" class="flow-arrow"/>
+
+  <!-- Step 3: AlphaMemory.activate -->
+  <rect x="50" y="320" width="280" height="100" class="highlight-box" rx="5"/>
+  <text x="190" y="345" class="step-label" text-anchor="middle">3. AlphaMemory.activate(fact)</text>
+  <text x="190" y="370" class="code-label" text-anchor="middle">return unless @linked</text>
+  <text x="190" y="387" class="code-label" text-anchor="middle">@items &lt;&lt; fact</text>
+  <text x="190" y="404" class="code-label" text-anchor="middle">For each successor join_node:</text>
+
+  <!-- Arrow to Step 4 -->
+  <path d="M 190 420 L 190 460" class="flow-arrow"/>
+
+  <!-- Step 4: JoinNode.right_activate -->
+  <rect x="50" y="460" width="280" height="120" class="highlight-box" rx="5"/>
+  <text x="190" y="485" class="step-label" text-anchor="middle">4. JoinNode.right_activate(fact)</text>
+  <text x="190" y="510" class="code-label" text-anchor="middle">return unless @left_linked &amp;&amp; @right_linked</text>
+  <text x="190" y="527" class="code-label" text-anchor="middle">For each token in beta_memory:</text>
+  <text x="190" y="544" class="code-label" text-anchor="middle">if perform_join_tests(token, fact)</text>
+  <text x="190" y="561" class="code-label" text-anchor="middle">new_token = Token.new(token, fact, self)</text>
+
+  <!-- Arrow to Step 5 -->
+  <path d="M 190 580 L 190 620" class="flow-arrow"/>
+
+  <!-- Step 5: Token Propagation -->
+  <rect x="50" y="620" width="280" height="60" class="highlight-box" rx="5"/>
+  <text x="190" y="645" class="step-label" text-anchor="middle">5. Propagate Token</text>
+  <text x="190" y="667" class="code-label" text-anchor="middle">@successors.each { |s| s.activate(new_token) }</text>
+
+  <!-- Right side: Data structures -->
+  <text x="550" y="105" class="step-label">Data Structures Updated:</text>
+
+  <!-- Working Memory -->
+  <rect x="450" y="130" width="400" height="80" class="box" rx="5"/>
+  <text x="650" y="155" class="step-label" text-anchor="middle">Working Memory</text>
+  <text x="650" y="180" class="node-label" text-anchor="middle">@facts = [</text>
+  <text x="650" y="197" class="code-label" text-anchor="middle">stock(symbol: "AAPL", price: 150)</text>
+  <text x="650" y="205" class="node-label" text-anchor="middle">]</text>
+
+  <!-- Data flow arrow from step 1 -->
+  <path d="M 330 120 L 450 160" class="data-arrow"/>
+
+  <!-- Alpha Memory -->
+  <rect x="450" y="250" width="400" height="80" class="box" rx="5"/>
+  <text x="650" y="275" class="step-label" text-anchor="middle">Alpha Memory (stock pattern)</text>
+  <text x="650" y="300" class="node-label" text-anchor="middle">@items = [</text>
+  <text x="650" y="317" class="code-label" text-anchor="middle">stock(symbol: "AAPL", price: 150)</text>
+  <text x="650" y="325" class="node-label" text-anchor="middle">]</text>
+
+  <!-- Data flow arrow from step 3 -->
+  <path d="M 330 360 L 450 280" class="data-arrow"/>
+
+  <!-- Beta Memory -->
+  <rect x="450" y="370" width="400" height="100" class="box" rx="5"/>
+  <text x="650" y="395" class="step-label" text-anchor="middle">Beta Memory (after join)</text>
+  <text x="650" y="420" class="node-label" text-anchor="middle">@tokens = [</text>
+  <text x="650" y="437" class="code-label" text-anchor="middle">Token(parent: root_token,</text>
+  <text x="650" y="454" class="code-label" text-anchor="middle">fact: stock(symbol: "AAPL", price: 150))</text>
+  <text x="650" y="462" class="node-label" text-anchor="middle">]</text>
+
+  <!-- Data flow arrow from step 4 -->
+  <path d="M 330 520 L 450 420" class="data-arrow"/>
+
+  <!-- Production Node -->
+  <rect x="450" y="500" width="400" height="100" class="box" rx="5"/>
+  <text x="650" y="525" class="step-label" text-anchor="middle">Production Node (if fully matched)</text>
+  <text x="650" y="550" class="node-label" text-anchor="middle">@tokens = [</text>
+  <text x="650" y="567" class="code-label" text-anchor="middle">Token(...) // ready to fire</text>
+  <text x="650" y="584" class="node-label" text-anchor="middle">]</text>
+  <text x="650" y="592" class="code-label" text-anchor="middle">Call engine.run() to execute rule actions</text>
+
+  <!-- Data flow arrow from step 5 -->
+  <path d="M 330 650 L 450 550" class="data-arrow"/>
+
+  <!-- Legend -->
+  <text x="50" y="695" class="code-label">Pink arrows: Control flow</text>
+  <text x="350" y="695" class="code-label">Teal dashed: Data updates</text>
+</svg>

@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 700" style="background: transparent;">
+  <defs>
+    <style>
+      .title { font: bold 18px monospace; fill: #e0e0e0; }
+      .component-title { font: bold 14px monospace; fill: #bb86fc; }
+      .label { font: 12px monospace; fill: #e0e0e0; }
+      .code { font: 11px monospace; fill: #03dac6; }
+      .comment { font: italic 10px monospace; fill: #888; }
+      .box { fill: #2d2d2d; stroke: #bb86fc; stroke-width: 2; }
+      .core-box { fill: #3d2d4d; stroke: #bb86fc; stroke-width: 3; }
+      .storage-box { fill: #2d3d3d; stroke: #03dac6; stroke-width: 2; }
+      .agent-box { fill: #4d3d2d; stroke: #cf6679; stroke-width: 2; }
+      .arrow { stroke: #bb86fc; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .data-arrow { stroke: #03dac6; stroke-width: 2; fill: none; marker-end: url(#data-arrowhead); stroke-dasharray: 5,3; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#bb86fc" />
+    </marker>
+    <marker id="data-arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#03dac6" />
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="500" y="30" class="title" text-anchor="middle">Blackboard Architecture</text>
+
+  <!-- Central Blackboard Memory -->
+  <rect x="350" y="70" width="300" height="200" class="core-box" rx="8"/>
+  <text x="500" y="95" class="component-title" text-anchor="middle">Blackboard Memory</text>
+  <text x="500" y="115" class="comment" text-anchor="middle">(Central Shared Workspace)</text>
+
+  <!-- Memory components -->
+  <text x="370" y="140" class="label">• Facts (persistent)</text>
+  <text x="370" y="160" class="label">• Message Queue</text>
+  <text x="370" y="180" class="label">• Audit Log</text>
+  <text x="370" y="200" class="label">• Observer notifications</text>
+  <text x="370" y="220" class="label">• Transaction support</text>
+  <text x="370" y="240" class="code">UUID-based fact tracking</text>
+
+  <!-- Agents (top) -->
+  <text x="500" y="315" class="component-title" text-anchor="middle">Agents / Knowledge Sources</text>
+
+  <!-- Agent 1 -->
+  <rect x="50" y="330" width="200" height="100" class="agent-box" rx="5"/>
+  <text x="150" y="355" class="component-title" text-anchor="middle">Trading Agent</text>
+  <text x="150" y="380" class="code" text-anchor="middle">Reads: stock prices</text>
+  <text x="150" y="397" class="code" text-anchor="middle">Writes: buy/sell orders</text>
+  <text x="150" y="414" class="code" text-anchor="middle">Priority: 10</text>
+
+  <!-- Agent 2 -->
+  <rect x="280" y="330" width="200" height="100" class="agent-box" rx="5"/>
+  <text x="380" y="355" class="component-title" text-anchor="middle">Risk Agent</text>
+  <text x="380" y="380" class="code" text-anchor="middle">Reads: orders, portfolio</text>
+  <text x="380" y="397" class="code" text-anchor="middle">Writes: risk alerts</text>
+  <text x="380" y="414" class="code" text-anchor="middle">Priority: 20</text>
+
+  <!-- Agent 3 -->
+  <rect x="510" y="330" width="200" height="100" class="agent-box" rx="5"/>
+  <text x="610" y="355" class="component-title" text-anchor="middle">Analytics Agent</text>
+  <text x="610" y="380" class="code" text-anchor="middle">Reads: all facts</text>
+  <text x="610" y="397" class="code" text-anchor="middle">Writes: insights</text>
+  <text x="610" y="414" class="code" text-anchor="middle">Priority: 5</text>
+
+  <!-- Agent 4 -->
+  <rect x="750" y="330" width="200" height="100" class="agent-box" rx="5"/>
+  <text x="850" y="355" class="component-title" text-anchor="middle">Execution Agent</text>
+  <text x="850" y="380" class="code" text-anchor="middle">Reads: approved orders</text>
+  <text x="850" y="397" class="code" text-anchor="middle">Writes: executions</text>
+  <text x="850" y="414" class="code" text-anchor="middle">Priority: 30</text>
+
+  <!-- Arrows from agents to blackboard -->
+  <path d="M 150 330 L 400 270" class="arrow"/>
+  <path d="M 380 330 L 450 270" class="arrow"/>
+  <path d="M 610 330 L 550 270" class="arrow"/>
+  <path d="M 850 330 L 600 270" class="arrow"/>
+
+  <!-- RETE Engine -->
+  <rect x="100" y="90" width="180" height="80" class="box" rx="5"/>
+  <text x="190" y="115" class="component-title" text-anchor="middle">RETE Engine</text>
+  <text x="190" y="135" class="code" text-anchor="middle">Pattern matching</text>
+  <text x="190" y="152" class="code" text-anchor="middle">Rule execution</text>
+
+  <!-- Arrow from RETE to Blackboard -->
+  <path d="M 280 130 L 350 130" class="arrow"/>
+
+  <!-- Persistence Layer (bottom) -->
+  <text x="500" y="485" class="component-title" text-anchor="middle">Persistence Layer (Pluggable)</text>
+
+  <!-- SQLite Store -->
+  <rect x="100" y="500" width="220" height="150" class="storage-box" rx="5"/>
+  <text x="210" y="525" class="component-title" text-anchor="middle">SQLite Store</text>
+  <text x="210" y="550" class="label" text-anchor="middle">Tables:</text>
+  <text x="210" y="570" class="code" text-anchor="middle">• facts</text>
+  <text x="210" y="587" class="code" text-anchor="middle">• messages</text>
+  <text x="210" y="604" class="code" text-anchor="middle">• audit_log</text>
+  <text x="210" y="625" class="comment" text-anchor="middle">✓ ACID transactions</text>
+  <text x="210" y="642" class="comment" text-anchor="middle">✓ Durable</text>
+
+  <!-- Redis Store -->
+  <rect x="350" y="500" width="220" height="150" class="storage-box" rx="5"/>
+  <text x="460" y="525" class="component-title" text-anchor="middle">Redis Store</text>
+  <text x="460" y="550" class="label" text-anchor="middle">Data Structures:</text>
+  <text x="460" y="570" class="code" text-anchor="middle">• fact:{uuid} (hash)</text>
+  <text x="460" y="587" class="code" text-anchor="middle">• facts:type:{t} (set)</text>
+  <text x="460" y="604" class="code" text-anchor="middle">• messages (zset)</text>
+  <text x="460" y="625" class="comment" text-anchor="middle">✓ 100x faster</text>
+  <text x="460" y="642" class="comment" text-anchor="middle">✓ Distributed</text>
+
+  <!-- Hybrid Store -->
+  <rect x="600" y="500" width="220" height="150" class="storage-box" rx="5"/>
+  <text x="710" y="525" class="component-title" text-anchor="middle">Hybrid Store</text>
+  <text x="710" y="550" class="label" text-anchor="middle">Best of Both:</text>
+  <text x="710" y="570" class="code" text-anchor="middle">• Redis for facts</text>
+  <text x="710" y="587" class="code" text-anchor="middle">• SQLite for audit</text>
+  <text x="710" y="604" class="code" text-anchor="middle">• Fast + durable</text>
+  <text x="710" y="625" class="comment" text-anchor="middle">✓ </text>
+  <text x="710" y="642" class="comment" text-anchor="middle">✓ Full audit trail</text>
+
+  <!-- Arrows from Blackboard to Storage -->
+  <path d="M 400 270 L 210 500" class="data-arrow"/>
+  <path d="M 500 270 L 460 500" class="data-arrow"/>
+  <path d="M 600 270 L 710 500" class="data-arrow"/>
+
+  <!-- Message Flow Indicator -->
+  <rect x="850" y="90" width="130" height="160" class="box" rx="5" stroke-dasharray="5,3"/>
+  <text x="915" y="110" class="component-title" text-anchor="middle">Message Flow</text>
+  <text x="915" y="135" class="code" text-anchor="middle">1. Agent writes fact</text>
+  <text x="915" y="155" class="code" text-anchor="middle">2. RETE matches</text>
+  <text x="915" y="175" class="code" text-anchor="middle">3. Rules fire</text>
+  <text x="915" y="195" class="code" text-anchor="middle">4. New facts added</text>
+  <text x="915" y="215" class="code" text-anchor="middle">5. Other agents see</text>
+  <text x="915" y="235" class="code" text-anchor="middle">6. Cycle continues</text>
+
+  <!-- Legend -->
+  <text x="50" y="690" class="comment">Purple: Control/Logic  |  Teal: Data Storage  |  Pink: Agents/Knowledge Sources</text>
+</svg>
