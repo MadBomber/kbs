@@ -4,7 +4,7 @@ Comprehensive test suite for the KBS (Knowledge-Based System) Ruby gem using Min
 
 ## Test Files
 
-### Core RETE II Engine Tests
+### Core RETE Engine Tests
 - `test_fact.rb` - Fact class initialization, attributes, pattern matching
 - `test_token.rb` - Token creation and fact associations
 - `test_working_memory.rb` - Fact storage, observer pattern
@@ -103,7 +103,7 @@ end
 ## Test Organization
 
 ### Core RETE Tests (12 files)
-Tests for the RETE II algorithm implementation:
+Tests for the RETE algorithm implementation:
 - Alpha network (pattern matching)
 - Beta network (join operations)
 - Production nodes (rule firing)

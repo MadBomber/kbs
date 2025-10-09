@@ -2,7 +2,7 @@
 
 require_relative '../lib/kbs'
 
-engine = KBS::ReteEngine.new
+engine = KBS::Engine.new
 
 puts "Creating a simple expert system for diagnosing car problems..."
 puts "-" * 60

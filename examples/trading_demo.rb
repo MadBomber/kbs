@@ -4,7 +4,7 @@ require_relative '../lib/kbs'
 
 class TradingDemo
   def initialize
-    @engine = KBS::ReteEngine.new
+    @engine = KBS::Engine.new
     setup_trading_rules
     puts "🏦 STOCK TRADING EXPERT SYSTEM LOADED"
     puts "📊 #{@engine.rules.size} trading strategies active"

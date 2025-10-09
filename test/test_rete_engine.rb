@@ -2,13 +2,13 @@
 
 require_relative 'test_helper'
 
-class TestReteEngine < Minitest::Test
+class TestEngine < Minitest::Test
   def setup
-    @engine = KBS::ReteEngine.new
+    @engine = KBS::Engine.new
   end
 
   def test_initialization
-    assert_instance_of KBS::ReteEngine, @engine
+    assert_instance_of KBS::Engine, @engine
     assert_instance_of KBS::WorkingMemory, @engine.working_memory
   end
 

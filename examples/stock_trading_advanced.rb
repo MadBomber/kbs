@@ -4,7 +4,7 @@ require_relative '../lib/kbs'
 
 class AdvancedStockTradingSystem
   def initialize
-    @engine = KBS::ReteEngine.new
+    @engine = KBS::Engine.new
     @portfolio = {
       cash: 100000,
       positions: {},

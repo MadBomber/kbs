@@ -1,0 +1,181 @@
+# MkDocs Configuration for KBS Documentation
+site_name: KBS - Knowledge-Based Systems for Ruby
+site_description: A Ruby implementation of the RETE algorithm for production rule systems with persistent blackboard memory
+site_author: Dewayne VanHoozer
+site_url: https://madbomber.github.io/kbs
+copyright: Copyright &copy; 2024 Dewayne VanHoozer
+
+# Repository information
+repo_name: madbomber/kbs
+repo_url: https://github.com/madbomber/kbs
+edit_uri: edit/main/docs/
+
+# Configuration
+theme:
+  name: material
+
+  # Color scheme - Default to light mode
+  palette:
+    # Palette toggle for light mode (default)
+    - scheme: default
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - scheme: slate
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+  # Typography
+  font:
+    text: Roboto
+    code: Roboto Mono
+
+  # Theme features
+  features:
+    # Navigation
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.path
+    - navigation.indexes
+    - navigation.top
+
+    # Table of contents
+    - toc.follow
+
+    # Search
+    - search.suggest
+    - search.highlight
+    - search.share
+
+    # Header
+    - header.autohide
+
+    # Content
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - content.tooltips
+    - content.action.edit
+    - content.action.view
+
+# Plugins
+plugins:
+  - search:
+      separator: '[\s\-,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
+
+# Extensions
+markdown_extensions:
+  # Python Markdown
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+      title: On this page
+
+  # Python Markdown Extensions
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      repo_url_shorthand: true
+      user: madbomber
+      repo: kbs
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+# Extra CSS and JavaScript
+extra_css:
+  - assets/css/custom.css
+
+extra_javascript:
+  - assets/js/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
+# Social media and extra configuration
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/madbomber/kbs
+      name: KBS on GitHub
+    - icon: fontawesome/solid/gem
+      link: https://rubygems.org/gems/kbs
+      name: KBS on RubyGems
+
+  version:
+    provider: mike
+
+# Navigation
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Quick Start: quick-start.md
+  - Architecture:
+    - architecture/index.md
+    - RETE Algorithm: architecture/rete-algorithm.md
+    - Blackboard System: architecture/blackboard.md
+    - Network Structure: architecture/network-structure.md
+  - Guides:
+    - guides/index.md
+    - Getting Started: guides/getting-started.md
+    - Writing Rules: guides/writing-rules.md
+    - DSL Reference: guides/dsl.md
+    - Working with Facts: guides/facts.md
+    - Pattern Matching: guides/pattern-matching.md
+    - Variable Binding: guides/variable-binding.md
+    - Negation: guides/negation.md
+    - Blackboard Memory: guides/blackboard-memory.md
+    - Persistence Options: guides/persistence.md
+  - Examples:
+    - examples/index.md
+    - Stock Trading: examples/stock-trading.md
+    - Expert Systems: examples/expert-systems.md
+    - Multi-Agent Systems: examples/multi-agent.md
+  - Advanced:
+    - advanced/index.md
+    - Performance Tuning: advanced/performance.md
+    - Custom Persistence: advanced/custom-persistence.md
+    - Debugging: advanced/debugging.md
+    - Testing Rules: advanced/testing.md
+  - API Reference:
+    - api/index.md
+    - ReteEngine: api/engine.md
+    - Facts: api/facts.md
+    - Rules: api/rules.md
+    - Blackboard: api/blackboard.md

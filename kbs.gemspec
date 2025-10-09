@@ -8,11 +8,11 @@ Gem::Specification.new do |spec|
   spec.authors = ["Dewayne VanHoozer"]
   spec.email = ["dvanhoozer@gmail.com"]
 
-  spec.summary = "Production-ready Knowledge-Based System with RETE II inference, Blackboard architecture, and AI integration"
+  spec.summary = "Knowledge-Based System with RETE inference, Blackboard architecture, and AI integration"
   spec.description = <<~DESC
     A comprehensive Ruby implementation of a Knowledge-Based System featuring:
 
-    • RETE II Algorithm: Optimized forward-chaining inference engine with unlinking optimization for high-performance pattern matching
+    • RETE Algorithm: Optimized forward-chaining inference engine with unlinking optimization for high-performance pattern matching
     • Declarative DSL: Readable, expressive syntax for rule definition with built-in condition helpers
     • Blackboard Architecture: Multi-agent coordination with message passing and knowledge source registration
     • Flexible Persistence: SQLite (durable), Redis (fast), and hybrid storage backends with audit trails

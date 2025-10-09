@@ -9,7 +9,7 @@ require 'thread'
 # Rules fire immediately when facts are added
 # =============================================================================
 
-class ReactiveEngine < KBS::ReteEngine
+class ReactiveEngine < KBS::Engine
   attr_accessor :auto_inference
 
   def initialize(auto_inference: true)
@@ -37,7 +37,7 @@ end
 # Inference runs continuously in a background thread
 # =============================================================================
 
-class BackgroundInferenceEngine < KBS::ReteEngine
+class BackgroundInferenceEngine < KBS::Engine
   def initialize
     super()
     @running = false
@@ -103,7 +103,7 @@ end
 # Execute callbacks immediately when rules fire
 # =============================================================================
 
-class EventDrivenEngine < KBS::ReteEngine
+class EventDrivenEngine < KBS::Engine
   def initialize
     super()
     @rule_callbacks = {}
@@ -285,7 +285,7 @@ def demo_queue_based
   puts "="*80
   puts "Facts accumulate and are processed in batches\n\n"
 
-  engine = KBS::ReteEngine.new
+  engine = KBS::Engine.new
   fact_queue = Queue.new
 
   # Define rule
@@ -344,7 +344,7 @@ end
 # =============================================================================
 
 if __FILE__ == $0
-  puts "\n🚀 CONCURRENT INFERENCE PATTERNS FOR RETE II\n"
+  puts "\n🚀 CONCURRENT INFERENCE PATTERNS FOR RETE\n"
 
   demo_reactive_inference
   sleep 1

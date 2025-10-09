@@ -36,7 +36,7 @@ class TestToken < Minitest::Test
   end
 
   def test_facts_with_nil_fact_in_chain
-    # Dummy token (used by RETE II for initial state)
+    # Dummy token (used by RETE for initial state)
     dummy = KBS::Token.new(nil, nil, nil)
     token = KBS::Token.new(dummy, @fact1, nil)
 

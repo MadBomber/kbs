@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    kbs (0.0.1)
+    kbs (0.1.0)
       sqlite3 (~> 1.6)
 
 GEM

@@ -14,7 +14,7 @@ end
 module AIEnhancedKBS
   class AIKnowledgeSystem
     def initialize
-      @engine = KBS::ReteEngine.new
+      @engine = KBS::Engine.new
       @ai_client = setup_ai_client
       @mcp_agent = setup_mcp_agent
       @sentiment_cache = {}

@@ -6,7 +6,7 @@ module KBS
       attr_reader :engine, :rules
 
       def initialize
-        @engine = ReteEngine.new
+        @engine = Engine.new
         @rules = {}
         @rule_builders = {}
       end

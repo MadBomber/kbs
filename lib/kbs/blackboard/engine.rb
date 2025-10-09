@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-require_relative '../rete_engine'
+require_relative '../engine'
 require_relative 'memory'
 
 module KBS
   module Blackboard
-    # RETE engine integrated with Blackboard memory
-    class Engine < ReteEngine
+    # KBS engine integrated with Blackboard memory
+    class Engine < KBS::Engine
       attr_reader :blackboard
 
       def initialize(db_path: ':memory:', store: nil)

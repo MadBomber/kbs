@@ -1,0 +1,83 @@
+/* Custom CSS for KBS Documentation */
+
+/* SVG image styling */
+img[src$=".svg"] {
+  max-width: 100%;
+  height: auto;
+  margin: 2em 0;
+  border-radius: 8px;
+  background: transparent;
+}
+
+/* Code block enhancements */
+.highlight pre {
+  border-radius: 8px;
+  padding: 1em;
+}
+
+/* Improve table styling */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.5em 0;
+}
+
+table th {
+  background-color: rgba(187, 134, 252, 0.2);
+  font-weight: bold;
+}
+
+table td, table th {
+  padding: 0.75em;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+table tr:hover {
+  background-color: rgba(187, 134, 252, 0.1);
+}
+
+/* Admonition customization */
+.admonition {
+  border-radius: 8px;
+  margin: 1.5em 0;
+}
+
+/* Implementation reference links */
+strong + a[href*="lib/kbs"] {
+  font-family: monospace;
+  font-size: 0.9em;
+  color: #03dac6;
+}
+
+/* Enhance inline code */
+code {
+  background-color: rgba(187, 134, 252, 0.15);
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+/* Navigation improvements */
+.md-nav__title {
+  font-weight: bold;
+}
+
+/* Search result highlighting */
+.md-search-result__article--document {
+  border-left: 3px solid #bb86fc;
+}
+
+/* Smooth scrolling for anchor links */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Figure captions for SVG diagrams */
+em {
+  display: block;
+  text-align: center;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: -1.5em;
+  margin-bottom: 1.5em;
+}

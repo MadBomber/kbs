@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module KBS
-  class ReteEngine
+  class Engine
     attr_reader :working_memory, :rules, :alpha_memories, :production_nodes
 
     def initialize

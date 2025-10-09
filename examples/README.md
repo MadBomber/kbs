@@ -1,6 +1,6 @@
 # KBS Examples
 
-This directory contains comprehensive examples demonstrating the capabilities of the KBS (Knowledge-Based System) gem. Each example showcases different features and use cases of the RETE II inference engine and blackboard architecture.
+This directory contains comprehensive examples demonstrating the capabilities of the KBS (Knowledge-Based System) gem. Each example showcases different features and use cases of the RETE inference engine and blackboard architecture.
 
 ## Table of Contents
 
@@ -421,7 +421,7 @@ export OLLAMA_MODEL=gpt-oss:latest
 ## Summary of Capabilities
 
 ### Core KBS Features
-- ✅ RETE II inference engine
+- ✅ RETE inference engine
 - ✅ Forward-chaining reasoning
 - ✅ Pattern matching
 - ✅ Negated conditions

@@ -5,7 +5,7 @@ require 'time'
 
 class TimestampedTradingSystem
   def initialize
-    @engine = KBS::ReteEngine.new
+    @engine = KBS::Engine.new
     @market_open = Time.parse("09:30:00")
     @market_close = Time.parse("16:00:00")
     setup_time_aware_rules

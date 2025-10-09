@@ -7,7 +7,7 @@ require_relative '../lib/kbs/blackboard'
 
 class TestIntegration < Minitest::Test
   def test_basic_rete_workflow
-    engine = KBS::ReteEngine.new
+    engine = KBS::Engine.new
 
     # Define rule
     rule = KBS::Rule.new('fast_car') do |r|

@@ -3,7 +3,7 @@
 ## [0.0.1] - 2025-10-07
 
 ### Added
-- **RETE II Inference Engine**: Optimized forward-chaining inference with unlinking optimization
+- **RETE Inference Engine**: Optimized forward-chaining inference with unlinking optimization
 - **Declarative DSL**: Readable rule definition syntax with condition helpers (greater_than, less_than, range, one_of, matches)
 - **Blackboard Architecture**: Multi-agent coordination with message passing and knowledge source registration
 - **Flexible Persistence**:

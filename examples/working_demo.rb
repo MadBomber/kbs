@@ -4,7 +4,7 @@ require_relative '../lib/kbs'
 
 class WorkingTradingDemo
   def initialize
-    @engine = KBS::ReteEngine.new
+    @engine = KBS::Engine.new
     setup_simple_rules
   end
   

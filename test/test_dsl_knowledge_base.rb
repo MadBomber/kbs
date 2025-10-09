@@ -8,7 +8,7 @@ class TestDSLKnowledgeBase < Minitest::Test
     kb = KBS::DSL::KnowledgeBase.new
 
     assert_instance_of KBS::DSL::KnowledgeBase, kb
-    assert_instance_of KBS::ReteEngine, kb.engine
+    assert_instance_of KBS::Engine, kb.engine
   end
 
   def test_add_fact

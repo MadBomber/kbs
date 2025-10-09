@@ -1,4 +1,4 @@
-![KBS - Knowledge-Based System](kbs.jpg)
+![KBS - Knowledge-Based System](docs/assets/images/kbs.jpg)
 
 # KBS - Knowledge-Based System
 
@@ -9,8 +9,8 @@ A comprehensive Ruby implementation of a Knowledge-Based System featuring the RE
 
 ## 🌟 Key Features
 
-### RETE II Inference Engine
-- **Optimized Pattern Matching**: RETE II algorithm with unlinking optimization for high-performance forward-chaining inference
+### RETE Inference Engine
+- **Optimized Pattern Matching**: RETE algorithm with unlinking optimization for high-performance forward-chaining inference
 - **Incremental Updates**: Efficient fact addition/removal without full network recomputation
 - **Negation Support**: Built-in handling of NOT conditions and absence patterns
 - **Memory Optimization**: Nodes automatically unlink when empty to reduce computation
@@ -231,7 +231,7 @@ See [examples/README.md](examples/README.md) for detailed documentation of each 
 
 ## 🏗️ Architecture
 
-### RETE II Network Structure
+### RETE Network Structure
 
 ```
 Facts → Alpha Network → Beta Network → Production Nodes

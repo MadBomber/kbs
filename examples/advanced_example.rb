@@ -4,7 +4,7 @@ require_relative '../lib/kbs'
 
 class StockTradingExpertSystem
   def initialize
-    @engine = KBS::ReteEngine.new
+    @engine = KBS::Engine.new
     setup_rules
   end
   
@@ -137,7 +137,7 @@ end
 
 class NetworkDiagnosticSystem
   def initialize
-    @engine = KBS::ReteEngine.new
+    @engine = KBS::Engine.new
     setup_network_rules
   end
   

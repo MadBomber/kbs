@@ -6,7 +6,7 @@ require 'date'
 
 class CSVTradingSystem
   def initialize(csv_file = 'sample_stock_data.csv')
-    @engine = KBS::ReteEngine.new
+    @engine = KBS::Engine.new
     @csv_file = csv_file
     @portfolio = {
       cash: 100_000,
