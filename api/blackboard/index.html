@@ -78,7 +78,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#blackboard-api" class="md-skip">
+        <a href="#blackboard-api-reference" class="md-skip">
           Skip to content
         </a>
       
@@ -1401,6 +1401,19 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Blackboard
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -1412,6 +1425,678 @@
   
 
       </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Table of Contents
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kbsblackboardmemory" class="md-nav__link">
+    <span class="md-ellipsis">
+      KBS::Blackboard::Memory
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="KBS::Blackboard::Memory">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#constructor" class="md-nav__link">
+    <span class="md-ellipsis">
+      Constructor
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Constructor">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#initializedb_path-memory-store-nil" class="md-nav__link">
+    <span class="md-ellipsis">
+      initialize(db_path: ':memory:', store: nil)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#public-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Public Attributes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Public Attributes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#session_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      session_id
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#store" class="md-nav__link">
+    <span class="md-ellipsis">
+      store
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#message_queue" class="md-nav__link">
+    <span class="md-ellipsis">
+      message_queue
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#audit_log" class="md-nav__link">
+    <span class="md-ellipsis">
+      audit_log
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fact-management-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fact Management Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Fact Management Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#add_facttype-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_fact(type, attributes = {})
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#remove_factfact" class="md-nav__link">
+    <span class="md-ellipsis">
+      remove_fact(fact)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update_factfact-new_attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      update_fact(fact, new_attributes)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get_factstype-nil-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_facts(type = nil, pattern = {})
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#facts" class="md-nav__link">
+    <span class="md-ellipsis">
+      facts
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#query_factssql_conditions-nil-params" class="md-nav__link">
+    <span class="md-ellipsis">
+      query_facts(sql_conditions = nil, params = [])
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#message-queue-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Message Queue Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Message Queue Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#post_messagesender-topic-content-priority-0" class="md-nav__link">
+    <span class="md-ellipsis">
+      post_message(sender, topic, content, priority: 0)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#consume_messagetopic-consumer" class="md-nav__link">
+    <span class="md-ellipsis">
+      consume_message(topic, consumer)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#peek_messagestopic-limit-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      peek_messages(topic, limit: 10)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#audit-log-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Audit Log Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Audit Log Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#log_rule_firingrule_name-fact_uuids-bindings" class="md-nav__link">
+    <span class="md-ellipsis">
+      log_rule_firing(rule_name, fact_uuids, bindings = {})
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get_historyfact_uuid-nil-limit-100" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_history(fact_uuid = nil, limit: 100)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get_rule_firingsrule_name-nil-limit-100" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_rule_firings(rule_name = nil, limit: 100)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#knowledge-source-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Knowledge Source Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Knowledge Source Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#register_knowledge_sourcename-description-nil-topics" class="md-nav__link">
+    <span class="md-ellipsis">
+      register_knowledge_source(name, description: nil, topics: [])
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#observer-pattern-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Observer Pattern Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Observer Pattern Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#add_observerobserver" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_observer(observer)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#session-management-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Session Management Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Session Management Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#clear_session" class="md-nav__link">
+    <span class="md-ellipsis">
+      clear_session
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#transactionblock" class="md-nav__link">
+    <span class="md-ellipsis">
+      transaction(&amp;block)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#statistics-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Statistics Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Statistics Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stats" class="md-nav__link">
+    <span class="md-ellipsis">
+      stats
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#maintenance-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Maintenance Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Maintenance Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vacuum" class="md-nav__link">
+    <span class="md-ellipsis">
+      vacuum
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#close" class="md-nav__link">
+    <span class="md-ellipsis">
+      close
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kbsblackboardmessagequeue" class="md-nav__link">
+    <span class="md-ellipsis">
+      KBS::Blackboard::MessageQueue
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="KBS::Blackboard::MessageQueue">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#postsender-topic-content-priority-0" class="md-nav__link">
+    <span class="md-ellipsis">
+      post(sender, topic, content, priority: 0)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#consumetopic-consumer" class="md-nav__link">
+    <span class="md-ellipsis">
+      consume(topic, consumer)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#peektopic-limit-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      peek(topic, limit: 10)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stats_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      stats
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kbsblackboardauditlog" class="md-nav__link">
+    <span class="md-ellipsis">
+      KBS::Blackboard::AuditLog
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="KBS::Blackboard::AuditLog">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#methods_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#log_fact_changefact_uuid-fact_type-attributes-action" class="md-nav__link">
+    <span class="md-ellipsis">
+      log_fact_change(fact_uuid, fact_type, attributes, action)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#log_rule_firingrule_name-fact_uuids-bindings_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      log_rule_firing(rule_name, fact_uuids, bindings = {})
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fact_historyfact_uuid-nil-limit-100" class="md-nav__link">
+    <span class="md-ellipsis">
+      fact_history(fact_uuid = nil, limit: 100)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rule_firingsrule_name-nil-limit-100" class="md-nav__link">
+    <span class="md-ellipsis">
+      rule_firings(rule_name = nil, limit: 100)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stats_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      stats
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usage-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Usage Patterns
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Usage Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-multi-agent-coordination" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Multi-Agent Coordination
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-audit-trail-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Audit Trail Analysis
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-rule-performance-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Rule Performance Analysis
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-transaction-based-workflows" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Transaction-Based Workflows
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-debugging-message-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Debugging Message Flow
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-session-isolation" class="md-nav__link">
+    <span class="md-ellipsis">
+      6. Session Isolation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-custom-observer-for-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      7. Custom Observer for Metrics
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#performance-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Performance Considerations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Performance Considerations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#message-queue" class="md-nav__link">
+    <span class="md-ellipsis">
+      Message Queue
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#audit-log" class="md-nav__link">
+    <span class="md-ellipsis">
+      Audit Log
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      See Also
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1447,6 +2132,665 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Table of Contents
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kbsblackboardmemory" class="md-nav__link">
+    <span class="md-ellipsis">
+      KBS::Blackboard::Memory
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="KBS::Blackboard::Memory">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#constructor" class="md-nav__link">
+    <span class="md-ellipsis">
+      Constructor
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Constructor">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#initializedb_path-memory-store-nil" class="md-nav__link">
+    <span class="md-ellipsis">
+      initialize(db_path: ':memory:', store: nil)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#public-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Public Attributes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Public Attributes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#session_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      session_id
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#store" class="md-nav__link">
+    <span class="md-ellipsis">
+      store
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#message_queue" class="md-nav__link">
+    <span class="md-ellipsis">
+      message_queue
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#audit_log" class="md-nav__link">
+    <span class="md-ellipsis">
+      audit_log
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fact-management-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fact Management Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Fact Management Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#add_facttype-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_fact(type, attributes = {})
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#remove_factfact" class="md-nav__link">
+    <span class="md-ellipsis">
+      remove_fact(fact)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#update_factfact-new_attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      update_fact(fact, new_attributes)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get_factstype-nil-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_facts(type = nil, pattern = {})
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#facts" class="md-nav__link">
+    <span class="md-ellipsis">
+      facts
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#query_factssql_conditions-nil-params" class="md-nav__link">
+    <span class="md-ellipsis">
+      query_facts(sql_conditions = nil, params = [])
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#message-queue-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Message Queue Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Message Queue Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#post_messagesender-topic-content-priority-0" class="md-nav__link">
+    <span class="md-ellipsis">
+      post_message(sender, topic, content, priority: 0)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#consume_messagetopic-consumer" class="md-nav__link">
+    <span class="md-ellipsis">
+      consume_message(topic, consumer)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#peek_messagestopic-limit-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      peek_messages(topic, limit: 10)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#audit-log-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Audit Log Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Audit Log Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#log_rule_firingrule_name-fact_uuids-bindings" class="md-nav__link">
+    <span class="md-ellipsis">
+      log_rule_firing(rule_name, fact_uuids, bindings = {})
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get_historyfact_uuid-nil-limit-100" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_history(fact_uuid = nil, limit: 100)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#get_rule_firingsrule_name-nil-limit-100" class="md-nav__link">
+    <span class="md-ellipsis">
+      get_rule_firings(rule_name = nil, limit: 100)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#knowledge-source-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Knowledge Source Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Knowledge Source Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#register_knowledge_sourcename-description-nil-topics" class="md-nav__link">
+    <span class="md-ellipsis">
+      register_knowledge_source(name, description: nil, topics: [])
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#observer-pattern-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Observer Pattern Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Observer Pattern Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#add_observerobserver" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_observer(observer)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#session-management-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Session Management Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Session Management Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#clear_session" class="md-nav__link">
+    <span class="md-ellipsis">
+      clear_session
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#transactionblock" class="md-nav__link">
+    <span class="md-ellipsis">
+      transaction(&amp;block)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#statistics-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Statistics Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Statistics Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stats" class="md-nav__link">
+    <span class="md-ellipsis">
+      stats
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#maintenance-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Maintenance Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Maintenance Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vacuum" class="md-nav__link">
+    <span class="md-ellipsis">
+      vacuum
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#close" class="md-nav__link">
+    <span class="md-ellipsis">
+      close
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kbsblackboardmessagequeue" class="md-nav__link">
+    <span class="md-ellipsis">
+      KBS::Blackboard::MessageQueue
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="KBS::Blackboard::MessageQueue">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#postsender-topic-content-priority-0" class="md-nav__link">
+    <span class="md-ellipsis">
+      post(sender, topic, content, priority: 0)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#consumetopic-consumer" class="md-nav__link">
+    <span class="md-ellipsis">
+      consume(topic, consumer)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#peektopic-limit-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      peek(topic, limit: 10)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stats_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      stats
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kbsblackboardauditlog" class="md-nav__link">
+    <span class="md-ellipsis">
+      KBS::Blackboard::AuditLog
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="KBS::Blackboard::AuditLog">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#methods_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Methods
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#log_fact_changefact_uuid-fact_type-attributes-action" class="md-nav__link">
+    <span class="md-ellipsis">
+      log_fact_change(fact_uuid, fact_type, attributes, action)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#log_rule_firingrule_name-fact_uuids-bindings_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      log_rule_firing(rule_name, fact_uuids, bindings = {})
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fact_historyfact_uuid-nil-limit-100" class="md-nav__link">
+    <span class="md-ellipsis">
+      fact_history(fact_uuid = nil, limit: 100)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rule_firingsrule_name-nil-limit-100" class="md-nav__link">
+    <span class="md-ellipsis">
+      rule_firings(rule_name = nil, limit: 100)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stats_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      stats
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usage-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Usage Patterns
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Usage Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-multi-agent-coordination" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Multi-Agent Coordination
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-audit-trail-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Audit Trail Analysis
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-rule-performance-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Rule Performance Analysis
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-transaction-based-workflows" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Transaction-Based Workflows
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-debugging-message-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Debugging Message Flow
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-session-isolation" class="md-nav__link">
+    <span class="md-ellipsis">
+      6. Session Isolation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-custom-observer-for-metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      7. Custom Observer for Metrics
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#performance-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Performance Considerations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Performance Considerations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#message-queue" class="md-nav__link">
+    <span class="md-ellipsis">
+      Message Queue
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#audit-log" class="md-nav__link">
+    <span class="md-ellipsis">
+      Audit Log
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      See Also
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1477,12 +2821,839 @@
   
 
 
-<h1 id="blackboard-api">Blackboard API<a class="headerlink" href="#blackboard-api" title="Permanent link">&para;</a></h1>
-<p><em>Coming soon: Blackboard classes reference.</em></p>
-<p>See:
-- <code>lib/kbs/blackboard/engine.rb</code>
-- <code>lib/kbs/blackboard/memory.rb</code>
-- <code>lib/kbs/blackboard/persistence/</code></p>
+<h1 id="blackboard-api-reference">Blackboard API Reference<a class="headerlink" href="#blackboard-api-reference" title="Permanent link">&para;</a></h1>
+<p>Complete API reference for blackboard memory classes.</p>
+<h2 id="table-of-contents">Table of Contents<a class="headerlink" href="#table-of-contents" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="#kbsblackboardmemory">KBS::Blackboard::Memory</a> - Central blackboard workspace</li>
+<li><a href="#kbsblackboardmessagequeue">KBS::Blackboard::MessageQueue</a> - Inter-agent communication</li>
+<li><a href="#kbsblackboardauditlog">KBS::Blackboard::AuditLog</a> - Historical tracking</li>
+<li><a href="#usage-patterns">Usage Patterns</a></li>
+</ul>
+<hr />
+<h2 id="kbsblackboardmemory">KBS::Blackboard::Memory<a class="headerlink" href="#kbsblackboardmemory" title="Permanent link">&para;</a></h2>
+<p>The central blackboard workspace that coordinates facts, messages, and audit logging.</p>
+<p><strong>Architecture</strong>: Composes three components:
+1. <strong>Store</strong> - Persistence layer (SQLite, Redis, or Hybrid)
+2. <strong>MessageQueue</strong> - Priority-based inter-agent messaging
+3. <strong>AuditLog</strong> - Complete history of fact changes and rule firings</p>
+<hr />
+<h3 id="constructor">Constructor<a class="headerlink" href="#constructor" title="Permanent link">&para;</a></h3>
+<h4 id="initializedb_path-memory-store-nil"><code>initialize(db_path: ':memory:', store: nil)</code><a class="headerlink" href="#initializedb_path-memory-store-nil" title="Permanent link">&para;</a></h4>
+<p>Creates a new blackboard memory.</p>
+<p><strong>Parameters</strong>:
+- <code>db_path</code> (String, optional) - Path to SQLite database (default: <code>:memory:</code>)
+- <code>store</code> (KBS::Blackboard::Persistence::Store, optional) - Custom store (default: <code>nil</code>, creates SQLiteStore)</p>
+<p><strong>Returns</strong>: <code>KBS::Blackboard::Memory</code> instance</p>
+<p><strong>Side Effects</strong>:
+- Generates session UUID
+- Creates or connects to persistence store
+- Initializes message queue and audit log
+- Sets up database tables/indexes</p>
+<p><strong>Example - In-Memory</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Memory</span><span class="o">.</span><span class="n">new</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="c1"># Blackboard stored in RAM (lost on exit)</span>
+</span></code></pre></div></p>
+<p><strong>Example - SQLite Persistence</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Memory</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">db_path</span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;knowledge_base.db&#39;</span><span class="p">)</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1"># Facts persisted to knowledge_base.db</span>
+</span></code></pre></div></p>
+<p><strong>Example - Redis Store</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">require</span><span class="w"> </span><span class="s1">&#39;kbs/blackboard/persistence/redis_store&#39;</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Persistence</span><span class="o">::</span><span class="no">RedisStore</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">url</span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;redis://localhost:6379/0&#39;</span><span class="p">)</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="n">memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Memory</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">store</span><span class="p">:</span><span class="w"> </span><span class="n">store</span><span class="p">)</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># Fast, distributed persistence</span>
+</span></code></pre></div></p>
+<p><strong>Example - Hybrid Store</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">require</span><span class="w"> </span><span class="s1">&#39;kbs/blackboard/persistence/hybrid_store&#39;</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Persistence</span><span class="o">::</span><span class="no">HybridStore</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="ss">redis_url</span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;redis://localhost:6379/0&#39;</span><span class="p">,</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">  </span><span class="ss">db_path</span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;audit.db&#39;</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="p">)</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="n">memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Memory</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">store</span><span class="p">:</span><span class="w"> </span><span class="n">store</span><span class="p">)</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="c1"># Facts in Redis, audit trail in SQLite</span>
+</span></code></pre></div></p>
+<hr />
+<h3 id="public-attributes">Public Attributes<a class="headerlink" href="#public-attributes" title="Permanent link">&para;</a></h3>
+<h4 id="session_id"><code>session_id</code><a class="headerlink" href="#session_id" title="Permanent link">&para;</a></h4>
+<p><strong>Type</strong>: <code>String</code></p>
+<p><strong>Read-only</strong>: Yes (via <code>attr_reader</code>)</p>
+<p><strong>Description</strong>: Unique session identifier (UUID)</p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Memory</span><span class="o">.</span><span class="n">new</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nb">puts</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">session_id</span><span class="w">  </span><span class="c1"># =&gt; &quot;550e8400-e29b-41d4-a716-446655440000&quot;</span>
+</span></code></pre></div></p>
+<p><strong>Use Cases</strong>:
+- Filter audit log by session
+- Separate facts from different runs
+- Debugging multi-session scenarios</p>
+<hr />
+<h4 id="store"><code>store</code><a class="headerlink" href="#store" title="Permanent link">&para;</a></h4>
+<p><strong>Type</strong>: <code>KBS::Blackboard::Persistence::Store</code></p>
+<p><strong>Read-only</strong>: Yes (via <code>attr_reader</code>)</p>
+<p><strong>Description</strong>: The underlying persistence store</p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Memory</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">db_path</span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;kb.db&#39;</span><span class="p">)</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="nb">puts</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">class</span><span class="w">  </span><span class="c1"># =&gt; KBS::Blackboard::Persistence::SqliteStore</span>
+</span></code></pre></div></p>
+<hr />
+<h4 id="message_queue"><code>message_queue</code><a class="headerlink" href="#message_queue" title="Permanent link">&para;</a></h4>
+<p><strong>Type</strong>: <code>KBS::Blackboard::MessageQueue</code></p>
+<p><strong>Read-only</strong>: Yes (via <code>attr_reader</code>)</p>
+<p><strong>Description</strong>: The message queue for inter-agent communication</p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">memory</span><span class="o">.</span><span class="n">message_queue</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;agent1&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;alerts&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">level</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;critical&quot;</span><span class="w"> </span><span class="p">})</span>
+</span></code></pre></div></p>
+<hr />
+<h4 id="audit_log"><code>audit_log</code><a class="headerlink" href="#audit_log" title="Permanent link">&para;</a></h4>
+<p><strong>Type</strong>: <code>KBS::Blackboard::AuditLog</code></p>
+<p><strong>Read-only</strong>: Yes (via <code>attr_reader</code>)</p>
+<p><strong>Description</strong>: The audit log for tracking all changes</p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">history</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">audit_log</span><span class="o">.</span><span class="n">fact_history</span><span class="p">(</span><span class="n">fact</span><span class="o">.</span><span class="n">uuid</span><span class="p">)</span>
+</span></code></pre></div></p>
+<hr />
+<h3 id="fact-management-methods">Fact Management Methods<a class="headerlink" href="#fact-management-methods" title="Permanent link">&para;</a></h3>
+<h4 id="add_facttype-attributes"><code>add_fact(type, attributes = {})</code><a class="headerlink" href="#add_facttype-attributes" title="Permanent link">&para;</a></h4>
+<p>Adds a persistent fact to the blackboard.</p>
+<p><strong>Parameters</strong>:
+- <code>type</code> (Symbol) - Fact type
+- <code>attributes</code> (Hash, optional) - Fact attributes (default: <code>{}</code>)</p>
+<p><strong>Returns</strong>: <code>KBS::Blackboard::Fact</code> - Persistent fact with UUID</p>
+<p><strong>Side Effects</strong>:
+- Generates UUID for fact
+- Saves fact to store (within transaction)
+- Logs addition to audit log
+- Notifies observers</p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">location</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;server_room&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span><span class="p">)</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="nb">puts</span><span class="w"> </span><span class="n">fact</span><span class="o">.</span><span class="n">uuid</span><span class="w">  </span><span class="c1"># =&gt; &quot;550e8400-e29b-41d4-a716-446655440000&quot;</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="nb">puts</span><span class="w"> </span><span class="n">fact</span><span class="o">.</span><span class="n">type</span><span class="w">  </span><span class="c1"># =&gt; :temperature</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="nb">puts</span><span class="w"> </span><span class="n">fact</span><span class="o">[</span><span class="ss">:value</span><span class="o">]</span><span class="w">  </span><span class="c1"># =&gt; 85</span>
+</span></code></pre></div></p>
+<p><strong>Transaction Handling</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">memory</span><span class="o">.</span><span class="n">transaction</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="n">fact1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:order</span><span class="p">,</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="ss">status</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pending&quot;</span><span class="p">)</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span><span class="n">fact2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:inventory</span><span class="p">,</span><span class="w"> </span><span class="ss">item</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ABC&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">quantity</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">)</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span><span class="c1"># Both facts committed together</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="k">end</span>
+</span></code></pre></div></p>
+<hr />
+<h4 id="remove_factfact"><code>remove_fact(fact)</code><a class="headerlink" href="#remove_factfact" title="Permanent link">&para;</a></h4>
+<p>Removes a fact from the blackboard.</p>
+<p><strong>Parameters</strong>:
+- <code>fact</code> (KBS::Blackboard::Fact or String) - Fact object or UUID</p>
+<p><strong>Returns</strong>: <code>nil</code></p>
+<p><strong>Side Effects</strong>:
+- Marks fact as inactive in store
+- Logs removal to audit log
+- Notifies observers</p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span><span class="p">)</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="n">memory</span><span class="o">.</span><span class="n">remove_fact</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="c1"># Or by UUID</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="n">memory</span><span class="o">.</span><span class="n">remove_fact</span><span class="p">(</span><span class="s2">&quot;550e8400-e29b-41d4-a716-446655440000&quot;</span><span class="p">)</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="c1"># Fact remains in audit log</span>
+</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="n">history</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">get_history</span><span class="p">(</span><span class="n">fact</span><span class="o">.</span><span class="n">uuid</span><span class="p">)</span>
+</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="nb">puts</span><span class="w"> </span><span class="n">history</span><span class="o">.</span><span class="n">last</span><span class="o">[</span><span class="ss">:action</span><span class="o">]</span><span class="w">  </span><span class="c1"># =&gt; &quot;REMOVE&quot;</span>
+</span></code></pre></div></p>
+<hr />
+<h4 id="update_factfact-new_attributes"><code>update_fact(fact, new_attributes)</code><a class="headerlink" href="#update_factfact-new_attributes" title="Permanent link">&para;</a></h4>
+<p>Updates a fact's attributes.</p>
+<p><strong>Parameters</strong>:
+- <code>fact</code> (KBS::Blackboard::Fact or String) - Fact object or UUID
+- <code>new_attributes</code> (Hash) - New attributes to merge</p>
+<p><strong>Returns</strong>: <code>nil</code></p>
+<p><strong>Side Effects</strong>:
+- Updates fact in store
+- Logs update to audit log</p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">location</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;server_room&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span><span class="p">)</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="n">memory</span><span class="o">.</span><span class="n">update_fact</span><span class="p">(</span><span class="n">fact</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">90</span><span class="p">,</span><span class="w"> </span><span class="ss">timestamp</span><span class="p">:</span><span class="w"> </span><span class="no">Time</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="c1"># Or by UUID</span>
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="n">memory</span><span class="o">.</span><span class="n">update_fact</span><span class="p">(</span><span class="n">fact</span><span class="o">.</span><span class="n">uuid</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">95</span><span class="p">)</span>
+</span></code></pre></div></p>
+<p><strong>Note</strong>: Updates do NOT notify observers or trigger rule re-evaluation. For that, retract and re-add the fact.</p>
+<hr />
+<h4 id="get_factstype-nil-pattern"><code>get_facts(type = nil, pattern = {})</code><a class="headerlink" href="#get_factstype-nil-pattern" title="Permanent link">&para;</a></h4>
+<p>Retrieves facts from the blackboard.</p>
+<p><strong>Parameters</strong>:
+- <code>type</code> (Symbol, optional) - Filter by fact type (default: <code>nil</code>, all types)
+- <code>pattern</code> (Hash, optional) - Additional attribute filters (default: <code>{}</code>)</p>
+<p><strong>Returns</strong>: <code>Array&lt;KBS::Blackboard::Fact&gt;</code></p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1"># Get all facts</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="n">all_facts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">get_facts</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="c1"># Get all temperature facts</span>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="n">temps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">get_facts</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">)</span>
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="c1"># Get temperature facts from specific location</span>
+</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="n">server_temps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">get_facts</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">location</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;server_room&quot;</span><span class="p">)</span>
+</span></code></pre></div></p>
+<p><strong>Performance</strong>: O(N) where N = total facts (uses linear scan). For large datasets, consider <code>query_facts</code>.</p>
+<hr />
+<h4 id="facts"><code>facts</code><a class="headerlink" href="#facts" title="Permanent link">&para;</a></h4>
+<p>Alias for <code>get_facts()</code>. Returns all facts.</p>
+<p><strong>Returns</strong>: <code>Array&lt;KBS::Blackboard::Fact&gt;</code></p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;Total facts: </span><span class="si">#{</span><span class="n">memory</span><span class="o">.</span><span class="n">facts</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">&quot;</span>
+</span></code></pre></div></p>
+<hr />
+<h4 id="query_factssql_conditions-nil-params"><code>query_facts(sql_conditions = nil, params = [])</code><a class="headerlink" href="#query_factssql_conditions-nil-params" title="Permanent link">&para;</a></h4>
+<p>Advanced SQL query for facts (SQLite store only).</p>
+<p><strong>Parameters</strong>:
+- <code>sql_conditions</code> (String, optional) - SQL WHERE clause (default: <code>nil</code>)
+- <code>params</code> (Array, optional) - Parameters for SQL query (default: <code>[]</code>)</p>
+<p><strong>Returns</strong>: <code>Array&lt;KBS::Blackboard::Fact&gt;</code></p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="c1"># Query with SQL condition</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="n">high_temps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">query_facts</span><span class="p">(</span>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">  </span><span class="s2">&quot;fact_type = ? AND json_extract(attributes, &#39;$.value&#39;) &gt; ?&quot;</span><span class="p">,</span>
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">  </span><span class="o">[</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="mi">80</span><span class="o">]</span>
+</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="p">)</span>
+</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>
+</span><span id="__span-14-7"><a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a><span class="c1"># Complex query</span>
+</span><span id="__span-14-8"><a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="n">recent_errors</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">query_facts</span><span class="p">(</span>
+</span><span id="__span-14-9"><a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="w">  </span><span class="s2">&quot;fact_type = ? AND datetime(json_extract(attributes, &#39;$.timestamp&#39;)) &gt; datetime(?)&quot;</span><span class="p">,</span>
+</span><span id="__span-14-10"><a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="w">  </span><span class="o">[</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="no">Time</span><span class="o">.</span><span class="n">now</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">3600</span><span class="p">)</span><span class="o">.</span><span class="n">iso8601</span><span class="o">]</span>
+</span><span id="__span-14-11"><a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="p">)</span>
+</span></code></pre></div></p>
+<p><strong>Important</strong>: Only works with SQLite stores. Redis stores will raise NotImplementedError.</p>
+<hr />
+<h3 id="message-queue-methods">Message Queue Methods<a class="headerlink" href="#message-queue-methods" title="Permanent link">&para;</a></h3>
+<h4 id="post_messagesender-topic-content-priority-0"><code>post_message(sender, topic, content, priority: 0)</code><a class="headerlink" href="#post_messagesender-topic-content-priority-0" title="Permanent link">&para;</a></h4>
+<p>Posts a message to the blackboard message queue.</p>
+<p><strong>Parameters</strong>:
+- <code>sender</code> (String) - Sender identifier (e.g., agent name)
+- <code>topic</code> (String) - Message topic (channel/category)
+- <code>content</code> (Hash) - Message payload
+- <code>priority</code> (Integer, optional) - Message priority (default: 0, higher = more urgent)</p>
+<p><strong>Returns</strong>: <code>nil</code></p>
+<p><strong>Side Effects</strong>:
+- Adds message to queue
+- Persists to store</p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="c1"># Post high-priority alert</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="n">memory</span><span class="o">.</span><span class="n">post_message</span><span class="p">(</span>
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">  </span><span class="s2">&quot;temperature_agent&quot;</span><span class="p">,</span>
+</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="w">  </span><span class="s2">&quot;alerts&quot;</span><span class="p">,</span>
+</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="ss">level</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;critical&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">110</span><span class="p">,</span><span class="w"> </span><span class="ss">location</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;server_room&quot;</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-15-6"><a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="w">  </span><span class="ss">priority</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span>
+</span><span id="__span-15-7"><a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="p">)</span>
+</span><span id="__span-15-8"><a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>
+</span><span id="__span-15-9"><a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="c1"># Post normal-priority task</span>
+</span><span id="__span-15-10"><a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="n">memory</span><span class="o">.</span><span class="n">post_message</span><span class="p">(</span>
+</span><span id="__span-15-11"><a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="w">  </span><span class="s2">&quot;scheduler&quot;</span><span class="p">,</span>
+</span><span id="__span-15-12"><a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="w">  </span><span class="s2">&quot;tasks&quot;</span><span class="p">,</span>
+</span><span id="__span-15-13"><a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a><span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="ss">task_name</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;cleanup&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">params</span><span class="p">:</span><span class="w"> </span><span class="p">{}</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-15-14"><a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a><span class="w">  </span><span class="ss">priority</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span>
+</span><span id="__span-15-15"><a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a><span class="p">)</span>
+</span></code></pre></div></p>
+<p><strong>Message Ordering</strong>: Messages consumed in priority order (highest first), then FIFO within same priority.</p>
+<hr />
+<h4 id="consume_messagetopic-consumer"><code>consume_message(topic, consumer)</code><a class="headerlink" href="#consume_messagetopic-consumer" title="Permanent link">&para;</a></h4>
+<p>Retrieves and removes the highest priority message from a topic.</p>
+<p><strong>Parameters</strong>:
+- <code>topic</code> (String) - Topic to consume from
+- <code>consumer</code> (String) - Consumer identifier (for audit trail)</p>
+<p><strong>Returns</strong>: <code>Hash</code> or <code>nil</code> - Message hash with <code>:id</code>, <code>:sender</code>, <code>:topic</code>, <code>:content</code>, <code>:priority</code>, <code>:posted_at</code>, or <code>nil</code> if queue empty</p>
+<p><strong>Side Effects</strong>:
+- Removes message from queue (atomic operation)
+- Marks message as consumed
+- Records consumer and consumption timestamp</p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="c1"># Consumer loop</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="kp">loop</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">  </span><span class="n">msg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">consume_message</span><span class="p">(</span><span class="s2">&quot;tasks&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;worker_1&quot;</span><span class="p">)</span>
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">  </span><span class="k">break</span><span class="w"> </span><span class="k">unless</span><span class="w"> </span><span class="n">msg</span>
+</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>
+</span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="w">  </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;Processing: </span><span class="si">#{</span><span class="n">msg</span><span class="o">[</span><span class="ss">:content</span><span class="o">][</span><span class="ss">:task_name</span><span class="o">]</span><span class="si">}</span><span class="s2"> (priority </span><span class="si">#{</span><span class="n">msg</span><span class="o">[</span><span class="ss">:priority</span><span class="o">]</span><span class="si">}</span><span class="s2">)&quot;</span>
+</span><span id="__span-16-7"><a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="w">  </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;Sent by: </span><span class="si">#{</span><span class="n">msg</span><span class="o">[</span><span class="ss">:sender</span><span class="o">]</span><span class="si">}</span><span class="s2"> at </span><span class="si">#{</span><span class="n">msg</span><span class="o">[</span><span class="ss">:posted_at</span><span class="o">]</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-16-8"><a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>
+</span><span id="__span-16-9"><a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="w">  </span><span class="c1"># Process message...</span>
+</span><span id="__span-16-10"><a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="w">  </span><span class="n">process_task</span><span class="p">(</span><span class="n">msg</span><span class="o">[</span><span class="ss">:content</span><span class="o">]</span><span class="p">)</span>
+</span><span id="__span-16-11"><a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="k">end</span>
+</span></code></pre></div></p>
+<p><strong>Thread Safety</strong>: Atomic pop (safe for concurrent consumers with PostgreSQL/Redis).</p>
+<hr />
+<h4 id="peek_messagestopic-limit-10"><code>peek_messages(topic, limit: 10)</code><a class="headerlink" href="#peek_messagestopic-limit-10" title="Permanent link">&para;</a></h4>
+<p>Views messages in queue without consuming them.</p>
+<p><strong>Parameters</strong>:
+- <code>topic</code> (String) - Topic to peek
+- <code>limit</code> (Integer, optional) - Max messages to return (default: 10)</p>
+<p><strong>Returns</strong>: <code>Array&lt;Hash&gt;</code> - Array of message hashes (same format as <code>consume_message</code>)</p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># Check queue depth</span>
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="n">pending</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">peek_messages</span><span class="p">(</span><span class="s2">&quot;tasks&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">limit</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">)</span>
+</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;Pending tasks: </span><span class="si">#{</span><span class="n">pending</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>
+</span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="c1"># Inspect high-priority messages</span>
+</span><span id="__span-17-6"><a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="n">pending</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">msg</span><span class="o">|</span>
+</span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="n">msg</span><span class="o">[</span><span class="ss">:priority</span><span class="o">]</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">50</span>
+</span><span id="__span-17-8"><a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;High priority: </span><span class="si">#{</span><span class="n">msg</span><span class="o">[</span><span class="ss">:content</span><span class="o">][</span><span class="ss">:task_name</span><span class="o">]</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-17-9"><a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-17-10"><a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a><span class="k">end</span>
+</span></code></pre></div></p>
+<p><strong>Use Cases</strong>:
+- Monitor queue depth
+- Inspect waiting messages
+- Debugging message flow</p>
+<hr />
+<h3 id="audit-log-methods">Audit Log Methods<a class="headerlink" href="#audit-log-methods" title="Permanent link">&para;</a></h3>
+<h4 id="log_rule_firingrule_name-fact_uuids-bindings"><code>log_rule_firing(rule_name, fact_uuids, bindings = {})</code><a class="headerlink" href="#log_rule_firingrule_name-fact_uuids-bindings" title="Permanent link">&para;</a></h4>
+<p>Logs a rule firing event.</p>
+<p><strong>Parameters</strong>:
+- <code>rule_name</code> (String) - Name of fired rule
+- <code>fact_uuids</code> (Array<String>) - UUIDs of facts that matched
+- <code>bindings</code> (Hash, optional) - Variable bindings (default: <code>{}</code>)</p>
+<p><strong>Returns</strong>: <code>nil</code></p>
+<p><strong>Side Effects</strong>:
+- Adds entry to audit log
+- Records timestamp and session ID</p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="c1"># Typically called by engine, but can be called manually</span>
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="n">memory</span><span class="o">.</span><span class="n">log_rule_firing</span><span class="p">(</span>
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">  </span><span class="s2">&quot;high_temperature_alert&quot;</span><span class="p">,</span>
+</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="w">  </span><span class="o">[</span><span class="n">fact1</span><span class="o">.</span><span class="n">uuid</span><span class="p">,</span><span class="w"> </span><span class="n">fact2</span><span class="o">.</span><span class="n">uuid</span><span class="o">]</span><span class="p">,</span>
+</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="p">:?</span><span class="n">temp</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="mi">85</span><span class="p">,</span><span class="w"> </span><span class="p">:?</span><span class="n">location</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="s2">&quot;server_room&quot;</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="p">)</span>
+</span></code></pre></div></p>
+<p><strong>Note</strong>: <code>KBS::Blackboard::Engine</code> calls this automatically. Manual calls useful for custom logging.</p>
+<hr />
+<h4 id="get_historyfact_uuid-nil-limit-100"><code>get_history(fact_uuid = nil, limit: 100)</code><a class="headerlink" href="#get_historyfact_uuid-nil-limit-100" title="Permanent link">&para;</a></h4>
+<p>Retrieves fact change history.</p>
+<p><strong>Parameters</strong>:
+- <code>fact_uuid</code> (String, optional) - Filter by fact UUID (default: <code>nil</code>, all facts)
+- <code>limit</code> (Integer, optional) - Max entries to return (default: 100)</p>
+<p><strong>Returns</strong>: <code>Array&lt;Hash&gt;</code> - Array of history entries with <code>:fact_uuid</code>, <code>:fact_type</code>, <code>:attributes</code>, <code>:action</code>, <code>:timestamp</code>, <code>:session_id</code></p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="c1"># Get history for specific fact</span>
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="n">fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span><span class="p">)</span>
+</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="n">memory</span><span class="o">.</span><span class="n">update_fact</span><span class="p">(</span><span class="n">fact</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">90</span><span class="p">)</span>
+</span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="n">memory</span><span class="o">.</span><span class="n">update_fact</span><span class="p">(</span><span class="n">fact</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">95</span><span class="p">)</span>
+</span><span id="__span-19-5"><a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>
+</span><span id="__span-19-6"><a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="n">history</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">get_history</span><span class="p">(</span><span class="n">fact</span><span class="o">.</span><span class="n">uuid</span><span class="p">)</span>
+</span><span id="__span-19-7"><a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="n">history</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">entry</span><span class="o">|</span>
+</span><span id="__span-19-8"><a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a><span class="w">  </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;</span><span class="si">#{</span><span class="n">entry</span><span class="o">[</span><span class="ss">:timestamp</span><span class="o">]</span><span class="si">}</span><span class="s2">: </span><span class="si">#{</span><span class="n">entry</span><span class="o">[</span><span class="ss">:action</span><span class="o">]</span><span class="si">}</span><span class="s2"> - </span><span class="si">#{</span><span class="n">entry</span><span class="o">[</span><span class="ss">:attributes</span><span class="o">][</span><span class="ss">:value</span><span class="o">]</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-19-9"><a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a><span class="k">end</span>
+</span><span id="__span-19-10"><a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a>
+</span><span id="__span-19-11"><a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a><span class="c1"># Output:</span>
+</span><span id="__span-19-12"><a id="__codelineno-19-12" name="__codelineno-19-12" href="#__codelineno-19-12"></a><span class="c1"># 2025-01-15 10:30:03: UPDATE - 95</span>
+</span><span id="__span-19-13"><a id="__codelineno-19-13" name="__codelineno-19-13" href="#__codelineno-19-13"></a><span class="c1"># 2025-01-15 10:30:02: UPDATE - 90</span>
+</span><span id="__span-19-14"><a id="__codelineno-19-14" name="__codelineno-19-14" href="#__codelineno-19-14"></a><span class="c1"># 2025-01-15 10:30:00: ADD - 85</span>
+</span></code></pre></div></p>
+<p><strong>All Facts History</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="c1"># Get recent changes across all facts</span>
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="n">recent_changes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">get_history</span><span class="p">(</span><span class="ss">limit</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="p">)</span>
+</span></code></pre></div></p>
+<hr />
+<h4 id="get_rule_firingsrule_name-nil-limit-100"><code>get_rule_firings(rule_name = nil, limit: 100)</code><a class="headerlink" href="#get_rule_firingsrule_name-nil-limit-100" title="Permanent link">&para;</a></h4>
+<p>Retrieves rule firing history.</p>
+<p><strong>Parameters</strong>:
+- <code>rule_name</code> (String, optional) - Filter by rule name (default: <code>nil</code>, all rules)
+- <code>limit</code> (Integer, optional) - Max entries to return (default: 100)</p>
+<p><strong>Returns</strong>: <code>Array&lt;Hash&gt;</code> - Array of firing entries with <code>:rule_name</code>, <code>:fact_uuids</code>, <code>:bindings</code>, <code>:fired_at</code>, <code>:session_id</code></p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="c1"># Get firings for specific rule</span>
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="n">firings</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">get_rule_firings</span><span class="p">(</span><span class="s2">&quot;high_temperature_alert&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">limit</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">)</span>
+</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="n">firings</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">firing</span><span class="o">|</span>
+</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="w">  </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;</span><span class="si">#{</span><span class="n">firing</span><span class="o">[</span><span class="ss">:fired_at</span><span class="o">]</span><span class="si">}</span><span class="s2">: </span><span class="si">#{</span><span class="n">firing</span><span class="o">[</span><span class="ss">:rule_name</span><span class="o">]</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="w">  </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;  Bindings: </span><span class="si">#{</span><span class="n">firing</span><span class="o">[</span><span class="ss">:bindings</span><span class="o">]</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-21-6"><a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="w">  </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;  Facts: </span><span class="si">#{</span><span class="n">firing</span><span class="o">[</span><span class="ss">:fact_uuids</span><span class="o">]</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-21-7"><a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a><span class="k">end</span>
+</span><span id="__span-21-8"><a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a>
+</span><span id="__span-21-9"><a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a><span class="c1"># All rule firings</span>
+</span><span id="__span-21-10"><a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a><span class="n">all_firings</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">get_rule_firings</span><span class="p">(</span><span class="ss">limit</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">)</span>
+</span></code></pre></div></p>
+<p><strong>Use Cases</strong>:
+- Debugging rule behavior
+- Performance analysis
+- Compliance auditing</p>
+<hr />
+<h3 id="knowledge-source-methods">Knowledge Source Methods<a class="headerlink" href="#knowledge-source-methods" title="Permanent link">&para;</a></h3>
+<h4 id="register_knowledge_sourcename-description-nil-topics"><code>register_knowledge_source(name, description: nil, topics: [])</code><a class="headerlink" href="#register_knowledge_sourcename-description-nil-topics" title="Permanent link">&para;</a></h4>
+<p>Registers an agent/knowledge source.</p>
+<p><strong>Parameters</strong>:
+- <code>name</code> (String) - Knowledge source name
+- <code>description</code> (String, optional) - Description (default: <code>nil</code>)
+- <code>topics</code> (Array<String>, optional) - Topics this source produces/consumes (default: <code>[]</code>)</p>
+<p><strong>Returns</strong>: <code>nil</code></p>
+<p><strong>Side Effects</strong>:
+- Stores knowledge source metadata in database</p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="n">memory</span><span class="o">.</span><span class="n">register_knowledge_source</span><span class="p">(</span>
+</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="w">  </span><span class="s2">&quot;TemperatureMonitor&quot;</span><span class="p">,</span>
+</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="w">  </span><span class="ss">description</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Monitors temperature sensors and generates alerts&quot;</span><span class="p">,</span>
+</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="w">  </span><span class="ss">topics</span><span class="p">:</span><span class="w"> </span><span class="o">[</span><span class="s2">&quot;temperature_readings&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;alerts&quot;</span><span class="o">]</span>
+</span><span id="__span-22-5"><a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="p">)</span>
+</span><span id="__span-22-6"><a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a>
+</span><span id="__span-22-7"><a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a><span class="n">memory</span><span class="o">.</span><span class="n">register_knowledge_source</span><span class="p">(</span>
+</span><span id="__span-22-8"><a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a><span class="w">  </span><span class="s2">&quot;AlertDispatcher&quot;</span><span class="p">,</span>
+</span><span id="__span-22-9"><a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a><span class="w">  </span><span class="ss">description</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Dispatches alerts to external systems&quot;</span><span class="p">,</span>
+</span><span id="__span-22-10"><a id="__codelineno-22-10" name="__codelineno-22-10" href="#__codelineno-22-10"></a><span class="w">  </span><span class="ss">topics</span><span class="p">:</span><span class="w"> </span><span class="o">[</span><span class="s2">&quot;alerts&quot;</span><span class="o">]</span>
+</span><span id="__span-22-11"><a id="__codelineno-22-11" name="__codelineno-22-11" href="#__codelineno-22-11"></a><span class="p">)</span>
+</span></code></pre></div></p>
+<p><strong>Use Cases</strong>:
+- Document multi-agent systems
+- Visualize agent architecture
+- Track message flow</p>
+<hr />
+<h3 id="observer-pattern-methods">Observer Pattern Methods<a class="headerlink" href="#observer-pattern-methods" title="Permanent link">&para;</a></h3>
+<h4 id="add_observerobserver"><code>add_observer(observer)</code><a class="headerlink" href="#add_observerobserver" title="Permanent link">&para;</a></h4>
+<p>Registers an observer to receive fact change notifications.</p>
+<p><strong>Parameters</strong>:
+- <code>observer</code> - Object responding to <code>update(action, fact)</code> method</p>
+<p><strong>Returns</strong>: <code>nil</code></p>
+<p><strong>Side Effects</strong>: Adds observer to internal observers list</p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">FactLogger</span>
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="n">action</span><span class="p">,</span><span class="w"> </span><span class="n">fact</span><span class="p">)</span>
+</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="n">action</span>
+</span><span id="__span-23-4"><a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="w">    </span><span class="k">when</span><span class="w"> </span><span class="ss">:add</span>
+</span><span id="__span-23-5"><a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="w">      </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;Added: </span><span class="si">#{</span><span class="n">fact</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2"> </span><span class="si">#{</span><span class="n">fact</span><span class="o">.</span><span class="n">attributes</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-23-6"><a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="w">    </span><span class="k">when</span><span class="w"> </span><span class="ss">:remove</span>
+</span><span id="__span-23-7"><a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a><span class="w">      </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;Removed: </span><span class="si">#{</span><span class="n">fact</span><span class="o">.</span><span class="n">uuid</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-23-8"><a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a><span class="w">    </span><span class="k">end</span>
+</span><span id="__span-23-9"><a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-23-10"><a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a><span class="k">end</span>
+</span><span id="__span-23-11"><a id="__codelineno-23-11" name="__codelineno-23-11" href="#__codelineno-23-11"></a>
+</span><span id="__span-23-12"><a id="__codelineno-23-12" name="__codelineno-23-12" href="#__codelineno-23-12"></a><span class="n">logger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">FactLogger</span><span class="o">.</span><span class="n">new</span>
+</span><span id="__span-23-13"><a id="__codelineno-23-13" name="__codelineno-23-13" href="#__codelineno-23-13"></a><span class="n">memory</span><span class="o">.</span><span class="n">add_observer</span><span class="p">(</span><span class="n">logger</span><span class="p">)</span>
+</span><span id="__span-23-14"><a id="__codelineno-23-14" name="__codelineno-23-14" href="#__codelineno-23-14"></a>
+</span><span id="__span-23-15"><a id="__codelineno-23-15" name="__codelineno-23-15" href="#__codelineno-23-15"></a><span class="n">memory</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span><span class="p">)</span>
+</span><span id="__span-23-16"><a id="__codelineno-23-16" name="__codelineno-23-16" href="#__codelineno-23-16"></a><span class="c1"># Output: Added: temperature {:value=&gt;85}</span>
+</span></code></pre></div></p>
+<p><strong>Important</strong>: Observers are NOT persisted. Re-register after restart.</p>
+<hr />
+<h3 id="session-management-methods">Session Management Methods<a class="headerlink" href="#session-management-methods" title="Permanent link">&para;</a></h3>
+<h4 id="clear_session"><code>clear_session</code><a class="headerlink" href="#clear_session" title="Permanent link">&para;</a></h4>
+<p>Removes all facts from current session.</p>
+<p><strong>Parameters</strong>: None</p>
+<p><strong>Returns</strong>: <code>nil</code></p>
+<p><strong>Side Effects</strong>:
+- Removes facts with matching session_id
+- Preserves audit log</p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="c1"># Add facts</span>
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="n">memory</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span><span class="p">)</span>
+</span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="n">memory</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:humidity</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">60</span><span class="p">)</span>
+</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>
+</span><span id="__span-24-5"><a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="c1"># Clear session facts</span>
+</span><span id="__span-24-6"><a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="n">memory</span><span class="o">.</span><span class="n">clear_session</span>
+</span><span id="__span-24-7"><a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a>
+</span><span id="__span-24-8"><a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a><span class="c1"># Facts removed, but audit log intact</span>
+</span><span id="__span-24-9"><a id="__codelineno-24-9" name="__codelineno-24-9" href="#__codelineno-24-9"></a><span class="nb">puts</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">facts</span><span class="o">.</span><span class="n">size</span><span class="w">  </span><span class="c1"># =&gt; 0</span>
+</span><span id="__span-24-10"><a id="__codelineno-24-10" name="__codelineno-24-10" href="#__codelineno-24-10"></a><span class="nb">puts</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">get_history</span><span class="o">.</span><span class="n">size</span><span class="w">  </span><span class="c1"># =&gt; 2 (ADD entries still present)</span>
+</span></code></pre></div></p>
+<hr />
+<h4 id="transactionblock"><code>transaction(&amp;block)</code><a class="headerlink" href="#transactionblock" title="Permanent link">&para;</a></h4>
+<p>Executes block within database transaction.</p>
+<p><strong>Parameters</strong>:
+- <code>&amp;block</code> - Block to execute</p>
+<p><strong>Returns</strong>: Result of block</p>
+<p><strong>Side Effects</strong>:
+- Begins transaction
+- Executes block
+- Commits on success
+- Rolls back on exception</p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="n">memory</span><span class="o">.</span><span class="n">transaction</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="w">  </span><span class="n">fact1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:order</span><span class="p">,</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="ss">total</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">)</span>
+</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="w">  </span><span class="n">fact2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:inventory</span><span class="p">,</span><span class="w"> </span><span class="ss">item</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ABC&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">quantity</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">)</span>
+</span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>
+</span><span id="__span-25-5"><a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="w">  </span><span class="c1"># If this raises, both facts are rolled back</span>
+</span><span id="__span-25-6"><a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a><span class="w">  </span><span class="k">raise</span><span class="w"> </span><span class="s2">&quot;Validation failed&quot;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">fact1</span><span class="o">[</span><span class="ss">:total</span><span class="o">]</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1000</span>
+</span><span id="__span-25-7"><a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a><span class="k">end</span>
+</span></code></pre></div></p>
+<p><strong>Nested Transactions</strong>: Supported (SQLite uses savepoints).</p>
+<hr />
+<h3 id="statistics-methods">Statistics Methods<a class="headerlink" href="#statistics-methods" title="Permanent link">&para;</a></h3>
+<h4 id="stats"><code>stats</code><a class="headerlink" href="#stats" title="Permanent link">&para;</a></h4>
+<p>Returns blackboard statistics.</p>
+<p><strong>Parameters</strong>: None</p>
+<p><strong>Returns</strong>: <code>Hash</code> with keys:
+- <code>:facts_count</code> (Integer) - Active facts
+- <code>:total_messages</code> (Integer) - Total messages (consumed + unconsumed)
+- <code>:unconsumed_messages</code> (Integer) - Unconsumed messages
+- <code>:rules_fired</code> (Integer) - Total rule firings</p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="n">stats</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">stats</span>
+</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;Facts: </span><span class="si">#{</span><span class="n">stats</span><span class="o">[</span><span class="ss">:facts_count</span><span class="o">]</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-26-3"><a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;Messages (unconsumed): </span><span class="si">#{</span><span class="n">stats</span><span class="o">[</span><span class="ss">:unconsumed_messages</span><span class="o">]</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-26-4"><a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;Messages (total): </span><span class="si">#{</span><span class="n">stats</span><span class="o">[</span><span class="ss">:total_messages</span><span class="o">]</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-26-5"><a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;Rules fired: </span><span class="si">#{</span><span class="n">stats</span><span class="o">[</span><span class="ss">:rules_fired</span><span class="o">]</span><span class="si">}</span><span class="s2">&quot;</span>
+</span></code></pre></div></p>
+<hr />
+<h3 id="maintenance-methods">Maintenance Methods<a class="headerlink" href="#maintenance-methods" title="Permanent link">&para;</a></h3>
+<h4 id="vacuum"><code>vacuum</code><a class="headerlink" href="#vacuum" title="Permanent link">&para;</a></h4>
+<p>Optimizes database storage (SQLite only).</p>
+<p><strong>Parameters</strong>: None</p>
+<p><strong>Returns</strong>: <code>nil</code></p>
+<p><strong>Side Effects</strong>: Reclaims unused database space</p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="c1"># After deleting many facts</span>
+</span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="n">memory</span><span class="o">.</span><span class="n">vacuum</span>
+</span></code></pre></div></p>
+<p><strong>When to Use</strong>: After bulk deletions or periodically for long-running systems.</p>
+<hr />
+<h4 id="close"><code>close</code><a class="headerlink" href="#close" title="Permanent link">&para;</a></h4>
+<p>Closes database connection.</p>
+<p><strong>Parameters</strong>: None</p>
+<p><strong>Returns</strong>: <code>nil</code></p>
+<p><strong>Side Effects</strong>: Closes connection to store</p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="n">memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Memory</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">db_path</span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;kb.db&#39;</span><span class="p">)</span>
+</span><span id="__span-28-2"><a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="c1"># ... use memory ...</span>
+</span><span id="__span-28-3"><a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="n">memory</span><span class="o">.</span><span class="n">close</span>
+</span></code></pre></div></p>
+<p><strong>Important</strong>: Required for proper cleanup. Use <code>ensure</code> block:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="n">memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Memory</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">db_path</span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;kb.db&#39;</span><span class="p">)</span>
+</span><span id="__span-29-2"><a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="k">begin</span>
+</span><span id="__span-29-3"><a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="w">  </span><span class="c1"># ... use memory ...</span>
+</span><span id="__span-29-4"><a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="k">ensure</span>
+</span><span id="__span-29-5"><a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a><span class="w">  </span><span class="n">memory</span><span class="o">.</span><span class="n">close</span>
+</span><span id="__span-29-6"><a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a><span class="k">end</span>
+</span></code></pre></div></p>
+<hr />
+<h2 id="kbsblackboardmessagequeue">KBS::Blackboard::MessageQueue<a class="headerlink" href="#kbsblackboardmessagequeue" title="Permanent link">&para;</a></h2>
+<p>Priority-based message queue for inter-agent communication.</p>
+<p><strong>Typically accessed via</strong>: <code>memory.message_queue</code> or <code>memory.post_message()</code> / <code>memory.consume_message()</code></p>
+<h3 id="methods">Methods<a class="headerlink" href="#methods" title="Permanent link">&para;</a></h3>
+<h4 id="postsender-topic-content-priority-0"><code>post(sender, topic, content, priority: 0)</code><a class="headerlink" href="#postsender-topic-content-priority-0" title="Permanent link">&para;</a></h4>
+<p>Posts a message to the queue.</p>
+<p><strong>Parameters</strong>:
+- <code>sender</code> (String) - Sender identifier
+- <code>topic</code> (String) - Message topic
+- <code>content</code> (Hash or String) - Message payload (auto-converts to JSON)
+- <code>priority</code> (Integer, optional) - Priority (default: 0)</p>
+<p><strong>Returns</strong>: <code>nil</code></p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="n">memory</span><span class="o">.</span><span class="n">message_queue</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="s2">&quot;agent1&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;alerts&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">alert</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;critical&quot;</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="ss">priority</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">)</span>
+</span></code></pre></div></p>
+<hr />
+<h4 id="consumetopic-consumer"><code>consume(topic, consumer)</code><a class="headerlink" href="#consumetopic-consumer" title="Permanent link">&para;</a></h4>
+<p>Consumes highest priority message from topic.</p>
+<p><strong>Parameters</strong>:
+- <code>topic</code> (String) - Topic to consume from
+- <code>consumer</code> (String) - Consumer identifier</p>
+<p><strong>Returns</strong>: <code>Hash</code> or <code>nil</code></p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="n">msg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">message_queue</span><span class="o">.</span><span class="n">consume</span><span class="p">(</span><span class="s2">&quot;tasks&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;worker_1&quot;</span><span class="p">)</span>
+</span><span id="__span-31-2"><a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="nb">puts</span><span class="w"> </span><span class="n">msg</span><span class="o">[</span><span class="ss">:content</span><span class="o">]</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">msg</span>
+</span></code></pre></div></p>
+<hr />
+<h4 id="peektopic-limit-10"><code>peek(topic, limit: 10)</code><a class="headerlink" href="#peektopic-limit-10" title="Permanent link">&para;</a></h4>
+<p>Views messages without consuming.</p>
+<p><strong>Parameters</strong>:
+- <code>topic</code> (String) - Topic to peek
+- <code>limit</code> (Integer, optional) - Max messages (default: 10)</p>
+<p><strong>Returns</strong>: <code>Array&lt;Hash&gt;</code></p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-32-1"><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="n">pending</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">message_queue</span><span class="o">.</span><span class="n">peek</span><span class="p">(</span><span class="s2">&quot;tasks&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">limit</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">)</span>
+</span><span id="__span-32-2"><a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;Next </span><span class="si">#{</span><span class="n">pending</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2"> tasks:&quot;</span>
+</span><span id="__span-32-3"><a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a><span class="n">pending</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">m</span><span class="o">|</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;  - </span><span class="si">#{</span><span class="n">m</span><span class="o">[</span><span class="ss">:content</span><span class="o">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span><span class="p">}</span>
+</span></code></pre></div></p>
+<hr />
+<h4 id="stats_1"><code>stats</code><a class="headerlink" href="#stats_1" title="Permanent link">&para;</a></h4>
+<p>Returns queue statistics.</p>
+<p><strong>Returns</strong>: <code>Hash</code> with <code>:total_messages</code>, <code>:unconsumed_messages</code></p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-33-1"><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="n">stats</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">message_queue</span><span class="o">.</span><span class="n">stats</span>
+</span><span id="__span-33-2"><a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;Queue depth: </span><span class="si">#{</span><span class="n">stats</span><span class="o">[</span><span class="ss">:unconsumed_messages</span><span class="o">]</span><span class="si">}</span><span class="s2">&quot;</span>
+</span></code></pre></div></p>
+<hr />
+<h2 id="kbsblackboardauditlog">KBS::Blackboard::AuditLog<a class="headerlink" href="#kbsblackboardauditlog" title="Permanent link">&para;</a></h2>
+<p>Complete audit trail of all fact changes and rule firings.</p>
+<p><strong>Typically accessed via</strong>: <code>memory.audit_log</code> or <code>memory.get_history()</code> / <code>memory.get_rule_firings()</code></p>
+<h3 id="methods_1">Methods<a class="headerlink" href="#methods_1" title="Permanent link">&para;</a></h3>
+<h4 id="log_fact_changefact_uuid-fact_type-attributes-action"><code>log_fact_change(fact_uuid, fact_type, attributes, action)</code><a class="headerlink" href="#log_fact_changefact_uuid-fact_type-attributes-action" title="Permanent link">&para;</a></h4>
+<p>Logs a fact change event.</p>
+<p><strong>Parameters</strong>:
+- <code>fact_uuid</code> (String) - Fact UUID
+- <code>fact_type</code> (Symbol) - Fact type
+- <code>attributes</code> (Hash) - Fact attributes
+- <code>action</code> (String) - Action: "ADD", "UPDATE", "REMOVE"</p>
+<p><strong>Returns</strong>: <code>nil</code></p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-34-1"><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="n">memory</span><span class="o">.</span><span class="n">audit_log</span><span class="o">.</span><span class="n">log_fact_change</span><span class="p">(</span>
+</span><span id="__span-34-2"><a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="w">  </span><span class="n">fact</span><span class="o">.</span><span class="n">uuid</span><span class="p">,</span>
+</span><span id="__span-34-3"><a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="w">  </span><span class="ss">:temperature</span><span class="p">,</span>
+</span><span id="__span-34-4"><a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-34-5"><a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a><span class="w">  </span><span class="s1">&#39;ADD&#39;</span>
+</span><span id="__span-34-6"><a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a><span class="p">)</span>
+</span></code></pre></div></p>
+<p><strong>Note</strong>: Automatically called by Memory. Manual calls useful for custom tracking.</p>
+<hr />
+<h4 id="log_rule_firingrule_name-fact_uuids-bindings_1"><code>log_rule_firing(rule_name, fact_uuids, bindings = {})</code><a class="headerlink" href="#log_rule_firingrule_name-fact_uuids-bindings_1" title="Permanent link">&para;</a></h4>
+<p>Logs a rule firing event.</p>
+<p><strong>Parameters</strong>:
+- <code>rule_name</code> (String) - Rule name
+- <code>fact_uuids</code> (Array<String>) - Matched fact UUIDs
+- <code>bindings</code> (Hash, optional) - Variable bindings (default: <code>{}</code>)</p>
+<p><strong>Returns</strong>: <code>nil</code></p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-35-1"><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="n">memory</span><span class="o">.</span><span class="n">audit_log</span><span class="o">.</span><span class="n">log_rule_firing</span><span class="p">(</span>
+</span><span id="__span-35-2"><a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a><span class="w">  </span><span class="s2">&quot;high_temp_alert&quot;</span><span class="p">,</span>
+</span><span id="__span-35-3"><a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a><span class="w">  </span><span class="o">[</span><span class="n">fact1</span><span class="o">.</span><span class="n">uuid</span><span class="p">,</span><span class="w"> </span><span class="n">fact2</span><span class="o">.</span><span class="n">uuid</span><span class="o">]</span><span class="p">,</span>
+</span><span id="__span-35-4"><a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a><span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="p">:?</span><span class="n">temp</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="mi">85</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-35-5"><a id="__codelineno-35-5" name="__codelineno-35-5" href="#__codelineno-35-5"></a><span class="p">)</span>
+</span></code></pre></div></p>
+<hr />
+<h4 id="fact_historyfact_uuid-nil-limit-100"><code>fact_history(fact_uuid = nil, limit: 100)</code><a class="headerlink" href="#fact_historyfact_uuid-nil-limit-100" title="Permanent link">&para;</a></h4>
+<p>Retrieves fact change history.</p>
+<p><strong>Parameters</strong>:
+- <code>fact_uuid</code> (String, optional) - Filter by UUID (default: <code>nil</code>)
+- <code>limit</code> (Integer, optional) - Max entries (default: 100)</p>
+<p><strong>Returns</strong>: <code>Array&lt;Hash&gt;</code></p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-36-1"><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="n">history</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">audit_log</span><span class="o">.</span><span class="n">fact_history</span><span class="p">(</span><span class="n">fact</span><span class="o">.</span><span class="n">uuid</span><span class="p">,</span><span class="w"> </span><span class="ss">limit</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">)</span>
+</span></code></pre></div></p>
+<hr />
+<h4 id="rule_firingsrule_name-nil-limit-100"><code>rule_firings(rule_name = nil, limit: 100)</code><a class="headerlink" href="#rule_firingsrule_name-nil-limit-100" title="Permanent link">&para;</a></h4>
+<p>Retrieves rule firing history.</p>
+<p><strong>Parameters</strong>:
+- <code>rule_name</code> (String, optional) - Filter by rule name (default: <code>nil</code>)
+- <code>limit</code> (Integer, optional) - Max entries (default: 100)</p>
+<p><strong>Returns</strong>: <code>Array&lt;Hash&gt;</code></p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-37-1"><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="n">firings</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">audit_log</span><span class="o">.</span><span class="n">rule_firings</span><span class="p">(</span><span class="s2">&quot;my_rule&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">limit</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="p">)</span>
+</span></code></pre></div></p>
+<hr />
+<h4 id="stats_2"><code>stats</code><a class="headerlink" href="#stats_2" title="Permanent link">&para;</a></h4>
+<p>Returns audit log statistics.</p>
+<p><strong>Returns</strong>: <code>Hash</code> with <code>:rules_fired</code></p>
+<p><strong>Example</strong>:
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-38-1"><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a><span class="n">stats</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">audit_log</span><span class="o">.</span><span class="n">stats</span>
+</span><span id="__span-38-2"><a id="__codelineno-38-2" name="__codelineno-38-2" href="#__codelineno-38-2"></a><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;Total rule firings: </span><span class="si">#{</span><span class="n">stats</span><span class="o">[</span><span class="ss">:rules_fired</span><span class="o">]</span><span class="si">}</span><span class="s2">&quot;</span>
+</span></code></pre></div></p>
+<hr />
+<h2 id="usage-patterns">Usage Patterns<a class="headerlink" href="#usage-patterns" title="Permanent link">&para;</a></h2>
+<h3 id="1-multi-agent-coordination">1. Multi-Agent Coordination<a class="headerlink" href="#1-multi-agent-coordination" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-39-1"><a id="__codelineno-39-1" name="__codelineno-39-1" href="#__codelineno-39-1"></a><span class="c1"># Setup</span>
+</span><span id="__span-39-2"><a id="__codelineno-39-2" name="__codelineno-39-2" href="#__codelineno-39-2"></a><span class="n">memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Memory</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">db_path</span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;agents.db&#39;</span><span class="p">)</span>
+</span><span id="__span-39-3"><a id="__codelineno-39-3" name="__codelineno-39-3" href="#__codelineno-39-3"></a>
+</span><span id="__span-39-4"><a id="__codelineno-39-4" name="__codelineno-39-4" href="#__codelineno-39-4"></a><span class="c1"># Agent 1 - Temperature Monitor</span>
+</span><span id="__span-39-5"><a id="__codelineno-39-5" name="__codelineno-39-5" href="#__codelineno-39-5"></a><span class="n">memory</span><span class="o">.</span><span class="n">register_knowledge_source</span><span class="p">(</span>
+</span><span id="__span-39-6"><a id="__codelineno-39-6" name="__codelineno-39-6" href="#__codelineno-39-6"></a><span class="w">  </span><span class="s2">&quot;TempMonitor&quot;</span><span class="p">,</span>
+</span><span id="__span-39-7"><a id="__codelineno-39-7" name="__codelineno-39-7" href="#__codelineno-39-7"></a><span class="w">  </span><span class="ss">description</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Monitors temperature sensors&quot;</span><span class="p">,</span>
+</span><span id="__span-39-8"><a id="__codelineno-39-8" name="__codelineno-39-8" href="#__codelineno-39-8"></a><span class="w">  </span><span class="ss">topics</span><span class="p">:</span><span class="w"> </span><span class="o">[</span><span class="s2">&quot;sensors&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;alerts&quot;</span><span class="o">]</span>
+</span><span id="__span-39-9"><a id="__codelineno-39-9" name="__codelineno-39-9" href="#__codelineno-39-9"></a><span class="p">)</span>
+</span><span id="__span-39-10"><a id="__codelineno-39-10" name="__codelineno-39-10" href="#__codelineno-39-10"></a>
+</span><span id="__span-39-11"><a id="__codelineno-39-11" name="__codelineno-39-11" href="#__codelineno-39-11"></a><span class="k">def</span><span class="w"> </span><span class="nf">monitor_loop</span><span class="p">(</span><span class="n">memory</span><span class="p">)</span>
+</span><span id="__span-39-12"><a id="__codelineno-39-12" name="__codelineno-39-12" href="#__codelineno-39-12"></a><span class="w">  </span><span class="kp">loop</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-39-13"><a id="__codelineno-39-13" name="__codelineno-39-13" href="#__codelineno-39-13"></a><span class="w">    </span><span class="n">temp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">read_sensor</span>
+</span><span id="__span-39-14"><a id="__codelineno-39-14" name="__codelineno-39-14" href="#__codelineno-39-14"></a><span class="w">    </span><span class="n">fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="n">temp</span><span class="p">,</span><span class="w"> </span><span class="ss">timestamp</span><span class="p">:</span><span class="w"> </span><span class="no">Time</span><span class="o">.</span><span class="n">now</span><span class="p">)</span>
+</span><span id="__span-39-15"><a id="__codelineno-39-15" name="__codelineno-39-15" href="#__codelineno-39-15"></a>
+</span><span id="__span-39-16"><a id="__codelineno-39-16" name="__codelineno-39-16" href="#__codelineno-39-16"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">temp</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">80</span>
+</span><span id="__span-39-17"><a id="__codelineno-39-17" name="__codelineno-39-17" href="#__codelineno-39-17"></a><span class="w">      </span><span class="n">memory</span><span class="o">.</span><span class="n">post_message</span><span class="p">(</span>
+</span><span id="__span-39-18"><a id="__codelineno-39-18" name="__codelineno-39-18" href="#__codelineno-39-18"></a><span class="w">        </span><span class="s2">&quot;TempMonitor&quot;</span><span class="p">,</span>
+</span><span id="__span-39-19"><a id="__codelineno-39-19" name="__codelineno-39-19" href="#__codelineno-39-19"></a><span class="w">        </span><span class="s2">&quot;alerts&quot;</span><span class="p">,</span>
+</span><span id="__span-39-20"><a id="__codelineno-39-20" name="__codelineno-39-20" href="#__codelineno-39-20"></a><span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;high_temp&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="n">temp</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-39-21"><a id="__codelineno-39-21" name="__codelineno-39-21" href="#__codelineno-39-21"></a><span class="w">        </span><span class="ss">priority</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span>
+</span><span id="__span-39-22"><a id="__codelineno-39-22" name="__codelineno-39-22" href="#__codelineno-39-22"></a><span class="w">      </span><span class="p">)</span>
+</span><span id="__span-39-23"><a id="__codelineno-39-23" name="__codelineno-39-23" href="#__codelineno-39-23"></a><span class="w">    </span><span class="k">end</span>
+</span><span id="__span-39-24"><a id="__codelineno-39-24" name="__codelineno-39-24" href="#__codelineno-39-24"></a>
+</span><span id="__span-39-25"><a id="__codelineno-39-25" name="__codelineno-39-25" href="#__codelineno-39-25"></a><span class="w">    </span><span class="nb">sleep</span><span class="w"> </span><span class="mi">5</span>
+</span><span id="__span-39-26"><a id="__codelineno-39-26" name="__codelineno-39-26" href="#__codelineno-39-26"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-39-27"><a id="__codelineno-39-27" name="__codelineno-39-27" href="#__codelineno-39-27"></a><span class="k">end</span>
+</span><span id="__span-39-28"><a id="__codelineno-39-28" name="__codelineno-39-28" href="#__codelineno-39-28"></a>
+</span><span id="__span-39-29"><a id="__codelineno-39-29" name="__codelineno-39-29" href="#__codelineno-39-29"></a><span class="c1"># Agent 2 - Alert Dispatcher</span>
+</span><span id="__span-39-30"><a id="__codelineno-39-30" name="__codelineno-39-30" href="#__codelineno-39-30"></a><span class="n">memory</span><span class="o">.</span><span class="n">register_knowledge_source</span><span class="p">(</span>
+</span><span id="__span-39-31"><a id="__codelineno-39-31" name="__codelineno-39-31" href="#__codelineno-39-31"></a><span class="w">  </span><span class="s2">&quot;AlertDispatcher&quot;</span><span class="p">,</span>
+</span><span id="__span-39-32"><a id="__codelineno-39-32" name="__codelineno-39-32" href="#__codelineno-39-32"></a><span class="w">  </span><span class="ss">description</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Sends alerts to external systems&quot;</span><span class="p">,</span>
+</span><span id="__span-39-33"><a id="__codelineno-39-33" name="__codelineno-39-33" href="#__codelineno-39-33"></a><span class="w">  </span><span class="ss">topics</span><span class="p">:</span><span class="w"> </span><span class="o">[</span><span class="s2">&quot;alerts&quot;</span><span class="o">]</span>
+</span><span id="__span-39-34"><a id="__codelineno-39-34" name="__codelineno-39-34" href="#__codelineno-39-34"></a><span class="p">)</span>
+</span><span id="__span-39-35"><a id="__codelineno-39-35" name="__codelineno-39-35" href="#__codelineno-39-35"></a>
+</span><span id="__span-39-36"><a id="__codelineno-39-36" name="__codelineno-39-36" href="#__codelineno-39-36"></a><span class="k">def</span><span class="w"> </span><span class="nf">dispatch_loop</span><span class="p">(</span><span class="n">memory</span><span class="p">)</span>
+</span><span id="__span-39-37"><a id="__codelineno-39-37" name="__codelineno-39-37" href="#__codelineno-39-37"></a><span class="w">  </span><span class="kp">loop</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-39-38"><a id="__codelineno-39-38" name="__codelineno-39-38" href="#__codelineno-39-38"></a><span class="w">    </span><span class="n">msg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">consume_message</span><span class="p">(</span><span class="s2">&quot;alerts&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;AlertDispatcher&quot;</span><span class="p">)</span>
+</span><span id="__span-39-39"><a id="__codelineno-39-39" name="__codelineno-39-39" href="#__codelineno-39-39"></a><span class="w">    </span><span class="k">break</span><span class="w"> </span><span class="k">unless</span><span class="w"> </span><span class="n">msg</span>
+</span><span id="__span-39-40"><a id="__codelineno-39-40" name="__codelineno-39-40" href="#__codelineno-39-40"></a>
+</span><span id="__span-39-41"><a id="__codelineno-39-41" name="__codelineno-39-41" href="#__codelineno-39-41"></a><span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="n">msg</span><span class="o">[</span><span class="ss">:content</span><span class="o">][</span><span class="ss">:type</span><span class="o">]</span>
+</span><span id="__span-39-42"><a id="__codelineno-39-42" name="__codelineno-39-42" href="#__codelineno-39-42"></a><span class="w">    </span><span class="k">when</span><span class="w"> </span><span class="s2">&quot;high_temp&quot;</span>
+</span><span id="__span-39-43"><a id="__codelineno-39-43" name="__codelineno-39-43" href="#__codelineno-39-43"></a><span class="w">      </span><span class="n">send_email_alert</span><span class="p">(</span><span class="n">msg</span><span class="o">[</span><span class="ss">:content</span><span class="o">][</span><span class="ss">:value</span><span class="o">]</span><span class="p">)</span>
+</span><span id="__span-39-44"><a id="__codelineno-39-44" name="__codelineno-39-44" href="#__codelineno-39-44"></a><span class="w">    </span><span class="k">end</span>
+</span><span id="__span-39-45"><a id="__codelineno-39-45" name="__codelineno-39-45" href="#__codelineno-39-45"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-39-46"><a id="__codelineno-39-46" name="__codelineno-39-46" href="#__codelineno-39-46"></a><span class="k">end</span>
+</span></code></pre></div>
+<hr />
+<h3 id="2-audit-trail-analysis">2. Audit Trail Analysis<a class="headerlink" href="#2-audit-trail-analysis" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-40-1"><a id="__codelineno-40-1" name="__codelineno-40-1" href="#__codelineno-40-1"></a><span class="c1"># Find facts that were updated multiple times</span>
+</span><span id="__span-40-2"><a id="__codelineno-40-2" name="__codelineno-40-2" href="#__codelineno-40-2"></a><span class="n">memory</span><span class="o">.</span><span class="n">get_history</span><span class="p">(</span><span class="ss">limit</span><span class="p">:</span><span class="w"> </span><span class="mi">1000</span><span class="p">)</span><span class="o">.</span><span class="n">group_by</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">e</span><span class="o">|</span><span class="w"> </span><span class="n">e</span><span class="o">[</span><span class="ss">:fact_uuid</span><span class="o">]</span><span class="w"> </span><span class="p">}</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">uuid</span><span class="p">,</span><span class="w"> </span><span class="n">entries</span><span class="o">|</span>
+</span><span id="__span-40-3"><a id="__codelineno-40-3" name="__codelineno-40-3" href="#__codelineno-40-3"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="n">entries</span><span class="o">.</span><span class="n">size</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">5</span>
+</span><span id="__span-40-4"><a id="__codelineno-40-4" name="__codelineno-40-4" href="#__codelineno-40-4"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;Fact </span><span class="si">#{</span><span class="n">uuid</span><span class="si">}</span><span class="s2"> changed </span><span class="si">#{</span><span class="n">entries</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2"> times&quot;</span>
+</span><span id="__span-40-5"><a id="__codelineno-40-5" name="__codelineno-40-5" href="#__codelineno-40-5"></a><span class="w">    </span><span class="n">entries</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">entry</span><span class="o">|</span>
+</span><span id="__span-40-6"><a id="__codelineno-40-6" name="__codelineno-40-6" href="#__codelineno-40-6"></a><span class="w">      </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;  </span><span class="si">#{</span><span class="n">entry</span><span class="o">[</span><span class="ss">:timestamp</span><span class="o">]</span><span class="si">}</span><span class="s2">: </span><span class="si">#{</span><span class="n">entry</span><span class="o">[</span><span class="ss">:action</span><span class="o">]</span><span class="si">}</span><span class="s2"> - </span><span class="si">#{</span><span class="n">entry</span><span class="o">[</span><span class="ss">:attributes</span><span class="o">]</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-40-7"><a id="__codelineno-40-7" name="__codelineno-40-7" href="#__codelineno-40-7"></a><span class="w">    </span><span class="k">end</span>
+</span><span id="__span-40-8"><a id="__codelineno-40-8" name="__codelineno-40-8" href="#__codelineno-40-8"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-40-9"><a id="__codelineno-40-9" name="__codelineno-40-9" href="#__codelineno-40-9"></a><span class="k">end</span>
+</span></code></pre></div>
+<hr />
+<h3 id="3-rule-performance-analysis">3. Rule Performance Analysis<a class="headerlink" href="#3-rule-performance-analysis" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-41-1"><a id="__codelineno-41-1" name="__codelineno-41-1" href="#__codelineno-41-1"></a><span class="c1"># Analyze rule firing frequency</span>
+</span><span id="__span-41-2"><a id="__codelineno-41-2" name="__codelineno-41-2" href="#__codelineno-41-2"></a><span class="n">firings</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">get_rule_firings</span><span class="p">(</span><span class="ss">limit</span><span class="p">:</span><span class="w"> </span><span class="mi">10000</span><span class="p">)</span>
+</span><span id="__span-41-3"><a id="__codelineno-41-3" name="__codelineno-41-3" href="#__codelineno-41-3"></a><span class="n">by_rule</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">firings</span><span class="o">.</span><span class="n">group_by</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">f</span><span class="o">|</span><span class="w"> </span><span class="n">f</span><span class="o">[</span><span class="ss">:rule_name</span><span class="o">]</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-41-4"><a id="__codelineno-41-4" name="__codelineno-41-4" href="#__codelineno-41-4"></a>
+</span><span id="__span-41-5"><a id="__codelineno-41-5" name="__codelineno-41-5" href="#__codelineno-41-5"></a><span class="n">by_rule</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">rule_name</span><span class="p">,</span><span class="w"> </span><span class="n">firings_list</span><span class="o">|</span>
+</span><span id="__span-41-6"><a id="__codelineno-41-6" name="__codelineno-41-6" href="#__codelineno-41-6"></a><span class="w">  </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;</span><span class="si">#{</span><span class="n">rule_name</span><span class="si">}</span><span class="s2">: </span><span class="si">#{</span><span class="n">firings_list</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2"> firings&quot;</span>
+</span><span id="__span-41-7"><a id="__codelineno-41-7" name="__codelineno-41-7" href="#__codelineno-41-7"></a>
+</span><span id="__span-41-8"><a id="__codelineno-41-8" name="__codelineno-41-8" href="#__codelineno-41-8"></a><span class="w">  </span><span class="c1"># Calculate average time between firings</span>
+</span><span id="__span-41-9"><a id="__codelineno-41-9" name="__codelineno-41-9" href="#__codelineno-41-9"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="n">firings_list</span><span class="o">.</span><span class="n">size</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1</span>
+</span><span id="__span-41-10"><a id="__codelineno-41-10" name="__codelineno-41-10" href="#__codelineno-41-10"></a><span class="w">    </span><span class="n">times</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">firings_list</span><span class="o">.</span><span class="n">map</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">f</span><span class="o">|</span><span class="w"> </span><span class="n">f</span><span class="o">[</span><span class="ss">:fired_at</span><span class="o">]</span><span class="w"> </span><span class="p">}</span><span class="o">.</span><span class="n">sort</span>
+</span><span id="__span-41-11"><a id="__codelineno-41-11" name="__codelineno-41-11" href="#__codelineno-41-11"></a><span class="w">    </span><span class="n">intervals</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">times</span><span class="o">.</span><span class="n">each_cons</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">map</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">t1</span><span class="p">,</span><span class="w"> </span><span class="n">t2</span><span class="o">|</span><span class="w"> </span><span class="p">(</span><span class="n">t2</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">t1</span><span class="p">)</span><span class="o">.</span><span class="n">to_f</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-41-12"><a id="__codelineno-41-12" name="__codelineno-41-12" href="#__codelineno-41-12"></a><span class="w">    </span><span class="n">avg_interval</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">intervals</span><span class="o">.</span><span class="n">sum</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">intervals</span><span class="o">.</span><span class="n">size</span>
+</span><span id="__span-41-13"><a id="__codelineno-41-13" name="__codelineno-41-13" href="#__codelineno-41-13"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;  Avg interval: </span><span class="si">#{</span><span class="n">avg_interval</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2"> seconds&quot;</span>
+</span><span id="__span-41-14"><a id="__codelineno-41-14" name="__codelineno-41-14" href="#__codelineno-41-14"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-41-15"><a id="__codelineno-41-15" name="__codelineno-41-15" href="#__codelineno-41-15"></a><span class="k">end</span>
+</span></code></pre></div>
+<hr />
+<h3 id="4-transaction-based-workflows">4. Transaction-Based Workflows<a class="headerlink" href="#4-transaction-based-workflows" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-42-1"><a id="__codelineno-42-1" name="__codelineno-42-1" href="#__codelineno-42-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">process_order</span><span class="p">(</span><span class="n">memory</span><span class="p">,</span><span class="w"> </span><span class="n">order_data</span><span class="p">)</span>
+</span><span id="__span-42-2"><a id="__codelineno-42-2" name="__codelineno-42-2" href="#__codelineno-42-2"></a><span class="w">  </span><span class="n">memory</span><span class="o">.</span><span class="n">transaction</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-42-3"><a id="__codelineno-42-3" name="__codelineno-42-3" href="#__codelineno-42-3"></a><span class="w">    </span><span class="c1"># Add order fact</span>
+</span><span id="__span-42-4"><a id="__codelineno-42-4" name="__codelineno-42-4" href="#__codelineno-42-4"></a><span class="w">    </span><span class="n">order</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:order</span><span class="p">,</span><span class="w"> </span><span class="n">order_data</span><span class="p">)</span>
+</span><span id="__span-42-5"><a id="__codelineno-42-5" name="__codelineno-42-5" href="#__codelineno-42-5"></a>
+</span><span id="__span-42-6"><a id="__codelineno-42-6" name="__codelineno-42-6" href="#__codelineno-42-6"></a><span class="w">    </span><span class="c1"># Check inventory</span>
+</span><span id="__span-42-7"><a id="__codelineno-42-7" name="__codelineno-42-7" href="#__codelineno-42-7"></a><span class="w">    </span><span class="n">inventory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">get_facts</span><span class="p">(</span><span class="ss">:inventory</span><span class="p">,</span><span class="w"> </span><span class="ss">product_id</span><span class="p">:</span><span class="w"> </span><span class="n">order</span><span class="o">[</span><span class="ss">:product_id</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">first</span>
+</span><span id="__span-42-8"><a id="__codelineno-42-8" name="__codelineno-42-8" href="#__codelineno-42-8"></a><span class="w">    </span><span class="k">raise</span><span class="w"> </span><span class="s2">&quot;Insufficient inventory&quot;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">inventory</span><span class="o">[</span><span class="ss">:quantity</span><span class="o">]</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">order</span><span class="o">[</span><span class="ss">:quantity</span><span class="o">]</span>
+</span><span id="__span-42-9"><a id="__codelineno-42-9" name="__codelineno-42-9" href="#__codelineno-42-9"></a>
+</span><span id="__span-42-10"><a id="__codelineno-42-10" name="__codelineno-42-10" href="#__codelineno-42-10"></a><span class="w">    </span><span class="c1"># Deduct inventory</span>
+</span><span id="__span-42-11"><a id="__codelineno-42-11" name="__codelineno-42-11" href="#__codelineno-42-11"></a><span class="w">    </span><span class="n">memory</span><span class="o">.</span><span class="n">update_fact</span><span class="p">(</span><span class="n">inventory</span><span class="p">,</span><span class="w"> </span><span class="ss">quantity</span><span class="p">:</span><span class="w"> </span><span class="n">inventory</span><span class="o">[</span><span class="ss">:quantity</span><span class="o">]</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">order</span><span class="o">[</span><span class="ss">:quantity</span><span class="o">]</span><span class="p">)</span>
+</span><span id="__span-42-12"><a id="__codelineno-42-12" name="__codelineno-42-12" href="#__codelineno-42-12"></a>
+</span><span id="__span-42-13"><a id="__codelineno-42-13" name="__codelineno-42-13" href="#__codelineno-42-13"></a><span class="w">    </span><span class="c1"># Create shipment fact</span>
+</span><span id="__span-42-14"><a id="__codelineno-42-14" name="__codelineno-42-14" href="#__codelineno-42-14"></a><span class="w">    </span><span class="n">shipment</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:shipment</span><span class="p">,</span><span class="w"> </span><span class="ss">order_id</span><span class="p">:</span><span class="w"> </span><span class="n">order</span><span class="o">.</span><span class="n">uuid</span><span class="p">,</span><span class="w"> </span><span class="ss">status</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pending&quot;</span><span class="p">)</span>
+</span><span id="__span-42-15"><a id="__codelineno-42-15" name="__codelineno-42-15" href="#__codelineno-42-15"></a>
+</span><span id="__span-42-16"><a id="__codelineno-42-16" name="__codelineno-42-16" href="#__codelineno-42-16"></a><span class="w">    </span><span class="c1"># Post message for shipping agent</span>
+</span><span id="__span-42-17"><a id="__codelineno-42-17" name="__codelineno-42-17" href="#__codelineno-42-17"></a><span class="w">    </span><span class="n">memory</span><span class="o">.</span><span class="n">post_message</span><span class="p">(</span>
+</span><span id="__span-42-18"><a id="__codelineno-42-18" name="__codelineno-42-18" href="#__codelineno-42-18"></a><span class="w">      </span><span class="s2">&quot;OrderProcessor&quot;</span><span class="p">,</span>
+</span><span id="__span-42-19"><a id="__codelineno-42-19" name="__codelineno-42-19" href="#__codelineno-42-19"></a><span class="w">      </span><span class="s2">&quot;shipments&quot;</span><span class="p">,</span>
+</span><span id="__span-42-20"><a id="__codelineno-42-20" name="__codelineno-42-20" href="#__codelineno-42-20"></a><span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="ss">shipment_id</span><span class="p">:</span><span class="w"> </span><span class="n">shipment</span><span class="o">.</span><span class="n">uuid</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-42-21"><a id="__codelineno-42-21" name="__codelineno-42-21" href="#__codelineno-42-21"></a><span class="w">      </span><span class="ss">priority</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span>
+</span><span id="__span-42-22"><a id="__codelineno-42-22" name="__codelineno-42-22" href="#__codelineno-42-22"></a><span class="w">    </span><span class="p">)</span>
+</span><span id="__span-42-23"><a id="__codelineno-42-23" name="__codelineno-42-23" href="#__codelineno-42-23"></a>
+</span><span id="__span-42-24"><a id="__codelineno-42-24" name="__codelineno-42-24" href="#__codelineno-42-24"></a><span class="w">    </span><span class="c1"># If any step fails, entire transaction rolls back</span>
+</span><span id="__span-42-25"><a id="__codelineno-42-25" name="__codelineno-42-25" href="#__codelineno-42-25"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-42-26"><a id="__codelineno-42-26" name="__codelineno-42-26" href="#__codelineno-42-26"></a><span class="k">end</span>
+</span></code></pre></div>
+<hr />
+<h3 id="5-debugging-message-flow">5. Debugging Message Flow<a class="headerlink" href="#5-debugging-message-flow" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-43-1"><a id="__codelineno-43-1" name="__codelineno-43-1" href="#__codelineno-43-1"></a><span class="c1"># Monitor message queue</span>
+</span><span id="__span-43-2"><a id="__codelineno-43-2" name="__codelineno-43-2" href="#__codelineno-43-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">monitor_queue</span><span class="p">(</span><span class="n">memory</span><span class="p">,</span><span class="w"> </span><span class="n">topic</span><span class="p">)</span>
+</span><span id="__span-43-3"><a id="__codelineno-43-3" name="__codelineno-43-3" href="#__codelineno-43-3"></a><span class="w">  </span><span class="kp">loop</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-43-4"><a id="__codelineno-43-4" name="__codelineno-43-4" href="#__codelineno-43-4"></a><span class="w">    </span><span class="n">pending</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">peek_messages</span><span class="p">(</span><span class="n">topic</span><span class="p">,</span><span class="w"> </span><span class="ss">limit</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">)</span>
+</span><span id="__span-43-5"><a id="__codelineno-43-5" name="__codelineno-43-5" href="#__codelineno-43-5"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;</span><span class="si">#{</span><span class="no">Time</span><span class="o">.</span><span class="n">now</span><span class="si">}</span><span class="s2">: </span><span class="si">#{</span><span class="n">pending</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2"> messages in </span><span class="si">#{</span><span class="n">topic</span><span class="si">}</span><span class="s2"> queue&quot;</span>
+</span><span id="__span-43-6"><a id="__codelineno-43-6" name="__codelineno-43-6" href="#__codelineno-43-6"></a>
+</span><span id="__span-43-7"><a id="__codelineno-43-7" name="__codelineno-43-7" href="#__codelineno-43-7"></a><span class="w">    </span><span class="n">pending</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">msg</span><span class="o">|</span>
+</span><span id="__span-43-8"><a id="__codelineno-43-8" name="__codelineno-43-8" href="#__codelineno-43-8"></a><span class="w">      </span><span class="n">age</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">Time</span><span class="o">.</span><span class="n">now</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">msg</span><span class="o">[</span><span class="ss">:posted_at</span><span class="o">]</span>
+</span><span id="__span-43-9"><a id="__codelineno-43-9" name="__codelineno-43-9" href="#__codelineno-43-9"></a><span class="w">      </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;  [</span><span class="si">#{</span><span class="n">msg</span><span class="o">[</span><span class="ss">:priority</span><span class="o">]</span><span class="si">}</span><span class="s2">] </span><span class="si">#{</span><span class="n">msg</span><span class="o">[</span><span class="ss">:sender</span><span class="o">]</span><span class="si">}</span><span class="s2">: </span><span class="si">#{</span><span class="n">msg</span><span class="o">[</span><span class="ss">:content</span><span class="o">]</span><span class="si">}</span><span class="s2"> (</span><span class="si">#{</span><span class="n">age</span><span class="o">.</span><span class="n">round</span><span class="si">}</span><span class="s2">s old)&quot;</span>
+</span><span id="__span-43-10"><a id="__codelineno-43-10" name="__codelineno-43-10" href="#__codelineno-43-10"></a><span class="w">    </span><span class="k">end</span>
+</span><span id="__span-43-11"><a id="__codelineno-43-11" name="__codelineno-43-11" href="#__codelineno-43-11"></a>
+</span><span id="__span-43-12"><a id="__codelineno-43-12" name="__codelineno-43-12" href="#__codelineno-43-12"></a><span class="w">    </span><span class="nb">sleep</span><span class="w"> </span><span class="mi">5</span>
+</span><span id="__span-43-13"><a id="__codelineno-43-13" name="__codelineno-43-13" href="#__codelineno-43-13"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-43-14"><a id="__codelineno-43-14" name="__codelineno-43-14" href="#__codelineno-43-14"></a><span class="k">end</span>
+</span></code></pre></div>
+<hr />
+<h3 id="6-session-isolation">6. Session Isolation<a class="headerlink" href="#6-session-isolation" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-44-1"><a id="__codelineno-44-1" name="__codelineno-44-1" href="#__codelineno-44-1"></a><span class="c1"># Separate test runs</span>
+</span><span id="__span-44-2"><a id="__codelineno-44-2" name="__codelineno-44-2" href="#__codelineno-44-2"></a><span class="n">test_memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Memory</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">db_path</span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;test.db&#39;</span><span class="p">)</span>
+</span><span id="__span-44-3"><a id="__codelineno-44-3" name="__codelineno-44-3" href="#__codelineno-44-3"></a><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;Session: </span><span class="si">#{</span><span class="n">test_memory</span><span class="o">.</span><span class="n">session_id</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-44-4"><a id="__codelineno-44-4" name="__codelineno-44-4" href="#__codelineno-44-4"></a>
+</span><span id="__span-44-5"><a id="__codelineno-44-5" name="__codelineno-44-5" href="#__codelineno-44-5"></a><span class="c1"># Run test</span>
+</span><span id="__span-44-6"><a id="__codelineno-44-6" name="__codelineno-44-6" href="#__codelineno-44-6"></a><span class="n">test_memory</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:test_marker</span><span class="p">,</span><span class="w"> </span><span class="ss">run_id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-44-7"><a id="__codelineno-44-7" name="__codelineno-44-7" href="#__codelineno-44-7"></a><span class="n">run_tests</span><span class="p">(</span><span class="n">test_memory</span><span class="p">)</span>
+</span><span id="__span-44-8"><a id="__codelineno-44-8" name="__codelineno-44-8" href="#__codelineno-44-8"></a>
+</span><span id="__span-44-9"><a id="__codelineno-44-9" name="__codelineno-44-9" href="#__codelineno-44-9"></a><span class="c1"># Cleanup session (preserves audit log)</span>
+</span><span id="__span-44-10"><a id="__codelineno-44-10" name="__codelineno-44-10" href="#__codelineno-44-10"></a><span class="n">test_memory</span><span class="o">.</span><span class="n">clear_session</span>
+</span><span id="__span-44-11"><a id="__codelineno-44-11" name="__codelineno-44-11" href="#__codelineno-44-11"></a>
+</span><span id="__span-44-12"><a id="__codelineno-44-12" name="__codelineno-44-12" href="#__codelineno-44-12"></a><span class="c1"># Analyze audit log across sessions</span>
+</span><span id="__span-44-13"><a id="__codelineno-44-13" name="__codelineno-44-13" href="#__codelineno-44-13"></a><span class="n">all_history</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">test_memory</span><span class="o">.</span><span class="n">get_history</span><span class="p">(</span><span class="ss">limit</span><span class="p">:</span><span class="w"> </span><span class="mi">10000</span><span class="p">)</span>
+</span><span id="__span-44-14"><a id="__codelineno-44-14" name="__codelineno-44-14" href="#__codelineno-44-14"></a><span class="n">by_session</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">all_history</span><span class="o">.</span><span class="n">group_by</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">e</span><span class="o">|</span><span class="w"> </span><span class="n">e</span><span class="o">[</span><span class="ss">:session_id</span><span class="o">]</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-44-15"><a id="__codelineno-44-15" name="__codelineno-44-15" href="#__codelineno-44-15"></a><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;Total sessions: </span><span class="si">#{</span><span class="n">by_session</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">&quot;</span>
+</span></code></pre></div>
+<hr />
+<h3 id="7-custom-observer-for-metrics">7. Custom Observer for Metrics<a class="headerlink" href="#7-custom-observer-for-metrics" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-45-1"><a id="__codelineno-45-1" name="__codelineno-45-1" href="#__codelineno-45-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">MetricsObserver</span>
+</span><span id="__span-45-2"><a id="__codelineno-45-2" name="__codelineno-45-2" href="#__codelineno-45-2"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">initialize</span>
+</span><span id="__span-45-3"><a id="__codelineno-45-3" name="__codelineno-45-3" href="#__codelineno-45-3"></a><span class="w">    </span><span class="vi">@fact_counts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">Hash</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</span><span id="__span-45-4"><a id="__codelineno-45-4" name="__codelineno-45-4" href="#__codelineno-45-4"></a><span class="w">    </span><span class="vi">@add_count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+</span><span id="__span-45-5"><a id="__codelineno-45-5" name="__codelineno-45-5" href="#__codelineno-45-5"></a><span class="w">    </span><span class="vi">@remove_count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+</span><span id="__span-45-6"><a id="__codelineno-45-6" name="__codelineno-45-6" href="#__codelineno-45-6"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-45-7"><a id="__codelineno-45-7" name="__codelineno-45-7" href="#__codelineno-45-7"></a>
+</span><span id="__span-45-8"><a id="__codelineno-45-8" name="__codelineno-45-8" href="#__codelineno-45-8"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="n">action</span><span class="p">,</span><span class="w"> </span><span class="n">fact</span><span class="p">)</span>
+</span><span id="__span-45-9"><a id="__codelineno-45-9" name="__codelineno-45-9" href="#__codelineno-45-9"></a><span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="n">action</span>
+</span><span id="__span-45-10"><a id="__codelineno-45-10" name="__codelineno-45-10" href="#__codelineno-45-10"></a><span class="w">    </span><span class="k">when</span><span class="w"> </span><span class="ss">:add</span>
+</span><span id="__span-45-11"><a id="__codelineno-45-11" name="__codelineno-45-11" href="#__codelineno-45-11"></a><span class="w">      </span><span class="vi">@add_count</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="mi">1</span>
+</span><span id="__span-45-12"><a id="__codelineno-45-12" name="__codelineno-45-12" href="#__codelineno-45-12"></a><span class="w">      </span><span class="vi">@fact_counts</span><span class="o">[</span><span class="n">fact</span><span class="o">.</span><span class="n">type</span><span class="o">]</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="mi">1</span>
+</span><span id="__span-45-13"><a id="__codelineno-45-13" name="__codelineno-45-13" href="#__codelineno-45-13"></a><span class="w">    </span><span class="k">when</span><span class="w"> </span><span class="ss">:remove</span>
+</span><span id="__span-45-14"><a id="__codelineno-45-14" name="__codelineno-45-14" href="#__codelineno-45-14"></a><span class="w">      </span><span class="vi">@remove_count</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="mi">1</span>
+</span><span id="__span-45-15"><a id="__codelineno-45-15" name="__codelineno-45-15" href="#__codelineno-45-15"></a><span class="w">      </span><span class="vi">@fact_counts</span><span class="o">[</span><span class="n">fact</span><span class="o">.</span><span class="n">type</span><span class="o">]</span><span class="w"> </span><span class="o">-=</span><span class="w"> </span><span class="mi">1</span>
+</span><span id="__span-45-16"><a id="__codelineno-45-16" name="__codelineno-45-16" href="#__codelineno-45-16"></a><span class="w">    </span><span class="k">end</span>
+</span><span id="__span-45-17"><a id="__codelineno-45-17" name="__codelineno-45-17" href="#__codelineno-45-17"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-45-18"><a id="__codelineno-45-18" name="__codelineno-45-18" href="#__codelineno-45-18"></a>
+</span><span id="__span-45-19"><a id="__codelineno-45-19" name="__codelineno-45-19" href="#__codelineno-45-19"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">report</span>
+</span><span id="__span-45-20"><a id="__codelineno-45-20" name="__codelineno-45-20" href="#__codelineno-45-20"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;Facts added: </span><span class="si">#{</span><span class="vi">@add_count</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-45-21"><a id="__codelineno-45-21" name="__codelineno-45-21" href="#__codelineno-45-21"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;Facts removed: </span><span class="si">#{</span><span class="vi">@remove_count</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-45-22"><a id="__codelineno-45-22" name="__codelineno-45-22" href="#__codelineno-45-22"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;Active facts by type:&quot;</span>
+</span><span id="__span-45-23"><a id="__codelineno-45-23" name="__codelineno-45-23" href="#__codelineno-45-23"></a><span class="w">    </span><span class="vi">@fact_counts</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">type</span><span class="p">,</span><span class="w"> </span><span class="n">count</span><span class="o">|</span>
+</span><span id="__span-45-24"><a id="__codelineno-45-24" name="__codelineno-45-24" href="#__codelineno-45-24"></a><span class="w">      </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;  </span><span class="si">#{</span><span class="n">type</span><span class="si">}</span><span class="s2">: </span><span class="si">#{</span><span class="n">count</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-45-25"><a id="__codelineno-45-25" name="__codelineno-45-25" href="#__codelineno-45-25"></a><span class="w">    </span><span class="k">end</span>
+</span><span id="__span-45-26"><a id="__codelineno-45-26" name="__codelineno-45-26" href="#__codelineno-45-26"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-45-27"><a id="__codelineno-45-27" name="__codelineno-45-27" href="#__codelineno-45-27"></a><span class="k">end</span>
+</span><span id="__span-45-28"><a id="__codelineno-45-28" name="__codelineno-45-28" href="#__codelineno-45-28"></a>
+</span><span id="__span-45-29"><a id="__codelineno-45-29" name="__codelineno-45-29" href="#__codelineno-45-29"></a><span class="n">metrics</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">MetricsObserver</span><span class="o">.</span><span class="n">new</span>
+</span><span id="__span-45-30"><a id="__codelineno-45-30" name="__codelineno-45-30" href="#__codelineno-45-30"></a><span class="n">memory</span><span class="o">.</span><span class="n">add_observer</span><span class="p">(</span><span class="n">metrics</span><span class="p">)</span>
+</span><span id="__span-45-31"><a id="__codelineno-45-31" name="__codelineno-45-31" href="#__codelineno-45-31"></a>
+</span><span id="__span-45-32"><a id="__codelineno-45-32" name="__codelineno-45-32" href="#__codelineno-45-32"></a><span class="c1"># ... run system ...</span>
+</span><span id="__span-45-33"><a id="__codelineno-45-33" name="__codelineno-45-33" href="#__codelineno-45-33"></a>
+</span><span id="__span-45-34"><a id="__codelineno-45-34" name="__codelineno-45-34" href="#__codelineno-45-34"></a><span class="n">metrics</span><span class="o">.</span><span class="n">report</span>
+</span></code></pre></div>
+<hr />
+<h2 id="performance-considerations">Performance Considerations<a class="headerlink" href="#performance-considerations" title="Permanent link">&para;</a></h2>
+<h3 id="message-queue">Message Queue<a class="headerlink" href="#message-queue" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Priority indexing</strong>: Messages sorted by priority + timestamp</li>
+<li><strong>Atomic pop</strong>: <code>consume</code> uses SELECT + UPDATE in transaction (safe for concurrent consumers)</li>
+<li><strong>Scaling</strong>: For &gt;10,000 messages/sec, use Redis store</li>
+</ul>
+<h3 id="audit-log">Audit Log<a class="headerlink" href="#audit-log" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Write performance</strong>: Each fact change = 1 audit log insert (can be disabled for high-throughput)</li>
+<li><strong>Query performance</strong>: Indexed by <code>fact_uuid</code> and <code>session_id</code></li>
+<li><strong>Growth</strong>: Audit log grows unbounded. Implement periodic archival for production:</li>
+</ul>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-46-1"><a id="__codelineno-46-1" name="__codelineno-46-1" href="#__codelineno-46-1"></a><span class="c1"># Archive old audit entries</span>
+</span><span id="__span-46-2"><a id="__codelineno-46-2" name="__codelineno-46-2" href="#__codelineno-46-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">archive_old_audit</span><span class="p">(</span><span class="n">memory</span><span class="p">,</span><span class="w"> </span><span class="n">cutoff_date</span><span class="p">)</span>
+</span><span id="__span-46-3"><a id="__codelineno-46-3" name="__codelineno-46-3" href="#__codelineno-46-3"></a><span class="w">  </span><span class="n">memory</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+</span><span id="__span-46-4"><a id="__codelineno-46-4" name="__codelineno-46-4" href="#__codelineno-46-4"></a><span class="w">    </span><span class="s2">&quot;DELETE FROM fact_history WHERE timestamp &lt; ?&quot;</span><span class="p">,</span>
+</span><span id="__span-46-5"><a id="__codelineno-46-5" name="__codelineno-46-5" href="#__codelineno-46-5"></a><span class="w">    </span><span class="o">[</span><span class="n">cutoff_date</span><span class="o">.</span><span class="n">iso8601</span><span class="o">]</span>
+</span><span id="__span-46-6"><a id="__codelineno-46-6" name="__codelineno-46-6" href="#__codelineno-46-6"></a><span class="w">  </span><span class="p">)</span>
+</span><span id="__span-46-7"><a id="__codelineno-46-7" name="__codelineno-46-7" href="#__codelineno-46-7"></a>
+</span><span id="__span-46-8"><a id="__codelineno-46-8" name="__codelineno-46-8" href="#__codelineno-46-8"></a><span class="w">  </span><span class="n">memory</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+</span><span id="__span-46-9"><a id="__codelineno-46-9" name="__codelineno-46-9" href="#__codelineno-46-9"></a><span class="w">    </span><span class="s2">&quot;DELETE FROM rules_fired WHERE fired_at &lt; ?&quot;</span><span class="p">,</span>
+</span><span id="__span-46-10"><a id="__codelineno-46-10" name="__codelineno-46-10" href="#__codelineno-46-10"></a><span class="w">    </span><span class="o">[</span><span class="n">cutoff_date</span><span class="o">.</span><span class="n">iso8601</span><span class="o">]</span>
+</span><span id="__span-46-11"><a id="__codelineno-46-11" name="__codelineno-46-11" href="#__codelineno-46-11"></a><span class="w">  </span><span class="p">)</span>
+</span><span id="__span-46-12"><a id="__codelineno-46-12" name="__codelineno-46-12" href="#__codelineno-46-12"></a>
+</span><span id="__span-46-13"><a id="__codelineno-46-13" name="__codelineno-46-13" href="#__codelineno-46-13"></a><span class="w">  </span><span class="n">memory</span><span class="o">.</span><span class="n">vacuum</span>
+</span><span id="__span-46-14"><a id="__codelineno-46-14" name="__codelineno-46-14" href="#__codelineno-46-14"></a><span class="k">end</span>
+</span><span id="__span-46-15"><a id="__codelineno-46-15" name="__codelineno-46-15" href="#__codelineno-46-15"></a>
+</span><span id="__span-46-16"><a id="__codelineno-46-16" name="__codelineno-46-16" href="#__codelineno-46-16"></a><span class="c1"># Archive entries older than 30 days</span>
+</span><span id="__span-46-17"><a id="__codelineno-46-17" name="__codelineno-46-17" href="#__codelineno-46-17"></a><span class="n">archive_old_audit</span><span class="p">(</span><span class="n">memory</span><span class="p">,</span><span class="w"> </span><span class="no">Date</span><span class="o">.</span><span class="n">today</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">30</span><span class="p">)</span>
+</span></code></pre></div>
+<hr />
+<h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../engine/">Engine API</a> - Blackboard::Engine integration</li>
+<li><a href="../facts/">Facts API</a> - Persistent fact objects</li>
+<li><a href="../../advanced/custom-persistence/">Custom Persistence</a> - Implementing custom stores</li>
+<li><a href="../../guides/blackboard-memory/">Blackboard Guide</a> - Blackboard pattern overview</li>
+<li><a href="../../examples/multi-agent/">Multi-Agent Example</a> - Multi-agent coordination</li>
+</ul>
 
 
 

@@ -930,9 +930,396 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#topics" class="md-nav__link">
+  <a href="#negation-basics" class="md-nav__link">
     <span class="md-ellipsis">
-      Topics
+      Negation Basics
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Negation Basics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#syntax" class="md-nav__link">
+    <span class="md-ellipsis">
+      Syntax
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simple-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      Simple Example
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#negation-semantics" class="md-nav__link">
+    <span class="md-ellipsis">
+      Negation Semantics
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Negation Semantics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#open-world-assumption" class="md-nav__link">
+    <span class="md-ellipsis">
+      Open World Assumption
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variable-binding-in-negation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Variable Binding in Negation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#negation-node-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      Negation Node Behavior
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#use-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      Use Cases
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Use Cases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-guard-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Guard Conditions
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-missing-information-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Missing Information Detection
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-state-transitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. State Transitions
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-timeout-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Timeout Detection
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-mutual-exclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Mutual Exclusion
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multiple-negations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Multiple Negations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Multiple Negations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#conjunction-and" class="md-nav__link">
+    <span class="md-ellipsis">
+      Conjunction (AND)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#complex-negation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Complex Negation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#performance-implications" class="md-nav__link">
+    <span class="md-ellipsis">
+      Performance Implications
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Performance Implications">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#negation-is-expensive" class="md-nav__link">
+    <span class="md-ellipsis">
+      Negation is Expensive
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#negation-node-overhead" class="md-nav__link">
+    <span class="md-ellipsis">
+      Negation Node Overhead
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optimization-strategies" class="md-nav__link">
+    <span class="md-ellipsis">
+      Optimization Strategies
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-pitfalls" class="md-nav__link">
+    <span class="md-ellipsis">
+      Common Pitfalls
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Pitfalls">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-forgetting-variable-binding" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Forgetting Variable Binding
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-infinite-loops" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Infinite Loops
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-negation-of-missing-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Negation of Missing Attributes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-over-using-negation" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Over-Using Negation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#negation-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Negation Patterns
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Negation Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#default-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      Default Values
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cleanup-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      Cleanup Rules
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prerequisite-checking" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prerequisite Checking
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#debugging-negations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Debugging Negations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Debugging Negations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#trace-negation-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Trace Negation Checks
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#count-inhibitors" class="md-nav__link">
+    <span class="md-ellipsis">
+      Count Inhibitors
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validate-negation-logic" class="md-nav__link">
+    <span class="md-ellipsis">
+      Validate Negation Logic
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alternatives-to-negation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Alternatives to Negation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Alternatives to Negation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pattern-explicit-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pattern: Explicit State
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-status-flags" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pattern: Status Flags
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-computed-facts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pattern: Computed Facts
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Next Steps
     </span>
   </a>
   
@@ -1499,9 +1886,396 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#topics" class="md-nav__link">
+  <a href="#negation-basics" class="md-nav__link">
     <span class="md-ellipsis">
-      Topics
+      Negation Basics
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Negation Basics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#syntax" class="md-nav__link">
+    <span class="md-ellipsis">
+      Syntax
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simple-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      Simple Example
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#negation-semantics" class="md-nav__link">
+    <span class="md-ellipsis">
+      Negation Semantics
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Negation Semantics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#open-world-assumption" class="md-nav__link">
+    <span class="md-ellipsis">
+      Open World Assumption
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variable-binding-in-negation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Variable Binding in Negation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#negation-node-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      Negation Node Behavior
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#use-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      Use Cases
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Use Cases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-guard-conditions" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Guard Conditions
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-missing-information-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Missing Information Detection
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-state-transitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. State Transitions
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-timeout-detection" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Timeout Detection
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-mutual-exclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Mutual Exclusion
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multiple-negations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Multiple Negations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Multiple Negations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#conjunction-and" class="md-nav__link">
+    <span class="md-ellipsis">
+      Conjunction (AND)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#complex-negation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Complex Negation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#performance-implications" class="md-nav__link">
+    <span class="md-ellipsis">
+      Performance Implications
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Performance Implications">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#negation-is-expensive" class="md-nav__link">
+    <span class="md-ellipsis">
+      Negation is Expensive
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#negation-node-overhead" class="md-nav__link">
+    <span class="md-ellipsis">
+      Negation Node Overhead
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#optimization-strategies" class="md-nav__link">
+    <span class="md-ellipsis">
+      Optimization Strategies
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-pitfalls" class="md-nav__link">
+    <span class="md-ellipsis">
+      Common Pitfalls
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Pitfalls">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-forgetting-variable-binding" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Forgetting Variable Binding
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-infinite-loops" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Infinite Loops
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-negation-of-missing-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Negation of Missing Attributes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-over-using-negation" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Over-Using Negation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#negation-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Negation Patterns
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Negation Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#default-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      Default Values
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cleanup-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      Cleanup Rules
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#prerequisite-checking" class="md-nav__link">
+    <span class="md-ellipsis">
+      Prerequisite Checking
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#debugging-negations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Debugging Negations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Debugging Negations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#trace-negation-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Trace Negation Checks
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#count-inhibitors" class="md-nav__link">
+    <span class="md-ellipsis">
+      Count Inhibitors
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validate-negation-logic" class="md-nav__link">
+    <span class="md-ellipsis">
+      Validate Negation Logic
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alternatives-to-negation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Alternatives to Negation
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Alternatives to Negation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pattern-explicit-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pattern: Explicit State
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-status-flags" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pattern: Status Flags
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-computed-facts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pattern: Computed Facts
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      Next Steps
     </span>
   </a>
   
@@ -1540,14 +2314,418 @@
 
 
 <h1 id="negation">Negation<a class="headerlink" href="#negation" title="Permanent link">&para;</a></h1>
-<p><em>Coming soon: Understanding negated conditions.</em></p>
-<h2 id="topics">Topics<a class="headerlink" href="#topics" title="Permanent link">&para;</a></h2>
+<p>Negated conditions match when a pattern is <strong>absent</strong> from working memory. This guide explains negation semantics, use cases, performance implications, and common pitfalls.</p>
+<h2 id="negation-basics">Negation Basics<a class="headerlink" href="#negation-basics" title="Permanent link">&para;</a></h2>
+<h3 id="syntax">Syntax<a class="headerlink" href="#syntax" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:alert</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">sensor_id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="nb">id</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span>
+</span></code></pre></div>
+<p><strong>Semantics</strong>: Condition satisfied when NO fact matches the pattern.</p>
+<h3 id="simple-example">Simple Example<a class="headerlink" href="#simple-example" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="no">KBS</span><span class="o">::</span><span class="no">Rule</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;send_first_alert&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">r</span><span class="o">|</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="n">r</span><span class="o">.</span><span class="n">conditions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="c1"># Positive: High temperature detected</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:high_temp</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">sensor_id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="nb">id</span><span class="w"> </span><span class="p">}),</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span><span class="c1"># Negative: No alert sent yet</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:alert_sent</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">sensor_id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="nb">id</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">  </span><span class="o">]</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">  </span><span class="n">r</span><span class="o">.</span><span class="n">action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">lambda</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">facts</span><span class="p">,</span><span class="w"> </span><span class="n">bindings</span><span class="o">|</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">    </span><span class="n">send_alert</span><span class="p">(</span><span class="n">bindings</span><span class="o">[</span><span class="p">:?</span><span class="nb">id</span><span class="o">]</span><span class="p">)</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">    </span><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:alert_sent</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">sensor_id</span><span class="p">:</span><span class="w"> </span><span class="n">bindings</span><span class="o">[</span><span class="p">:?</span><span class="nb">id</span><span class="o">]</span><span class="w"> </span><span class="p">})</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="k">end</span>
+</span></code></pre></div>
+<p><strong>Behavior</strong>:
+- First run: <code>:high_temp</code> exists, <code>:alert_sent</code> doesn't → rule fires
+- Second run: Both <code>:high_temp</code> and <code>:alert_sent</code> exist → rule doesn't fire</p>
+<h2 id="negation-semantics">Negation Semantics<a class="headerlink" href="#negation-semantics" title="Permanent link">&para;</a></h2>
+<h3 id="open-world-assumption">Open World Assumption<a class="headerlink" href="#open-world-assumption" title="Permanent link">&para;</a></h3>
+<p>Negation means "<strong>no matching fact exists</strong>", not "fact is explicitly false":</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Negated condition</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="nb">id</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Matches when:</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># - No :error fact exists with that id</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="c1"># - Working memory is empty</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># - :error facts exist but with different ids</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="c1"># Does NOT match when:</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="c1"># - Any :error fact with matching id exists</span>
+</span></code></pre></div>
+<h3 id="variable-binding-in-negation">Variable Binding in Negation<a class="headerlink" href="#variable-binding-in-negation" title="Permanent link">&para;</a></h3>
+<p>Variables in negated conditions still create join constraints:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">r</span><span class="o">.</span><span class="n">conditions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:sensor</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="nb">id</span><span class="p">,</span><span class="w"> </span><span class="ss">temp</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="n">temp</span><span class="w"> </span><span class="p">}),</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:alert</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">sensor_id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="nb">id</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="o">]</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1"># For each sensor fact:</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="c1">#   Check if NO alert exists with sensor_id == sensor&#39;s id</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="c1">#   If no such alert: rule fires</span>
+</span></code></pre></div>
+<h3 id="negation-node-behavior">Negation Node Behavior<a class="headerlink" href="#negation-node-behavior" title="Permanent link">&para;</a></h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>1. Token arrives with bindings { :?id =&gt; &quot;bedroom&quot; }
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>2. Check alpha memory for :alert facts
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>3. Filter for matches where sensor_id == &quot;bedroom&quot;
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>4. If count == 0: propagate token (condition satisfied)
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>5. If count &gt; 0: block token (condition not satisfied)
+</span></code></pre></div>
+<h2 id="use-cases">Use Cases<a class="headerlink" href="#use-cases" title="Permanent link">&para;</a></h2>
+<h3 id="1-guard-conditions">1. Guard Conditions<a class="headerlink" href="#1-guard-conditions" title="Permanent link">&para;</a></h3>
+<p>Prevent duplicate actions:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="no">KBS</span><span class="o">::</span><span class="no">Rule</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;process_order&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">r</span><span class="o">|</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="n">r</span><span class="o">.</span><span class="n">conditions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:order</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="nb">id</span><span class="p">,</span><span class="w"> </span><span class="ss">status</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pending&quot;</span><span class="w"> </span><span class="p">}),</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:processing</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">order_id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="nb">id</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span><span class="o">]</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">  </span><span class="n">r</span><span class="o">.</span><span class="n">action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">lambda</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">facts</span><span class="p">,</span><span class="w"> </span><span class="n">bindings</span><span class="o">|</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">    </span><span class="c1"># Only process if not already processing</span>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">    </span><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:processing</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">order_id</span><span class="p">:</span><span class="w"> </span><span class="n">bindings</span><span class="o">[</span><span class="p">:?</span><span class="nb">id</span><span class="o">]</span><span class="w"> </span><span class="p">})</span>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">    </span><span class="n">process_order</span><span class="p">(</span><span class="n">bindings</span><span class="o">[</span><span class="p">:?</span><span class="nb">id</span><span class="o">]</span><span class="p">)</span>
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="k">end</span>
+</span></code></pre></div>
+<h3 id="2-missing-information-detection">2. Missing Information Detection<a class="headerlink" href="#2-missing-information-detection" title="Permanent link">&para;</a></h3>
+<p>Alert when expected data is absent:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="no">KBS</span><span class="o">::</span><span class="no">Rule</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;missing_threshold&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">r</span><span class="o">|</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="n">r</span><span class="o">.</span><span class="n">conditions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:sensor</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="nb">id</span><span class="w"> </span><span class="p">}),</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:threshold</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">sensor_id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="nb">id</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span><span class="o">]</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">  </span><span class="n">r</span><span class="o">.</span><span class="n">action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">lambda</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">facts</span><span class="p">,</span><span class="w"> </span><span class="n">bindings</span><span class="o">|</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">    </span><span class="n">alert</span><span class="p">(</span><span class="s2">&quot;Sensor </span><span class="si">#{</span><span class="n">bindings</span><span class="o">[</span><span class="p">:?</span><span class="nb">id</span><span class="o">]</span><span class="si">}</span><span class="s2"> has no threshold configured!&quot;</span><span class="p">)</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="k">end</span>
+</span></code></pre></div>
+<h3 id="3-state-transitions">3. State Transitions<a class="headerlink" href="#3-state-transitions" title="Permanent link">&para;</a></h3>
+<p>Ensure prerequisites before transitioning:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="no">KBS</span><span class="o">::</span><span class="no">Rule</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;activate_account&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">r</span><span class="o">|</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="n">r</span><span class="o">.</span><span class="n">conditions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:user</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="nb">id</span><span class="p">,</span><span class="w"> </span><span class="ss">email_verified</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="w"> </span><span class="p">}),</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:account_active</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">user_id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="nb">id</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">  </span><span class="o">]</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">  </span><span class="n">r</span><span class="o">.</span><span class="n">action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">lambda</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">facts</span><span class="p">,</span><span class="w"> </span><span class="n">bindings</span><span class="o">|</span>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w">    </span><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:account_active</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">user_id</span><span class="p">:</span><span class="w"> </span><span class="n">bindings</span><span class="o">[</span><span class="p">:?</span><span class="nb">id</span><span class="o">]</span><span class="w"> </span><span class="p">})</span>
+</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="k">end</span>
+</span></code></pre></div>
+<h3 id="4-timeout-detection">4. Timeout Detection<a class="headerlink" href="#4-timeout-detection" title="Permanent link">&para;</a></h3>
+<p>Fire when response hasn't arrived:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="no">KBS</span><span class="o">::</span><span class="no">Rule</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;timeout_alert&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">r</span><span class="o">|</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="n">r</span><span class="o">.</span><span class="n">conditions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:request</span><span class="p">,</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">      </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="n">req_id</span><span class="p">,</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">      </span><span class="ss">created_at</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="n">created</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">    </span><span class="p">},</span><span class="w"> </span><span class="ss">predicate</span><span class="p">:</span><span class="w"> </span><span class="nb">lambda</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">f</span><span class="o">|</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">      </span><span class="p">(</span><span class="no">Time</span><span class="o">.</span><span class="n">now</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">f</span><span class="o">[</span><span class="ss">:created_at</span><span class="o">]</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">300</span><span class="w">  </span><span class="c1"># 5 minutes</span>
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">    </span><span class="p">}),</span>
+</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>
+</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:response</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">request_id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="n">req_id</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span>
+</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">  </span><span class="o">]</span>
+</span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>
+</span><span id="__span-8-13"><a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="w">  </span><span class="n">r</span><span class="o">.</span><span class="n">action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">lambda</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">facts</span><span class="p">,</span><span class="w"> </span><span class="n">bindings</span><span class="o">|</span>
+</span><span id="__span-8-14"><a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="w">    </span><span class="n">alert</span><span class="p">(</span><span class="s2">&quot;Request </span><span class="si">#{</span><span class="n">bindings</span><span class="o">[</span><span class="p">:?</span><span class="n">req_id</span><span class="o">]</span><span class="si">}</span><span class="s2"> timed out!&quot;</span><span class="p">)</span>
+</span><span id="__span-8-15"><a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-8-16"><a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="k">end</span>
+</span></code></pre></div>
+<h3 id="5-mutual-exclusion">5. Mutual Exclusion<a class="headerlink" href="#5-mutual-exclusion" title="Permanent link">&para;</a></h3>
+<p>Ensure only one option selected:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="no">KBS</span><span class="o">::</span><span class="no">Rule</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;select_default&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">r</span><span class="o">|</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="n">r</span><span class="o">.</span><span class="n">conditions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:user</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="nb">id</span><span class="w"> </span><span class="p">}),</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:preference</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">user_id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="nb">id</span><span class="p">,</span><span class="w"> </span><span class="ss">theme</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="n">theme</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">  </span><span class="o">]</span>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">  </span><span class="n">r</span><span class="o">.</span><span class="n">action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">lambda</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">facts</span><span class="p">,</span><span class="w"> </span><span class="n">bindings</span><span class="o">|</span>
+</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">    </span><span class="c1"># No preference set → use default</span>
+</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">    </span><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:preference</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">user_id</span><span class="p">:</span><span class="w"> </span><span class="n">bindings</span><span class="o">[</span><span class="p">:?</span><span class="nb">id</span><span class="o">]</span><span class="p">,</span><span class="w"> </span><span class="ss">theme</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;light&quot;</span><span class="w"> </span><span class="p">})</span>
+</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="k">end</span>
+</span></code></pre></div>
+<h2 id="multiple-negations">Multiple Negations<a class="headerlink" href="#multiple-negations" title="Permanent link">&para;</a></h2>
+<h3 id="conjunction-and">Conjunction (AND)<a class="headerlink" href="#conjunction-and" title="Permanent link">&para;</a></h3>
+<p>All negations must be satisfied:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">r</span><span class="o">.</span><span class="n">conditions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:a</span><span class="p">,</span><span class="w"> </span><span class="p">{}),</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">  </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:b</span><span class="p">,</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">),</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">  </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:c</span><span class="p">,</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="o">]</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="c1"># Fires when: a exists AND b doesn&#39;t exist AND c doesn&#39;t exist</span>
+</span></code></pre></div>
+<h3 id="complex-negation">Complex Negation<a class="headerlink" href="#complex-negation" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="no">KBS</span><span class="o">::</span><span class="no">Rule</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;unique_error&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">r</span><span class="o">|</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span><span class="n">r</span><span class="o">.</span><span class="n">conditions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="n">type</span><span class="w"> </span><span class="p">}),</span>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:error_handled</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="n">type</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">),</span>
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:error_ignored</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="n">type</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span>
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">  </span><span class="o">]</span>
+</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>
+</span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="w">  </span><span class="n">r</span><span class="o">.</span><span class="n">action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">lambda</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">facts</span><span class="p">,</span><span class="w"> </span><span class="n">bindings</span><span class="o">|</span>
+</span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="w">    </span><span class="c1"># Error exists but neither handled nor ignored</span>
+</span><span id="__span-11-10"><a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="w">    </span><span class="n">handle_new_error</span><span class="p">(</span><span class="n">bindings</span><span class="o">[</span><span class="p">:?</span><span class="n">type</span><span class="o">]</span><span class="p">)</span>
+</span><span id="__span-11-11"><a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-11-12"><a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="k">end</span>
+</span></code></pre></div>
+<h2 id="performance-implications">Performance Implications<a class="headerlink" href="#performance-implications" title="Permanent link">&para;</a></h2>
+<h3 id="negation-is-expensive">Negation is Expensive<a class="headerlink" href="#negation-is-expensive" title="Permanent link">&para;</a></h3>
+<p><strong>Reason</strong>: Must check alpha memory on every token arrival.</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1"># Expensive: Large alpha memory to search</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:log_entry</span><span class="p">,</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="c1"># Must check all log_entry facts for each token</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="c1"># Better: Specific pattern</span>
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:error_log</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">severity</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;critical&quot;</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span>
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="c1"># Smaller alpha memory, fewer checks</span>
+</span></code></pre></div>
+<h3 id="negation-node-overhead">Negation Node Overhead<a class="headerlink" href="#negation-node-overhead" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">NegationNode</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">left_activate</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="w">    </span><span class="c1"># For EVERY token:</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="w">    </span><span class="n">matching_facts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="vi">@alpha_memory</span><span class="o">.</span><span class="n">items</span><span class="o">.</span><span class="n">select</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">fact</span><span class="o">|</span>
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="w">      </span><span class="n">perform_join_tests</span><span class="p">(</span><span class="n">token</span><span class="p">,</span><span class="w"> </span><span class="n">fact</span><span class="p">)</span>
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>
+</span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">matching_facts</span><span class="o">.</span><span class="n">empty?</span>
+</span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="w">      </span><span class="n">propagate</span><span class="p">(</span><span class="n">token</span><span class="p">)</span><span class="w">  </span><span class="c1"># No matches = condition satisfied</span>
+</span><span id="__span-13-10"><a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a><span class="w">    </span><span class="k">else</span>
+</span><span id="__span-13-11"><a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a><span class="w">      </span><span class="n">block</span><span class="p">(</span><span class="n">token</span><span class="p">)</span><span class="w">      </span><span class="c1"># Matches exist = condition not satisfied</span>
+</span><span id="__span-13-12"><a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a><span class="w">      </span><span class="n">track_inhibitors</span><span class="p">(</span><span class="n">token</span><span class="p">,</span><span class="w"> </span><span class="n">matching_facts</span><span class="p">)</span>
+</span><span id="__span-13-13"><a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a><span class="w">    </span><span class="k">end</span>
+</span><span id="__span-13-14"><a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-13-15"><a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a><span class="k">end</span>
+</span></code></pre></div>
+<p><strong>Cost</strong>: O(A × T) where A = alpha memory size, T = join test cost</p>
+<h3 id="optimization-strategies">Optimization Strategies<a class="headerlink" href="#optimization-strategies" title="Permanent link">&para;</a></h3>
+<p><strong>1. Order negations last:</strong></p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="c1"># Good: Positive conditions first</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="n">r</span><span class="o">.</span><span class="n">conditions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[</span>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">  </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:a</span><span class="p">,</span><span class="w"> </span><span class="p">{}),</span>
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">  </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:b</span><span class="p">,</span><span class="w"> </span><span class="p">{}),</span>
+</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a><span class="w">  </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:c</span><span class="p">,</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span><span class="w">  </span><span class="c1"># Last</span>
+</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a><span class="o">]</span>
+</span><span id="__span-14-7"><a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>
+</span><span id="__span-14-8"><a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a><span class="c1"># Bad: Negation first</span>
+</span><span id="__span-14-9"><a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a><span class="n">r</span><span class="o">.</span><span class="n">conditions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[</span>
+</span><span id="__span-14-10"><a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a><span class="w">  </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:c</span><span class="p">,</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">),</span><span class="w">  </span><span class="c1"># First</span>
+</span><span id="__span-14-11"><a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="w">  </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:a</span><span class="p">,</span><span class="w"> </span><span class="p">{}),</span>
+</span><span id="__span-14-12"><a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a><span class="w">  </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:b</span><span class="p">,</span><span class="w"> </span><span class="p">{})</span>
+</span><span id="__span-14-13"><a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a><span class="o">]</span>
+</span></code></pre></div>
+<p><strong>2. Minimize negations:</strong></p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="c1"># Bad: Multiple negations</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="n">r</span><span class="o">.</span><span class="n">conditions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[</span>
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="w">  </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:foo</span><span class="p">,</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">),</span>
+</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="w">  </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:bar</span><span class="p">,</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">),</span>
+</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="w">  </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:baz</span><span class="p">,</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span>
+</span><span id="__span-15-6"><a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="o">]</span>
+</span><span id="__span-15-7"><a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a>
+</span><span id="__span-15-8"><a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="c1"># Better: Single positive condition</span>
+</span><span id="__span-15-9"><a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="c1"># Add fact when conditions met:</span>
+</span><span id="__span-15-10"><a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="k">unless</span><span class="w"> </span><span class="n">foo_exists?</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">bar_exists?</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">baz_exists?</span>
+</span><span id="__span-15-11"><a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="w">  </span><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:conditions_clear</span><span class="p">,</span><span class="w"> </span><span class="p">{})</span>
+</span><span id="__span-15-12"><a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="k">end</span>
+</span><span id="__span-15-13"><a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a>
+</span><span id="__span-15-14"><a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a><span class="n">r</span><span class="o">.</span><span class="n">conditions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[</span>
+</span><span id="__span-15-15"><a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a><span class="w">  </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:conditions_clear</span><span class="p">,</span><span class="w"> </span><span class="p">{})</span>
+</span><span id="__span-15-16"><a id="__codelineno-15-16" name="__codelineno-15-16" href="#__codelineno-15-16"></a><span class="o">]</span>
+</span></code></pre></div>
+<p><strong>3. Use specific patterns:</strong></p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="c1"># Expensive</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:event</span><span class="p">,</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span>
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="c1"># Cheaper</span>
+</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:event</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;error&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">severity</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;critical&quot;</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span>
+</span></code></pre></div>
+<h2 id="common-pitfalls">Common Pitfalls<a class="headerlink" href="#common-pitfalls" title="Permanent link">&para;</a></h2>
+<h3 id="1-forgetting-variable-binding">1. Forgetting Variable Binding<a class="headerlink" href="#1-forgetting-variable-binding" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># Bad: Variables don&#39;t connect</span>
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="n">r</span><span class="o">.</span><span class="n">conditions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[</span>
+</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">  </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:sensor</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="n">id1</span><span class="w"> </span><span class="p">}),</span>
+</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="w">  </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:alert</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="n">id2</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span><span class="w">  </span><span class="c1"># Different variable!</span>
+</span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="o">]</span>
+</span><span id="__span-17-6"><a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>
+</span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="c1"># Good: Consistent variables</span>
+</span><span id="__span-17-8"><a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="n">r</span><span class="o">.</span><span class="n">conditions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[</span>
+</span><span id="__span-17-9"><a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="w">  </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:sensor</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="nb">id</span><span class="w"> </span><span class="p">}),</span>
+</span><span id="__span-17-10"><a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a><span class="w">  </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:alert</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">sensor_id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="nb">id</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span><span class="w">  </span><span class="c1"># Same :?id</span>
+</span><span id="__span-17-11"><a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a><span class="o">]</span>
+</span></code></pre></div>
+<h3 id="2-infinite-loops">2. Infinite Loops<a class="headerlink" href="#2-infinite-loops" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="c1"># Bad: Rule fires forever</span>
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="no">KBS</span><span class="o">::</span><span class="no">Rule</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;infinite_loop&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">r</span><span class="o">|</span>
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">  </span><span class="n">r</span><span class="o">.</span><span class="n">conditions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[</span>
+</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:start</span><span class="p">,</span><span class="w"> </span><span class="p">{}),</span>
+</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:done</span><span class="p">,</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span>
+</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="w">  </span><span class="o">]</span>
+</span><span id="__span-18-7"><a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>
+</span><span id="__span-18-8"><a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="w">  </span><span class="n">r</span><span class="o">.</span><span class="n">action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">lambda</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">facts</span><span class="p">,</span><span class="w"> </span><span class="n">bindings</span><span class="o">|</span>
+</span><span id="__span-18-9"><a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="w">    </span><span class="c1"># Never adds :done fact!</span>
+</span><span id="__span-18-10"><a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="w">    </span><span class="n">do_something</span><span class="p">()</span>
+</span><span id="__span-18-11"><a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-18-12"><a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a><span class="k">end</span>
+</span><span id="__span-18-13"><a id="__codelineno-18-13" name="__codelineno-18-13" href="#__codelineno-18-13"></a>
+</span><span id="__span-18-14"><a id="__codelineno-18-14" name="__codelineno-18-14" href="#__codelineno-18-14"></a><span class="c1"># Good: Add termination fact</span>
+</span><span id="__span-18-15"><a id="__codelineno-18-15" name="__codelineno-18-15" href="#__codelineno-18-15"></a><span class="no">KBS</span><span class="o">::</span><span class="no">Rule</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;runs_once&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">r</span><span class="o">|</span>
+</span><span id="__span-18-16"><a id="__codelineno-18-16" name="__codelineno-18-16" href="#__codelineno-18-16"></a><span class="w">  </span><span class="n">r</span><span class="o">.</span><span class="n">conditions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[</span>
+</span><span id="__span-18-17"><a id="__codelineno-18-17" name="__codelineno-18-17" href="#__codelineno-18-17"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:start</span><span class="p">,</span><span class="w"> </span><span class="p">{}),</span>
+</span><span id="__span-18-18"><a id="__codelineno-18-18" name="__codelineno-18-18" href="#__codelineno-18-18"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:done</span><span class="p">,</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span>
+</span><span id="__span-18-19"><a id="__codelineno-18-19" name="__codelineno-18-19" href="#__codelineno-18-19"></a><span class="w">  </span><span class="o">]</span>
+</span><span id="__span-18-20"><a id="__codelineno-18-20" name="__codelineno-18-20" href="#__codelineno-18-20"></a>
+</span><span id="__span-18-21"><a id="__codelineno-18-21" name="__codelineno-18-21" href="#__codelineno-18-21"></a><span class="w">  </span><span class="n">r</span><span class="o">.</span><span class="n">action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">lambda</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">facts</span><span class="p">,</span><span class="w"> </span><span class="n">bindings</span><span class="o">|</span>
+</span><span id="__span-18-22"><a id="__codelineno-18-22" name="__codelineno-18-22" href="#__codelineno-18-22"></a><span class="w">    </span><span class="n">do_something</span><span class="p">()</span>
+</span><span id="__span-18-23"><a id="__codelineno-18-23" name="__codelineno-18-23" href="#__codelineno-18-23"></a><span class="w">    </span><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:done</span><span class="p">,</span><span class="w"> </span><span class="p">{})</span><span class="w">  </span><span class="c1"># Prevents re-firing</span>
+</span><span id="__span-18-24"><a id="__codelineno-18-24" name="__codelineno-18-24" href="#__codelineno-18-24"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-18-25"><a id="__codelineno-18-25" name="__codelineno-18-25" href="#__codelineno-18-25"></a><span class="k">end</span>
+</span></code></pre></div>
+<h3 id="3-negation-of-missing-attributes">3. Negation of Missing Attributes<a class="headerlink" href="#3-negation-of-missing-attributes" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="c1"># Doesn&#39;t work as expected</span>
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:sensor</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">error</span><span class="p">:</span><span class="w"> </span><span class="kp">nil</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span>
+</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>
+</span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="c1"># Better: Check for absence of error fact</span>
+</span><span id="__span-19-5"><a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:sensor</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="nb">id</span><span class="w"> </span><span class="p">}),</span>
+</span><span id="__span-19-6"><a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:sensor_error</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">sensor_id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="nb">id</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span>
+</span></code></pre></div>
+<h3 id="4-over-using-negation">4. Over-Using Negation<a class="headerlink" href="#4-over-using-negation" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="c1"># Bad: Many negations</span>
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="no">KBS</span><span class="o">::</span><span class="no">Rule</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;many_negations&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">r</span><span class="o">|</span>
+</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="w">  </span><span class="n">r</span><span class="o">.</span><span class="n">conditions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[</span>
+</span><span id="__span-20-4"><a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:a</span><span class="p">,</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">),</span>
+</span><span id="__span-20-5"><a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:b</span><span class="p">,</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">),</span>
+</span><span id="__span-20-6"><a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:c</span><span class="p">,</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">),</span>
+</span><span id="__span-20-7"><a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:d</span><span class="p">,</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span>
+</span><span id="__span-20-8"><a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="w">  </span><span class="o">]</span>
+</span><span id="__span-20-9"><a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a><span class="w">  </span><span class="c1"># Expensive! Checks 4 alpha memories per token</span>
+</span><span id="__span-20-10"><a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a><span class="k">end</span>
+</span><span id="__span-20-11"><a id="__codelineno-20-11" name="__codelineno-20-11" href="#__codelineno-20-11"></a>
+</span><span id="__span-20-12"><a id="__codelineno-20-12" name="__codelineno-20-12" href="#__codelineno-20-12"></a><span class="c1"># Good: Refactor to positive logic</span>
+</span><span id="__span-20-13"><a id="__codelineno-20-13" name="__codelineno-20-13" href="#__codelineno-20-13"></a><span class="c1"># Add a single fact representing &quot;all clear&quot; state</span>
+</span></code></pre></div>
+<h2 id="negation-patterns">Negation Patterns<a class="headerlink" href="#negation-patterns" title="Permanent link">&para;</a></h2>
+<h3 id="default-values">Default Values<a class="headerlink" href="#default-values" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="c1"># If no preference, use default</span>
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="no">KBS</span><span class="o">::</span><span class="no">Rule</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;set_default_theme&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">r</span><span class="o">|</span>
+</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="w">  </span><span class="n">r</span><span class="o">.</span><span class="n">conditions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[</span>
+</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:user</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="nb">id</span><span class="w"> </span><span class="p">}),</span>
+</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:theme_preference</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">user_id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="nb">id</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span>
+</span><span id="__span-21-6"><a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a><span class="w">  </span><span class="o">]</span>
+</span><span id="__span-21-7"><a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a>
+</span><span id="__span-21-8"><a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a><span class="w">  </span><span class="n">r</span><span class="o">.</span><span class="n">action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">lambda</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">facts</span><span class="p">,</span><span class="w"> </span><span class="n">bindings</span><span class="o">|</span>
+</span><span id="__span-21-9"><a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a><span class="w">    </span><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:theme_preference</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">user_id</span><span class="p">:</span><span class="w"> </span><span class="n">bindings</span><span class="o">[</span><span class="p">:?</span><span class="nb">id</span><span class="o">]</span><span class="p">,</span><span class="w"> </span><span class="ss">theme</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;dark&quot;</span><span class="w"> </span><span class="p">})</span>
+</span><span id="__span-21-10"><a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-21-11"><a id="__codelineno-21-11" name="__codelineno-21-11" href="#__codelineno-21-11"></a><span class="k">end</span>
+</span></code></pre></div>
+<h3 id="cleanup-rules">Cleanup Rules<a class="headerlink" href="#cleanup-rules" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="c1"># Remove orphaned records</span>
+</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="no">KBS</span><span class="o">::</span><span class="no">Rule</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;cleanup_orphaned_comments&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">r</span><span class="o">|</span>
+</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="w">  </span><span class="n">r</span><span class="o">.</span><span class="n">conditions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[</span>
+</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:comment</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">post_id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="n">pid</span><span class="w"> </span><span class="p">}),</span>
+</span><span id="__span-22-5"><a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:post</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="n">pid</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span>
+</span><span id="__span-22-6"><a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a><span class="w">  </span><span class="o">]</span>
+</span><span id="__span-22-7"><a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a>
+</span><span id="__span-22-8"><a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a><span class="w">  </span><span class="n">r</span><span class="o">.</span><span class="n">action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">lambda</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">facts</span><span class="p">,</span><span class="w"> </span><span class="n">bindings</span><span class="o">|</span>
+</span><span id="__span-22-9"><a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a><span class="w">    </span><span class="n">comment</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">facts</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span>
+</span><span id="__span-22-10"><a id="__codelineno-22-10" name="__codelineno-22-10" href="#__codelineno-22-10"></a><span class="w">    </span><span class="n">engine</span><span class="o">.</span><span class="n">remove_fact</span><span class="p">(</span><span class="n">comment</span><span class="p">)</span>
+</span><span id="__span-22-11"><a id="__codelineno-22-11" name="__codelineno-22-11" href="#__codelineno-22-11"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-22-12"><a id="__codelineno-22-12" name="__codelineno-22-12" href="#__codelineno-22-12"></a><span class="k">end</span>
+</span></code></pre></div>
+<h3 id="prerequisite-checking">Prerequisite Checking<a class="headerlink" href="#prerequisite-checking" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="c1"># Ensure all prerequisites met</span>
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="no">KBS</span><span class="o">::</span><span class="no">Rule</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;deploy_application&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">r</span><span class="o">|</span>
+</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="w">  </span><span class="n">r</span><span class="o">.</span><span class="n">conditions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[</span>
+</span><span id="__span-23-4"><a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:deploy_requested</span><span class="p">,</span><span class="w"> </span><span class="p">{}),</span>
+</span><span id="__span-23-5"><a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:tests_passed</span><span class="p">,</span><span class="w"> </span><span class="p">{}),</span>
+</span><span id="__span-23-6"><a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:build_succeeded</span><span class="p">,</span><span class="w"> </span><span class="p">{}),</span>
+</span><span id="__span-23-7"><a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:deployment_blocked</span><span class="p">,</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span>
+</span><span id="__span-23-8"><a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a><span class="w">  </span><span class="o">]</span>
+</span><span id="__span-23-9"><a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a>
+</span><span id="__span-23-10"><a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a><span class="w">  </span><span class="n">r</span><span class="o">.</span><span class="n">action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">lambda</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">facts</span><span class="p">,</span><span class="w"> </span><span class="n">bindings</span><span class="o">|</span>
+</span><span id="__span-23-11"><a id="__codelineno-23-11" name="__codelineno-23-11" href="#__codelineno-23-11"></a><span class="w">    </span><span class="n">deploy</span><span class="p">()</span>
+</span><span id="__span-23-12"><a id="__codelineno-23-12" name="__codelineno-23-12" href="#__codelineno-23-12"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-23-13"><a id="__codelineno-23-13" name="__codelineno-23-13" href="#__codelineno-23-13"></a><span class="k">end</span>
+</span></code></pre></div>
+<h2 id="debugging-negations">Debugging Negations<a class="headerlink" href="#debugging-negations" title="Permanent link">&para;</a></h2>
+<h3 id="trace-negation-checks">Trace Negation Checks<a class="headerlink" href="#trace-negation-checks" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">DebugNegationNode</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">NegationNode</span>
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">left_activate</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+</span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="w">    </span><span class="n">matches</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="vi">@alpha_memory</span><span class="o">.</span><span class="n">items</span><span class="o">.</span><span class="n">select</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">f</span><span class="o">|</span><span class="w"> </span><span class="n">perform_join_tests</span><span class="p">(</span><span class="n">token</span><span class="p">,</span><span class="w"> </span><span class="n">f</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;Negation check:&quot;</span>
+</span><span id="__span-24-5"><a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;  Pattern: </span><span class="si">#{</span><span class="vi">@alpha_memory</span><span class="o">.</span><span class="n">pattern</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-24-6"><a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;  Token: </span><span class="si">#{</span><span class="n">token</span><span class="o">.</span><span class="n">inspect</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-24-7"><a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;  Matching facts: </span><span class="si">#{</span><span class="n">matches</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-24-8"><a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;  Result: </span><span class="si">#{</span><span class="n">matches</span><span class="o">.</span><span class="n">empty?</span><span class="w"> </span><span class="p">?</span><span class="w"> </span><span class="s1">&#39;PASS&#39;</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;BLOCK&#39;</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-24-9"><a id="__codelineno-24-9" name="__codelineno-24-9" href="#__codelineno-24-9"></a><span class="w">    </span><span class="k">super</span>
+</span><span id="__span-24-10"><a id="__codelineno-24-10" name="__codelineno-24-10" href="#__codelineno-24-10"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-24-11"><a id="__codelineno-24-11" name="__codelineno-24-11" href="#__codelineno-24-11"></a><span class="k">end</span>
+</span></code></pre></div>
+<h3 id="count-inhibitors">Count Inhibitors<a class="headerlink" href="#count-inhibitors" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="c1"># Check how many facts are blocking tokens</span>
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="n">engine</span><span class="o">.</span><span class="n">production_nodes</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="nb">name</span><span class="p">,</span><span class="w"> </span><span class="n">node</span><span class="o">|</span>
+</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a><span class="w">  </span><span class="c1"># Find negation nodes in network</span>
+</span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="w">  </span><span class="c1"># Count tokens blocked by each</span>
+</span><span id="__span-25-5"><a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="k">end</span>
+</span></code></pre></div>
+<h3 id="validate-negation-logic">Validate Negation Logic<a class="headerlink" href="#validate-negation-logic" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="c1"># Test: Rule should fire when condition absent</span>
+</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:trigger</span><span class="p">,</span><span class="w"> </span><span class="p">{})</span>
+</span><span id="__span-26-3"><a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a><span class="n">engine</span><span class="o">.</span><span class="n">run</span>
+</span><span id="__span-26-4"><a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a><span class="n">assert</span><span class="w"> </span><span class="n">rule_fired</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Should fire when negated condition absent&quot;</span>
+</span><span id="__span-26-5"><a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a>
+</span><span id="__span-26-6"><a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a><span class="c1"># Test: Rule should NOT fire when condition present</span>
+</span><span id="__span-26-7"><a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:blocker</span><span class="p">,</span><span class="w"> </span><span class="p">{})</span>
+</span><span id="__span-26-8"><a id="__codelineno-26-8" name="__codelineno-26-8" href="#__codelineno-26-8"></a><span class="n">engine</span><span class="o">.</span><span class="n">run</span>
+</span><span id="__span-26-9"><a id="__codelineno-26-9" name="__codelineno-26-9" href="#__codelineno-26-9"></a><span class="n">refute</span><span class="w"> </span><span class="n">rule_fired</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;Should not fire when negated condition present&quot;</span>
+</span></code></pre></div>
+<h2 id="alternatives-to-negation">Alternatives to Negation<a class="headerlink" href="#alternatives-to-negation" title="Permanent link">&para;</a></h2>
+<p>Sometimes positive logic is clearer and faster:</p>
+<h3 id="pattern-explicit-state">Pattern: Explicit State<a class="headerlink" href="#pattern-explicit-state" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="c1"># Instead of:</span>
+</span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:processing</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="nb">id</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span>
+</span><span id="__span-27-3"><a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>
+</span><span id="__span-27-4"><a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="c1"># Use explicit state:</span>
+</span><span id="__span-27-5"><a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:status</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="nb">id</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;idle&quot;</span><span class="w"> </span><span class="p">})</span>
+</span></code></pre></div>
+<h3 id="pattern-status-flags">Pattern: Status Flags<a class="headerlink" href="#pattern-status-flags" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="c1"># Instead of:</span>
+</span><span id="__span-28-2"><a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:error</span><span class="p">,</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span>
+</span><span id="__span-28-3"><a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a>
+</span><span id="__span-28-4"><a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a><span class="c1"># Use status flag:</span>
+</span><span id="__span-28-5"><a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:system_status</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">healthy</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="w"> </span><span class="p">})</span>
+</span></code></pre></div>
+<h3 id="pattern-computed-facts">Pattern: Computed Facts<a class="headerlink" href="#pattern-computed-facts" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="c1"># Instead of checking absence in rule:</span>
+</span><span id="__span-29-2"><a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:response</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">req_id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="nb">id</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span>
+</span><span id="__span-29-3"><a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>
+</span><span id="__span-29-4"><a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="c1"># Add a fact when timeout occurs:</span>
+</span><span id="__span-29-5"><a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a><span class="no">KBS</span><span class="o">::</span><span class="no">Rule</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">&quot;detect_timeout&quot;</span><span class="p">)</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">r</span><span class="o">|</span>
+</span><span id="__span-29-6"><a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a><span class="w">  </span><span class="n">r</span><span class="o">.</span><span class="n">conditions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[</span>
+</span><span id="__span-29-7"><a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a><span class="w">    </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:request</span><span class="p">,</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-29-8"><a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a><span class="w">      </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="nb">id</span><span class="p">,</span>
+</span><span id="__span-29-9"><a id="__codelineno-29-9" name="__codelineno-29-9" href="#__codelineno-29-9"></a><span class="w">      </span><span class="ss">created_at</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="n">time</span>
+</span><span id="__span-29-10"><a id="__codelineno-29-10" name="__codelineno-29-10" href="#__codelineno-29-10"></a><span class="w">    </span><span class="p">},</span><span class="w"> </span><span class="ss">predicate</span><span class="p">:</span><span class="w"> </span><span class="nb">lambda</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">f</span><span class="o">|</span><span class="w"> </span><span class="p">(</span><span class="no">Time</span><span class="o">.</span><span class="n">now</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">f</span><span class="o">[</span><span class="ss">:created_at</span><span class="o">]</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">300</span><span class="w"> </span><span class="p">})</span>
+</span><span id="__span-29-11"><a id="__codelineno-29-11" name="__codelineno-29-11" href="#__codelineno-29-11"></a><span class="w">  </span><span class="o">]</span>
+</span><span id="__span-29-12"><a id="__codelineno-29-12" name="__codelineno-29-12" href="#__codelineno-29-12"></a>
+</span><span id="__span-29-13"><a id="__codelineno-29-13" name="__codelineno-29-13" href="#__codelineno-29-13"></a><span class="w">  </span><span class="n">r</span><span class="o">.</span><span class="n">action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">lambda</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">facts</span><span class="p">,</span><span class="w"> </span><span class="n">bindings</span><span class="o">|</span>
+</span><span id="__span-29-14"><a id="__codelineno-29-14" name="__codelineno-29-14" href="#__codelineno-29-14"></a><span class="w">    </span><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:timeout</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">request_id</span><span class="p">:</span><span class="w"> </span><span class="n">bindings</span><span class="o">[</span><span class="p">:?</span><span class="nb">id</span><span class="o">]</span><span class="w"> </span><span class="p">})</span>
+</span><span id="__span-29-15"><a id="__codelineno-29-15" name="__codelineno-29-15" href="#__codelineno-29-15"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-29-16"><a id="__codelineno-29-16" name="__codelineno-29-16" href="#__codelineno-29-16"></a><span class="k">end</span>
+</span><span id="__span-29-17"><a id="__codelineno-29-17" name="__codelineno-29-17" href="#__codelineno-29-17"></a>
+</span><span id="__span-29-18"><a id="__codelineno-29-18" name="__codelineno-29-18" href="#__codelineno-29-18"></a><span class="c1"># Then use positive check:</span>
+</span><span id="__span-29-19"><a id="__codelineno-29-19" name="__codelineno-29-19" href="#__codelineno-29-19"></a><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:timeout</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">request_id</span><span class="p">:</span><span class="w"> </span><span class="p">:?</span><span class="nb">id</span><span class="w"> </span><span class="p">})</span>
+</span></code></pre></div>
+<h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Negation semantics</li>
-<li>Use cases</li>
-<li>Performance implications</li>
-<li>Common pitfalls</li>
+<li><strong><a href="../pattern-matching/">Pattern Matching</a></strong> - How negation fits with pattern matching</li>
+<li><strong><a href="../variable-binding/">Variable Binding</a></strong> - Variables in negated conditions</li>
+<li><strong><a href="../../architecture/network-structure/">Network Structure</a></strong> - Negation node implementation</li>
+<li><strong><a href="../../advanced/performance/">Performance Guide</a></strong> - Optimizing negation performance</li>
 </ul>
+<hr />
+<p><em>Negation is powerful but expensive. Use sparingly and order last for best performance.</em></p>
 
 
 
