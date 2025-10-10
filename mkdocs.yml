@@ -143,39 +143,43 @@ extra:
 
 # Navigation
 nav:
-  - Home: index.md
+  - Home:
+      - index.md
+      - What is aKnowledge Base?: what-is-a-knowledge-base.md
+      - What is a Fact?: what-is-a-fact.md
+      - What is a Rule?: what-is-a-rule.md
   - Installation: installation.md
   - Quick Start: quick-start.md
   - Architecture:
-    - architecture/index.md
-    - RETE Algorithm: architecture/rete-algorithm.md
-    - Blackboard System: architecture/blackboard.md
-    - Network Structure: architecture/network-structure.md
+      - architecture/index.md
+      - RETE Algorithm: architecture/rete-algorithm.md
+      - Blackboard System: architecture/blackboard.md
+      - Network Structure: architecture/network-structure.md
   - Guides:
-    - guides/index.md
-    - Getting Started: guides/getting-started.md
-    - Writing Rules: guides/writing-rules.md
-    - DSL Reference: guides/dsl.md
-    - Working with Facts: guides/facts.md
-    - Pattern Matching: guides/pattern-matching.md
-    - Variable Binding: guides/variable-binding.md
-    - Negation: guides/negation.md
-    - Blackboard Memory: guides/blackboard-memory.md
-    - Persistence Options: guides/persistence.md
+      - guides/index.md
+      - Getting Started: guides/getting-started.md
+      - Writing Rules: guides/writing-rules.md
+      - DSL Reference: guides/dsl.md
+      - Working with Facts: guides/facts.md
+      - Pattern Matching: guides/pattern-matching.md
+      - Variable Binding: guides/variable-binding.md
+      - Negation: guides/negation.md
+      - Blackboard Memory: guides/blackboard-memory.md
+      - Persistence Options: guides/persistence.md
   - Examples:
-    - examples/index.md
-    - Stock Trading: examples/stock-trading.md
-    - Expert Systems: examples/expert-systems.md
-    - Multi-Agent Systems: examples/multi-agent.md
+      - examples/index.md
+      - Stock Trading: examples/stock-trading.md
+      - Expert Systems: examples/expert-systems.md
+      - Multi-Agent Systems: examples/multi-agent.md
   - Advanced:
-    - advanced/index.md
-    - Performance Tuning: advanced/performance.md
-    - Custom Persistence: advanced/custom-persistence.md
-    - Debugging: advanced/debugging.md
-    - Testing Rules: advanced/testing.md
+      - advanced/index.md
+      - Performance Tuning: advanced/performance.md
+      - Custom Persistence: advanced/custom-persistence.md
+      - Debugging: advanced/debugging.md
+      - Testing Rules: advanced/testing.md
   - API Reference:
-    - api/index.md
-    - ReteEngine: api/engine.md
-    - Facts: api/facts.md
-    - Rules: api/rules.md
-    - Blackboard: api/blackboard.md
+      - api/index.md
+      - ReteEngine: api/engine.md
+      - Facts: api/facts.md
+      - Rules: api/rules.md
+      - Blackboard: api/blackboard.md
