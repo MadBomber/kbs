@@ -375,7 +375,7 @@ Now that you understand the basics, explore:
 - **[Writing Rules](writing-rules.md)** - Advanced rule patterns and techniques
 - **[Pattern Matching](pattern-matching.md)** - Deep dive into condition syntax
 - **[Blackboard Memory](blackboard-memory.md)** - Multi-agent collaboration
-- **[Stock Trading Example](../examples/stock-trading.md)** - Real-world application
+- **[Stock Trading Examples](../examples/index.md#stock-trading-systems)** - Real-world applications
 - **[API Reference](../api/engine.md)** - Complete method documentation
 
 ---

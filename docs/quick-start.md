@@ -143,9 +143,9 @@ audit = memory.audit_log.recent_changes(limit: 10)
 
 ### Explore Examples
 
-- **[Stock Trading](examples/stock-trading.md)** - Build a trading signal system
-- **[Expert Systems](examples/expert-systems.md)** - Diagnostic and decision support
-- **[Multi-Agent Systems](examples/multi-agent.md)** - Collaborative problem-solving
+- **[Stock Trading Examples](examples/index.md#stock-trading-systems)** - Build a trading signal system
+- **[Expert System Examples](examples/index.md#expert-systems)** - Diagnostic and decision support
+- **[Blackboard & Multi-Agent Examples](examples/index.md#advanced-features)** - Collaborative problem-solving
 
 ### Advanced Topics
 

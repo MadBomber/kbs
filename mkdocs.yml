@@ -166,11 +166,7 @@ nav:
       - Negation: guides/negation.md
       - Blackboard Memory: guides/blackboard-memory.md
       - Persistence Options: guides/persistence.md
-  - Examples:
-      - examples/index.md
-      - Stock Trading: examples/stock-trading.md
-      - Expert Systems: examples/expert-systems.md
-      - Multi-Agent Systems: examples/multi-agent.md
+  - Examples: examples/index.md
   - Advanced:
       - advanced/index.md
       - Performance Tuning: advanced/performance.md

@@ -1154,4 +1154,4 @@ archive_old_audit(memory, Date.today - 30)
 - [Facts API](facts.md) - Persistent fact objects
 - [Custom Persistence](../advanced/custom-persistence.md) - Implementing custom stores
 - [Blackboard Guide](../guides/blackboard-memory.md) - Blackboard pattern overview
-- [Multi-Agent Example](../examples/multi-agent.md) - Multi-agent coordination
+- [Blackboard Examples](../examples/index.md#advanced-features) - Multi-agent coordination and blackboard systems

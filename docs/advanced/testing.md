@@ -684,7 +684,7 @@ end
 - **[Debugging Guide](debugging.md)** - Debug failing tests
 - **[Performance Guide](performance.md)** - Optimize slow tests
 - **[Architecture](../architecture/index.md)** - Understand rule execution
-- **[Examples](../examples/stock-trading.md)** - See tested examples
+- **[Examples](../examples/index.md)** - See tested examples
 
 ---
 

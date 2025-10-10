@@ -549,5 +549,5 @@ buy_signal = Rule.new("buy", priority: 10)
 
 - **[Network Structure](network-structure.md)** - How blackboard integrates with RETE
 - **[Persistence Guide](../guides/persistence.md)** - Choosing and configuring backends
-- **[Multi-Agent Example](../examples/multi-agent.md)** - Complete working system
+- **[Blackboard Examples](../examples/index.md#advanced-features)** - Complete working systems
 - **[Custom Persistence](../advanced/custom-persistence.md)** - Build your own backend

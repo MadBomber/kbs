@@ -550,7 +550,7 @@ end
 
 - **[Persistence](persistence.md)** - Storage backend options
 - **[Architecture](../architecture/blackboard.md)** - Blackboard implementation details
-- **[Multi-Agent Example](../examples/multi-agent.md)** - Complete multi-agent system
+- **[Blackboard Examples](../examples/index.md#advanced-features)** - Complete multi-agent and blackboard systems
 - **[API Reference](../api/blackboard.md)** - Complete blackboard API
 
 ---
