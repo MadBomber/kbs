@@ -1,5 +1,38 @@
 ## [Unreleased]
 
+## [0.1.0] - 2025-10-09
+
+### Added
+- **DSL Example Suite**: Created DSL versions of all raw API examples (12 new files)
+  - advanced_example_dsl.rb - Complex trading strategies with DSL syntax
+  - ai_enhanced_kbs_dsl.rb - AI-powered sentiment analysis and risk assessment
+  - blackboard_demo_dsl.rb - Multi-agent blackboard pattern
+  - car_diagnostic_dsl.rb - Simple diagnostic expert system
+  - concurrent_inference_demo_dsl.rb - Thread-safe concurrent inference
+  - csv_trading_system_dsl.rb - CSV-based trading data processing
+  - portfolio_rebalancing_system_dsl.rb - Portfolio optimization and rebalancing
+  - redis_trading_demo_dsl.rb - Redis-backed trading system
+  - stock_trading_advanced_dsl.rb - Advanced trading with technical indicators
+  - timestamped_trading_dsl.rb - Time-aware trading rules
+  - trading_demo_dsl.rb - Basic trading scenarios
+  - working_demo_dsl.rb - Introductory DSL examples
+
+### Fixed
+- **Symbol Syntax**: Corrected Ruby symbol syntax from `:'?name'` to `:name?` throughout codebase
+- **Method Scope in Perform Blocks**: Fixed instance method access within DSL perform blocks
+  - Implemented self-capture pattern (`obj = self`) before knowledge_base blocks
+  - Applied to trading_demo_dsl.rb (demo), timestamped_trading_dsl.rb (ts_sys), ai_enhanced_kbs_dsl.rb (ai_sys), portfolio_rebalancing_system_dsl.rb (port_sys)
+- **Kernel#system Conflict**: Renamed captured variable from `system` to avoid shadowing Ruby's built-in method
+- **Instance Variable Access**: Added `attr_reader :kb` to ai_enhanced_kbs_dsl.rb for fact insertion from perform blocks
+- **Array Processing**: Fixed `portfolio_rebalancing_system.rb:447` - changed `sum` to `map` to prevent calling `compact` on Float
+- **File Operations**: Fixed `run_all.rb:13` - changed `basename` method call for String paths instead of Pathname objects
+
+### Changed
+- **DSL Syntax Improvements**: Standardized DSL rule definitions
+  - Priority declarations moved inside rule blocks: `rule "name" do priority 15`
+  - Hash parameters passed to `on` statements instead of inside blocks
+  - Consistent use of `kb.reset` instead of `kb.clear`
+
 ## [0.0.1] - 2025-10-07
 
 ### Added

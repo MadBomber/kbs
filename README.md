@@ -7,6 +7,8 @@ A comprehensive Ruby implementation of a Knowledge-Based System featuring the RE
 [![Ruby](https://img.shields.io/badge/ruby-%3E%3D%203.2.0-red.svg)](https://www.ruby-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
+See the [full documentation website](https://madbomber.github.io/kbs/).
+
 ## 🌟 Key Features
 
 ### RETE Inference Engine
