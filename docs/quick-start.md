@@ -21,12 +21,12 @@ engine = KBS::Engine.new
 # Rule 1: Alert on high temperature
 high_temp_rule = KBS::Rule.new("high_temperature_alert") do |r|
   r.conditions = [
-    KBS::Condition.new(:sensor, { id: :?id, temp: :?temp })
+    KBS::Condition.new(:sensor, { id: :id?, temp: :temp? })
   ]
 
   r.action = lambda do |facts, bindings|
-    if bindings[:?temp] > 75
-      puts "⚠️  HIGH TEMP Alert: Sensor #{bindings[:?id]} at #{bindings[:?temp]}°F"
+    if bindings[:temp?] > 75
+      puts "⚠️  HIGH TEMP Alert: Sensor #{bindings[:id?]} at #{bindings[:temp?]}°F"
     end
   end
 end
@@ -36,13 +36,13 @@ engine.add_rule(high_temp_rule)
 # Rule 2: Alert when cooling system is offline AND temp is high
 critical_rule = KBS::Rule.new("critical_condition", priority: 10) do |r|
   r.conditions = [
-    KBS::Condition.new(:sensor, { id: :?id, temp: :?temp }),
-    KBS::Condition.new(:cooling, { id: :?id, status: "offline" })
+    KBS::Condition.new(:sensor, { id: :id?, temp: :temp? }),
+    KBS::Condition.new(:cooling, { id: :id?, status: "offline" })
   ]
 
   r.action = lambda do |facts, bindings|
-    if bindings[:?temp] > 75
-      puts "🚨 CRITICAL: Sensor #{bindings[:?id]} at #{bindings[:?temp]}°F with cooling OFFLINE!"
+    if bindings[:temp?] > 75
+      puts "🚨 CRITICAL: Sensor #{bindings[:id?]} at #{bindings[:temp?]}°F with cooling OFFLINE!"
     end
   end
 end
@@ -81,7 +81,7 @@ engine.run
 The critical rule fires because:
 - Sensor "server_rack" temp (82°F) > 75
 - Cooling system for "server_rack" is offline
-- Both conditions are joined on the same `:?id` variable
+- Both conditions are joined on the same `:id?` variable
 
 ## Using Negation
 
@@ -91,13 +91,13 @@ Rules can match on the **absence** of facts:
 # Alert when sensor has NO recent reading
 stale_sensor_rule = KBS::Rule.new("stale_sensor") do |r|
   r.conditions = [
-    KBS::Condition.new(:sensor_registered, { id: :?id }),
+    KBS::Condition.new(:sensor_registered, { id: :id? }),
     # No recent reading exists (negation!)
-    KBS::Condition.new(:sensor, { id: :?id }, negated: true)
+    KBS::Condition.new(:sensor, { id: :id? }, negated: true)
   ]
 
   r.action = lambda do |facts, bindings|
-    puts "⚠️  No reading from sensor #{bindings[:?id]}"
+    puts "⚠️  No reading from sensor #{bindings[:id?]}"
   end
 end
 
@@ -167,14 +167,14 @@ audit = memory.audit_log.recent_changes(limit: 10)
 rule = KBS::Rule.new("recent_spike") do |r|
   r.conditions = [
     KBS::Condition.new(:reading, {
-      sensor: :?id,
-      temp: :?temp,
+      sensor: :id?,
+      temp: :temp?,
       timestamp: ->(ts) { Time.now - ts < 300 }  # Within 5 minutes
     })
   ]
 
   r.action = lambda do |facts, bindings|
-    puts "Recent spike: #{bindings[:?temp]}°F"
+    puts "Recent spike: #{bindings[:temp?]}°F"
   end
 end
 ```
@@ -184,12 +184,12 @@ end
 ```ruby
 rule = KBS::Rule.new("above_threshold") do |r|
   r.conditions = [
-    KBS::Condition.new(:reading, { sensor: :?id, value: :?val }),
-    KBS::Condition.new(:threshold, { sensor: :?id, max: :?max })
+    KBS::Condition.new(:reading, { sensor: :id?, value: :val? }),
+    KBS::Condition.new(:threshold, { sensor: :id?, max: :max? })
   ]
 
   r.action = lambda do |facts, bindings|
-    if bindings[:?val] > bindings[:?max]
+    if bindings[:val?] > bindings[:max?]
       puts "Threshold exceeded!"
     end
   end

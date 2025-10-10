@@ -13,8 +13,8 @@ When you add a rule to the engine, KBS compiles it into a discrimination network
 ```ruby
 rule = Rule.new("example") do |r|
   r.conditions = [
-    Condition.new(:stock, { symbol: :?sym, price: :?price }),
-    Condition.new(:threshold, { symbol: :?sym, max: :?max })
+    Condition.new(:stock, { symbol: :sym?, price: :price? }),
+    Condition.new(:threshold, { symbol: :sym?, max: :max? })
   ]
   r.action = lambda { |facts, bindings| ... }
 end
@@ -23,8 +23,8 @@ end
 The engine extracts:
 - Condition types (`:stock`, `:threshold`)
 - Patterns (attribute constraints)
-- Variable bindings (`:?sym`, `:?price`, `:?max`)
-- Join tests (`:?sym` appears in both conditions)
+- Variable bindings (`:sym?`, `:price?`, `:max?`)
+- Join tests (`:sym?` appears in both conditions)
 
 ### Step 2: Create or Reuse Alpha Memories
 
@@ -32,11 +32,11 @@ For each condition, the engine creates or reuses an `AlphaMemory` node:
 
 ```ruby
 # Pattern for first condition
-pattern1 = { type: :stock, symbol: :?sym, price: :?price }
+pattern1 = { type: :stock, symbol: :sym?, price: :price? }
 alpha1 = get_or_create_alpha_memory(pattern1)
 
 # Pattern for second condition
-pattern2 = { type: :threshold, symbol: :?sym, max: :?max }
+pattern2 = { type: :threshold, symbol: :sym?, max: :max? }
 alpha2 = get_or_create_alpha_memory(pattern2)
 ```
 
@@ -188,14 +188,14 @@ end
 ```ruby
 rule = Rule.new("trading_signal") do |r|
   r.conditions = [
-    Condition.new(:stock, { symbol: :?sym, price: :?price }),
-    Condition.new(:threshold, { symbol: :?sym, buy_below: :?threshold }),
-    Condition.new(:order, { symbol: :?sym }, negated: true)
+    Condition.new(:stock, { symbol: :sym?, price: :price? }),
+    Condition.new(:threshold, { symbol: :sym?, buy_below: :threshold? }),
+    Condition.new(:order, { symbol: :sym? }, negated: true)
   ]
 
   r.action = lambda do |facts, bindings|
-    if bindings[:?price] < bindings[:?threshold]
-      puts "BUY #{bindings[:?sym]}"
+    if bindings[:price?] < bindings[:threshold?]
+      puts "BUY #{bindings[:sym?]}"
     end
   end
 end
@@ -245,12 +245,12 @@ Place selective conditions first to minimize beta memory size:
 # Good: Specific condition first
 conditions = [
   Condition.new(:critical_alert, { severity: "critical" }),  # Few matches
-  Condition.new(:stock, { symbol: :?sym })                   # Many matches
+  Condition.new(:stock, { symbol: :sym? })                   # Many matches
 ]
 
 # Bad: General condition first
 conditions = [
-  Condition.new(:stock, { symbol: :?sym }),                  # Many matches
+  Condition.new(:stock, { symbol: :sym? }),                  # Many matches
   Condition.new(:critical_alert, { severity: "critical" })   # Few matches
 ]
 ```
@@ -260,7 +260,7 @@ conditions = [
 Variables create join tests automatically:
 
 ```ruby
-# Rule with :?sym in two conditions
+# Rule with :sym? in two conditions
 tests = [
   {
     token_field_index: 0,     # First fact in token (stock)

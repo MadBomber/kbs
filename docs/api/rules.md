@@ -68,7 +68,7 @@ kb = KBS.knowledge_base do
   rule "high_temperature", priority: 10 do
     on :temperature, value: greater_than(80)
     perform do |bindings|
-      puts "High temperature: #{bindings[:?value]}"
+      puts "High temperature: #{bindings[:value?]}"
     end
   end
 end
@@ -154,8 +154,8 @@ priority: -10
 ```ruby
 kb = KBS.knowledge_base do
   rule "log_temperature", priority: 0 do
-    on :temperature, value: :?temp
-    perform { |b| puts "Logged: #{b[:?temp]}" }
+    on :temperature, value: :temp?
+    perform { |b| puts "Logged: #{b[:temp?]}" }
   end
 
   rule "critical_alert", priority: 100 do
@@ -204,12 +204,12 @@ puts rule.conditions.size  # => 2
 # Good - Most selective condition first
 rule.conditions = [
   KBS::Condition.new(:sensor, id: 42),             # Filters to 1 fact
-  KBS::Condition.new(:temperature, value: :?temp)  # Then match temperature
+  KBS::Condition.new(:temperature, value: :temp?)  # Then match temperature
 ]
 
 # Less optimal - Less selective first
 rule.conditions = [
-  KBS::Condition.new(:temperature, value: :?temp),  # Matches many facts
+  KBS::Condition.new(:temperature, value: :temp?),  # Matches many facts
   KBS::Condition.new(:sensor, id: 42)               # Could have filtered first
 ]
 ```
@@ -246,10 +246,10 @@ end
 ```ruby
 # Rule with variable bindings
 rule = KBS::Rule.new(:temperature_alert) do |r|
-  r.conditions << KBS::Condition.new(:temperature, value: :?temp, location: :?loc)
+  r.conditions << KBS::Condition.new(:temperature, value: :temp?, location: :loc?)
   r.action = ->(facts, bindings) do
-    # bindings: {:?temp => 85, :?loc => "server_room"}
-    puts "#{bindings[:?loc]}: #{bindings[:?temp]}°F"
+    # bindings: {:temp? => 85, :loc? => "server_room"}
+    puts "#{bindings[:loc?]}: #{bindings[:temp?]}°F"
   end
 end
 ```
@@ -257,10 +257,10 @@ end
 **Example - DSL Preferred**:
 ```ruby
 rule "temperature_alert" do
-  on :temperature, value: :?temp, location: :?loc
+  on :temperature, value: :temp?, location: :loc?
   perform do |bindings|
     # Cleaner - DSL automatically provides bindings
-    puts "#{bindings[:?loc]}: #{bindings[:?temp]}°F"
+    puts "#{bindings[:loc?]}: #{bindings[:temp?]}°F"
   end
 end
 ```
@@ -292,9 +292,9 @@ Executes the rule's action with matched facts.
 **Example**:
 ```ruby
 rule = KBS::Rule.new(:log_temperature) do |r|
-  r.conditions << KBS::Condition.new(:temperature, value: :?temp)
+  r.conditions << KBS::Condition.new(:temperature, value: :temp?)
   r.action = ->(facts, bindings) do
-    puts "Temperature: #{bindings[:?temp]}"
+    puts "Temperature: #{bindings[:temp?]}"
   end
 end
 
@@ -315,15 +315,15 @@ rule.fire([fact])
 # Via DSL (recommended)
 kb = KBS.knowledge_base do
   rule "my_rule", priority: 10 do
-    on :temperature, value: :?temp
-    perform { |b| puts b[:?temp] }
+    on :temperature, value: :temp?
+    perform { |b| puts b[:temp?] }
   end
 end
 
 # Or programmatically
 rule = KBS::Rule.new(
   :my_rule,
-  conditions: [KBS::Condition.new(:temperature, value: :?temp)],
+  conditions: [KBS::Condition.new(:temperature, value: :temp?)],
   action: ->(facts) { puts facts[0][:value] },
   priority: 10
 )
@@ -385,8 +385,8 @@ Rules can fire multiple times:
 
 ```ruby
 rule "log_temperature" do
-  on :temperature, value: :?temp
-  perform { |b| puts "Temperature: #{b[:?temp]}" }
+  on :temperature, value: :temp?
+  perform { |b| puts "Temperature: #{b[:temp?]}" }
 end
 
 engine.add_fact(:temperature, value: 85)
@@ -412,9 +412,9 @@ Match single fact type:
 
 ```ruby
 rule "log_all_temperatures" do
-  on :temperature, value: :?temp
+  on :temperature, value: :temp?
   perform do |bindings|
-    puts "Temperature: #{bindings[:?temp]}"
+    puts "Temperature: #{bindings[:temp?]}"
   end
 end
 ```
@@ -427,10 +427,10 @@ Match multiple related facts:
 
 ```ruby
 rule "sensor_temperature_alert" do
-  on :sensor, id: :?sensor_id, status: "active"
-  on :temperature, sensor_id: :?sensor_id, value: greater_than(80)
+  on :sensor, id: :sensor_id?, status: "active"
+  on :temperature, sensor_id: :sensor_id?, value: greater_than(80)
   perform do |bindings|
-    puts "Sensor #{bindings[:?sensor_id]} reports high temperature"
+    puts "Sensor #{bindings[:sensor_id?]} reports high temperature"
   end
 end
 
@@ -439,7 +439,7 @@ end
 # - temperature fact with sensor_id=42, value > 80 exists
 ```
 
-**Variable Binding**: `:?sensor_id` in first condition must equal `sensor_id` in second condition (join test).
+**Variable Binding**: `:sensor_id?` in first condition must equal `sensor_id` in second condition (join test).
 
 ---
 
@@ -465,15 +465,15 @@ Rules can implement state transitions:
 
 ```ruby
 rule "pending_to_processing" do
-  on :order, id: :?order_id, status: "pending"
-  on :worker, status: "available", id: :?worker_id
+  on :order, id: :order_id?, status: "pending"
+  on :worker, status: "available", id: :worker_id?
   perform do |bindings|
     # Transition order to processing
-    order = find_order(bindings[:?order_id])
-    order.update(status: "processing", worker_id: bindings[:?worker_id])
+    order = find_order(bindings[:order_id?])
+    order.update(status: "processing", worker_id: bindings[:worker_id?])
 
     # Update worker
-    worker = find_worker(bindings[:?worker_id])
+    worker = find_worker(bindings[:worker_id?])
     worker.update(status: "busy")
   end
 end
@@ -489,7 +489,7 @@ Low-priority rules that clean up old facts:
 rule "expire_old_temperatures", priority: 0 do
   on :temperature, timestamp: less_than(Time.now - 3600)
   perform do |bindings|
-    fact = bindings[:?matched_fact]
+    fact = bindings[:matched_fact?]
     fact.retract  # Remove old temperature reading
   end
 end
@@ -526,17 +526,17 @@ Higher priority rule overrides lower priority:
 
 ```ruby
 rule "high_risk_order", priority: 100 do
-  on :order, id: :?order_id, total: greater_than(10000)
+  on :order, id: :order_id?, total: greater_than(10000)
   perform do |bindings|
-    puts "HIGH RISK: Order #{bindings[:?order_id]} requires manual review"
+    puts "HIGH RISK: Order #{bindings[:order_id?]} requires manual review"
     # This fires first due to priority
   end
 end
 
 rule "auto_approve_order", priority: 10 do
-  on :order, id: :?order_id, status: "pending"
+  on :order, id: :order_id?, status: "pending"
   perform do |bindings|
-    puts "Auto-approving order #{bindings[:?order_id]}"
+    puts "Auto-approving order #{bindings[:order_id?]}"
     # This fires later (if at all)
   end
 end
@@ -550,10 +550,10 @@ Rule that adds facts triggering other rules:
 
 ```ruby
 rule "calculate_fibonacci" do
-  on :fib_request, n: :?n
-  negated :fib_result, n: :?n  # Not already calculated
+  on :fib_request, n: :n?
+  negated :fib_result, n: :n?  # Not already calculated
   perform do |bindings|
-    n = bindings[:?n]
+    n = bindings[:n?]
 
     if n <= 1
       engine.add_fact(:fib_result, n: n, value: n)
@@ -568,13 +568,13 @@ rule "calculate_fibonacci" do
 end
 
 rule "combine_fibonacci" do
-  on :fib_request, n: :?n
-  on :fib_result, n: :?n_minus_1, value: :?val1
-  on :fib_result, n: :?n_minus_2, value: :?val2
+  on :fib_request, n: :n?
+  on :fib_result, n: :n_minus_1?, value: :val1?
+  on :fib_result, n: :n_minus_2?, value: :val2?
   # ... (complex join test: ?n_minus_1 == ?n - 1, etc.)
   perform do |bindings|
-    result = bindings[:?val1] + bindings[:?val2]
-    engine.add_fact(:fib_result, n: bindings[:?n], value: result)
+    result = bindings[:val1?] + bindings[:val2?]
+    engine.add_fact(:fib_result, n: bindings[:n?], value: result)
   end
 end
 ```
@@ -606,15 +606,15 @@ Most selective (fewest matching facts) first:
 ```ruby
 # Good - sensor_id=42 filters to ~1 fact
 rule "sensor_alert" do
-  on :sensor, id: 42, status: :?status              # Very selective
-  on :temperature, sensor_id: 42, value: :?temp     # Also selective
+  on :sensor, id: 42, status: :status?              # Very selective
+  on :temperature, sensor_id: 42, value: :temp?     # Also selective
   perform { ... }
 end
 
 # Bad - :temperature matches many facts
 rule "sensor_alert" do
-  on :temperature, value: :?temp                    # Matches 1000s of facts
-  on :sensor, id: 42, status: :?status              # Could have filtered first
+  on :temperature, value: :temp?                    # Matches 1000s of facts
+  on :sensor, id: 42, status: :status?              # Could have filtered first
   perform { ... }
 end
 ```
@@ -632,8 +632,8 @@ rule "critical_shutdown", priority: 1000 do
 end
 
 rule "log_temperature", priority: 0 do
-  on :temperature, value: :?temp
-  perform { |b| log(b[:?temp]) }
+  on :temperature, value: :temp?
+  perform { |b| log(b[:temp?]) }
 end
 ```
 
@@ -649,9 +649,9 @@ rule "alert_high_temp" do
   on :temperature, value: greater_than(80)
   perform do |bindings|
     # Check if alert already sent
-    unless alert_sent?(bindings[:?temp])
-      send_alert(bindings[:?temp])
-      mark_alert_sent(bindings[:?temp])
+    unless alert_sent?(bindings[:temp?])
+      send_alert(bindings[:temp?])
+      mark_alert_sent(bindings[:temp?])
     end
   end
 end
@@ -660,7 +660,7 @@ end
 rule "alert_high_temp" do
   on :temperature, value: greater_than(80)
   perform do |bindings|
-    send_alert(bindings[:?temp])  # Sends every time rule fires
+    send_alert(bindings[:temp?])  # Sends every time rule fires
   end
 end
 ```
@@ -694,22 +694,22 @@ end
 ```ruby
 # Good - Variable binding creates join test
 rule "order_inventory_check" do
-  on :order, product_id: :?pid, quantity: :?qty
-  on :inventory, product_id: :?pid, available: :?available
+  on :order, product_id: :pid?, quantity: :qty?
+  on :inventory, product_id: :pid?, available: :available?
   perform do |bindings|
-    if bindings[:?available] < bindings[:?qty]
-      puts "Insufficient inventory for product #{bindings[:?pid]}"
+    if bindings[:available?] < bindings[:qty?]
+      puts "Insufficient inventory for product #{bindings[:pid?]}"
     end
   end
 end
 
 # Bad - No join test (matches all combinations)
 rule "order_inventory_check" do
-  on :order, product_id: :?pid1, quantity: :?qty
-  on :inventory, product_id: :?pid2, available: :?available
+  on :order, product_id: :pid1?, quantity: :qty?
+  on :inventory, product_id: :pid2?, available: :available?
   perform do |bindings|
     # No guarantee pid1 == pid2!
-    if bindings[:?pid1] == bindings[:?pid2]  # Manual check in action (inefficient)
+    if bindings[:pid1?] == bindings[:pid2?]  # Manual check in action (inefficient)
       ...
     end
   end
@@ -731,8 +731,8 @@ rule "portfolio_rebalancing", priority: 50 do
   # - Calculates rebalancing trades
   # - Creates pending orders
 
-  on :portfolio, id: :?portfolio_id, status: "active"
-  on :drift_calculation, portfolio_id: :?portfolio_id, drift: greater_than(0.05)
+  on :portfolio, id: :portfolio_id?, status: "active"
+  on :drift_calculation, portfolio_id: :portfolio_id?, drift: greater_than(0.05)
   perform do |bindings|
     # Implementation...
   end
@@ -807,7 +807,7 @@ end
 rule "expire_old_facts", priority: 0 do
   on :temperature, timestamp: less_than(Time.now - 3600)
   perform do |bindings|
-    fact = bindings[:?matched_fact]
+    fact = bindings[:matched_fact?]
     fact.retract
   end
 end
@@ -863,12 +863,12 @@ end
 
 # 2. Facts and bindings (recommended)
 action: ->(facts, bindings) do
-  puts bindings[:?temp]
+  puts bindings[:temp?]
 end
 
 # 3. DSL style (cleanest)
 perform do |bindings|
-  puts bindings[:?temp]
+  puts bindings[:temp?]
 end
 ```
 
@@ -886,7 +886,7 @@ on :temperature, value: greater_than(80)
 on :temperature, value: less_than(100)
 
 # Variable binding
-on :temperature, location: :?loc, value: :?temp
+on :temperature, location: :loc?, value: :temp?
 
 # Predicate
 on :temperature, value: ->(v) { v > 80 && v < 100 }
@@ -941,15 +941,15 @@ Order conditions from most to least selective:
 
 # Good (selective first)
 rule "alert" do
-  on :sensor, id: 42, status: :?status        # Filters to 10 facts
-  on :temperature, sensor_id: 42, value: :?v  # Then filters to ~100 facts
+  on :sensor, id: 42, status: :status?        # Filters to 10 facts
+  on :temperature, sensor_id: 42, value: :v?  # Then filters to ~100 facts
   # Creates ~10 intermediate tokens
 end
 
 # Bad (unselective first)
 rule "alert" do
-  on :temperature, value: :?v                 # Matches 10,000 facts!
-  on :sensor, id: 42, status: :?status        # Then filters
+  on :temperature, value: :v?                 # Matches 10,000 facts!
+  on :sensor, id: 42, status: :status?        # Then filters
   # Creates 10,000 intermediate tokens (slow, memory-intensive)
 end
 ```
@@ -963,13 +963,13 @@ Keep actions fast:
 ```ruby
 # Good - Fast action
 perform do |bindings|
-  puts "Temperature: #{bindings[:?temp]}"
+  puts "Temperature: #{bindings[:temp?]}"
 end
 
 # Bad - Slow action blocks engine
 perform do |bindings|
   sleep 5  # Blocks engine for 5 seconds!
-  send_email_alert(bindings[:?temp])  # Network I/O
+  send_email_alert(bindings[:temp?])  # Network I/O
 end
 
 # Better - Offload slow work

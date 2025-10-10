@@ -7,7 +7,7 @@ Negated conditions match when a pattern is **absent** from working memory. This 
 ### Syntax
 
 ```ruby
-KBS::Condition.new(:alert, { sensor_id: :?id }, negated: true)
+KBS::Condition.new(:alert, { sensor_id: :id? }, negated: true)
 ```
 
 **Semantics**: Condition satisfied when NO fact matches the pattern.
@@ -18,15 +18,15 @@ KBS::Condition.new(:alert, { sensor_id: :?id }, negated: true)
 KBS::Rule.new("send_first_alert") do |r|
   r.conditions = [
     # Positive: High temperature detected
-    KBS::Condition.new(:high_temp, { sensor_id: :?id }),
+    KBS::Condition.new(:high_temp, { sensor_id: :id? }),
 
     # Negative: No alert sent yet
-    KBS::Condition.new(:alert_sent, { sensor_id: :?id }, negated: true)
+    KBS::Condition.new(:alert_sent, { sensor_id: :id? }, negated: true)
   ]
 
   r.action = lambda do |facts, bindings|
-    send_alert(bindings[:?id])
-    engine.add_fact(:alert_sent, { sensor_id: bindings[:?id] })
+    send_alert(bindings[:id?])
+    engine.add_fact(:alert_sent, { sensor_id: bindings[:id?] })
   end
 end
 ```
@@ -43,7 +43,7 @@ Negation means "**no matching fact exists**", not "fact is explicitly false":
 
 ```ruby
 # Negated condition
-KBS::Condition.new(:error, { id: :?id }, negated: true)
+KBS::Condition.new(:error, { id: :id? }, negated: true)
 
 # Matches when:
 # - No :error fact exists with that id
@@ -60,8 +60,8 @@ Variables in negated conditions still create join constraints:
 
 ```ruby
 r.conditions = [
-  KBS::Condition.new(:sensor, { id: :?id, temp: :?temp }),
-  KBS::Condition.new(:alert, { sensor_id: :?id }, negated: true)
+  KBS::Condition.new(:sensor, { id: :id?, temp: :temp? }),
+  KBS::Condition.new(:alert, { sensor_id: :id? }, negated: true)
 ]
 
 # For each sensor fact:
@@ -72,7 +72,7 @@ r.conditions = [
 ### Negation Node Behavior
 
 ```
-1. Token arrives with bindings { :?id => "bedroom" }
+1. Token arrives with bindings { :id? => "bedroom" }
 2. Check alpha memory for :alert facts
 3. Filter for matches where sensor_id == "bedroom"
 4. If count == 0: propagate token (condition satisfied)
@@ -88,14 +88,14 @@ Prevent duplicate actions:
 ```ruby
 KBS::Rule.new("process_order") do |r|
   r.conditions = [
-    KBS::Condition.new(:order, { id: :?id, status: "pending" }),
-    KBS::Condition.new(:processing, { order_id: :?id }, negated: true)
+    KBS::Condition.new(:order, { id: :id?, status: "pending" }),
+    KBS::Condition.new(:processing, { order_id: :id? }, negated: true)
   ]
 
   r.action = lambda do |facts, bindings|
     # Only process if not already processing
-    engine.add_fact(:processing, { order_id: bindings[:?id] })
-    process_order(bindings[:?id])
+    engine.add_fact(:processing, { order_id: bindings[:id?] })
+    process_order(bindings[:id?])
   end
 end
 ```
@@ -107,12 +107,12 @@ Alert when expected data is absent:
 ```ruby
 KBS::Rule.new("missing_threshold") do |r|
   r.conditions = [
-    KBS::Condition.new(:sensor, { id: :?id }),
-    KBS::Condition.new(:threshold, { sensor_id: :?id }, negated: true)
+    KBS::Condition.new(:sensor, { id: :id? }),
+    KBS::Condition.new(:threshold, { sensor_id: :id? }, negated: true)
   ]
 
   r.action = lambda do |facts, bindings|
-    alert("Sensor #{bindings[:?id]} has no threshold configured!")
+    alert("Sensor #{bindings[:id?]} has no threshold configured!")
   end
 end
 ```
@@ -124,12 +124,12 @@ Ensure prerequisites before transitioning:
 ```ruby
 KBS::Rule.new("activate_account") do |r|
   r.conditions = [
-    KBS::Condition.new(:user, { id: :?id, email_verified: true }),
-    KBS::Condition.new(:account_active, { user_id: :?id }, negated: true)
+    KBS::Condition.new(:user, { id: :id?, email_verified: true }),
+    KBS::Condition.new(:account_active, { user_id: :id? }, negated: true)
   ]
 
   r.action = lambda do |facts, bindings|
-    engine.add_fact(:account_active, { user_id: bindings[:?id] })
+    engine.add_fact(:account_active, { user_id: bindings[:id?] })
   end
 end
 ```
@@ -142,17 +142,17 @@ Fire when response hasn't arrived:
 KBS::Rule.new("timeout_alert") do |r|
   r.conditions = [
     KBS::Condition.new(:request, {
-      id: :?req_id,
-      created_at: :?created
+      id: :req_id?,
+      created_at: :created?
     }, predicate: lambda { |f|
       (Time.now - f[:created_at]) > 300  # 5 minutes
     }),
 
-    KBS::Condition.new(:response, { request_id: :?req_id }, negated: true)
+    KBS::Condition.new(:response, { request_id: :req_id? }, negated: true)
   ]
 
   r.action = lambda do |facts, bindings|
-    alert("Request #{bindings[:?req_id]} timed out!")
+    alert("Request #{bindings[:req_id?]} timed out!")
   end
 end
 ```
@@ -164,13 +164,13 @@ Ensure only one option selected:
 ```ruby
 KBS::Rule.new("select_default") do |r|
   r.conditions = [
-    KBS::Condition.new(:user, { id: :?id }),
-    KBS::Condition.new(:preference, { user_id: :?id, theme: :?theme }, negated: true)
+    KBS::Condition.new(:user, { id: :id? }),
+    KBS::Condition.new(:preference, { user_id: :id?, theme: :theme? }, negated: true)
   ]
 
   r.action = lambda do |facts, bindings|
     # No preference set → use default
-    engine.add_fact(:preference, { user_id: bindings[:?id], theme: "light" })
+    engine.add_fact(:preference, { user_id: bindings[:id?], theme: "light" })
   end
 end
 ```
@@ -196,14 +196,14 @@ r.conditions = [
 ```ruby
 KBS::Rule.new("unique_error") do |r|
   r.conditions = [
-    KBS::Condition.new(:error, { type: :?type }),
-    KBS::Condition.new(:error_handled, { type: :?type }, negated: true),
-    KBS::Condition.new(:error_ignored, { type: :?type }, negated: true)
+    KBS::Condition.new(:error, { type: :type? }),
+    KBS::Condition.new(:error_handled, { type: :type? }, negated: true),
+    KBS::Condition.new(:error_ignored, { type: :type? }, negated: true)
   ]
 
   r.action = lambda do |facts, bindings|
     # Error exists but neither handled nor ignored
-    handle_new_error(bindings[:?type])
+    handle_new_error(bindings[:type?])
   end
 end
 ```
@@ -304,14 +304,14 @@ KBS::Condition.new(:event, { type: "error", severity: "critical" }, negated: tru
 ```ruby
 # Bad: Variables don't connect
 r.conditions = [
-  KBS::Condition.new(:sensor, { id: :?id1 }),
-  KBS::Condition.new(:alert, { id: :?id2 }, negated: true)  # Different variable!
+  KBS::Condition.new(:sensor, { id: :id1? }),
+  KBS::Condition.new(:alert, { id: :id2? }, negated: true)  # Different variable!
 ]
 
 # Good: Consistent variables
 r.conditions = [
-  KBS::Condition.new(:sensor, { id: :?id }),
-  KBS::Condition.new(:alert, { sensor_id: :?id }, negated: true)  # Same :?id
+  KBS::Condition.new(:sensor, { id: :id? }),
+  KBS::Condition.new(:alert, { sensor_id: :id? }, negated: true)  # Same :id?
 ]
 ```
 
@@ -352,8 +352,8 @@ end
 KBS::Condition.new(:sensor, { error: nil }, negated: true)
 
 # Better: Check for absence of error fact
-KBS::Condition.new(:sensor, { id: :?id }),
-KBS::Condition.new(:sensor_error, { sensor_id: :?id }, negated: true)
+KBS::Condition.new(:sensor, { id: :id? }),
+KBS::Condition.new(:sensor_error, { sensor_id: :id? }, negated: true)
 ```
 
 ### 4. Over-Using Negation
@@ -382,12 +382,12 @@ end
 # If no preference, use default
 KBS::Rule.new("set_default_theme") do |r|
   r.conditions = [
-    KBS::Condition.new(:user, { id: :?id }),
-    KBS::Condition.new(:theme_preference, { user_id: :?id }, negated: true)
+    KBS::Condition.new(:user, { id: :id? }),
+    KBS::Condition.new(:theme_preference, { user_id: :id? }, negated: true)
   ]
 
   r.action = lambda do |facts, bindings|
-    engine.add_fact(:theme_preference, { user_id: bindings[:?id], theme: "dark" })
+    engine.add_fact(:theme_preference, { user_id: bindings[:id?], theme: "dark" })
   end
 end
 ```
@@ -398,8 +398,8 @@ end
 # Remove orphaned records
 KBS::Rule.new("cleanup_orphaned_comments") do |r|
   r.conditions = [
-    KBS::Condition.new(:comment, { post_id: :?pid }),
-    KBS::Condition.new(:post, { id: :?pid }, negated: true)
+    KBS::Condition.new(:comment, { post_id: :pid? }),
+    KBS::Condition.new(:post, { id: :pid? }, negated: true)
   ]
 
   r.action = lambda do |facts, bindings|
@@ -477,10 +477,10 @@ Sometimes positive logic is clearer and faster:
 
 ```ruby
 # Instead of:
-KBS::Condition.new(:processing, { id: :?id }, negated: true)
+KBS::Condition.new(:processing, { id: :id? }, negated: true)
 
 # Use explicit state:
-KBS::Condition.new(:status, { id: :?id, value: "idle" })
+KBS::Condition.new(:status, { id: :id?, value: "idle" })
 ```
 
 ### Pattern: Status Flags
@@ -497,24 +497,24 @@ KBS::Condition.new(:system_status, { healthy: true })
 
 ```ruby
 # Instead of checking absence in rule:
-KBS::Condition.new(:response, { req_id: :?id }, negated: true)
+KBS::Condition.new(:response, { req_id: :id? }, negated: true)
 
 # Add a fact when timeout occurs:
 KBS::Rule.new("detect_timeout") do |r|
   r.conditions = [
     KBS::Condition.new(:request, {
-      id: :?id,
-      created_at: :?time
+      id: :id?,
+      created_at: :time?
     }, predicate: lambda { |f| (Time.now - f[:created_at]) > 300 })
   ]
 
   r.action = lambda do |facts, bindings|
-    engine.add_fact(:timeout, { request_id: bindings[:?id] })
+    engine.add_fact(:timeout, { request_id: bindings[:id?] })
   end
 end
 
 # Then use positive check:
-KBS::Condition.new(:timeout, { request_id: :?id })
+KBS::Condition.new(:timeout, { request_id: :id? })
 ```
 
 ## Next Steps

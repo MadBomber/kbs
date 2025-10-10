@@ -16,7 +16,7 @@ module KBS
     def extract_variables(pattern)
       vars = {}
       pattern.each do |key, value|
-        if value.is_a?(Symbol) && value.to_s.start_with?('?')
+        if value.is_a?(Symbol) && value.to_s.end_with?('?')
           vars[value] = key
         end
       end

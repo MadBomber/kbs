@@ -37,8 +37,8 @@
   <rect x="520" y="150" width="160" height="80" class="alpha-box" rx="5"/>
   <text x="600" y="175" class="node-title" text-anchor="middle">AlphaMemory</text>
   <text x="600" y="195" class="label" text-anchor="middle">:stock</text>
-  <text x="600" y="210" class="detail" text-anchor="middle">pattern: {symbol: :?sym,</text>
-  <text x="600" y="222" class="detail" text-anchor="middle">price: :?price}</text>
+  <text x="600" y="210" class="detail" text-anchor="middle">pattern: {symbol: :sym?,</text>
+  <text x="600" y="222" class="detail" text-anchor="middle">price: :price?}</text>
 
   <!-- Arrow from alpha to join -->
   <path d="M 520 190 L 370 210" class="arrow-alpha"/>
@@ -63,8 +63,8 @@
   <rect x="520" y="360" width="160" height="80" class="alpha-box" rx="5"/>
   <text x="600" y="385" class="node-title" text-anchor="middle">AlphaMemory</text>
   <text x="600" y="405" class="label" text-anchor="middle">:threshold</text>
-  <text x="600" y="420" class="detail" text-anchor="middle">pattern: {symbol: :?sym,</text>
-  <text x="600" y="432" class="detail" text-anchor="middle">buy_below: :?threshold}</text>
+  <text x="600" y="420" class="detail" text-anchor="middle">pattern: {symbol: :sym?,</text>
+  <text x="600" y="432" class="detail" text-anchor="middle">buy_below: :threshold?}</text>
 
   <!-- Arrow from alpha to join -->
   <path d="M 520 400 L 380 420" class="arrow-alpha"/>
@@ -72,7 +72,7 @@
   <!-- JoinNode2 -->
   <rect x="200" y="390" width="180" height="60" class="join-box" rx="5"/>
   <text x="290" y="415" class="node-title" text-anchor="middle">JoinNode2</text>
-  <text x="290" y="435" class="label" text-anchor="middle">(test: :?sym equality)</text>
+  <text x="290" y="435" class="label" text-anchor="middle">(test: :sym? equality)</text>
 
   <!-- Arrow to BetaMemory2 -->
   <path d="M 290 450 L 290 490" class="arrow"/>
@@ -89,7 +89,7 @@
   <rect x="520" y="580" width="160" height="70" class="alpha-box" rx="5"/>
   <text x="600" y="605" class="node-title" text-anchor="middle">AlphaMemory</text>
   <text x="600" y="625" class="label" text-anchor="middle">:order</text>
-  <text x="600" y="640" class="detail" text-anchor="middle">pattern: {symbol: :?sym}</text>
+  <text x="600" y="640" class="detail" text-anchor="middle">pattern: {symbol: :sym?}</text>
 
   <!-- Arrow from alpha to negation -->
   <path d="M 520 615 L 410 625" class="arrow-alpha"/>
@@ -97,7 +97,7 @@
   <!-- NegationNode -->
   <rect x="190" y="600" width="220" height="60" class="neg-box" rx="5"/>
   <text x="300" y="625" class="node-title" text-anchor="middle">NegationNode</text>
-  <text x="300" y="645" class="label" text-anchor="middle">(test: :?sym equality)</text>
+  <text x="300" y="645" class="label" text-anchor="middle">(test: :sym? equality)</text>
 
   <!-- Arrow to BetaMemory3 -->
   <path d="M 300 660 L 300 700" class="arrow"/>
@@ -121,8 +121,8 @@
   <text x="50" y="970" class="label" style="font-size: 11px;">Network Flow:</text>
   <text x="50" y="990" class="detail">1. Dummy token starts at root</text>
   <text x="50" y="1005" class="detail">2. Join with :stock facts → tokens in Beta1</text>
-  <text x="50" y="1020" class="detail">3. Join with :threshold (test :?sym) → tokens in Beta2</text>
-  <text x="50" y="1035" class="detail">4. Check NO :order exists (test :?sym) → tokens in Beta3</text>
+  <text x="50" y="1020" class="detail">3. Join with :threshold (test :sym?) → tokens in Beta2</text>
+  <text x="50" y="1035" class="detail">4. Check NO :order exists (test :sym?) → tokens in Beta3</text>
   <text x="50" y="1050" class="detail">5. Tokens reach production node → rule can fire</text>
 
   <text x="50" y="1080" class="label" style="font-size: 11px;">Color Key:</text>

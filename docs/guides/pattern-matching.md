@@ -14,14 +14,14 @@ Pattern matching determines whether a fact satisfies a condition. A match occurs
 # Condition pattern
 KBS::Condition.new(:sensor, {
   id: "bedroom",
-  temp: :?temp
+  temp: :temp?
 })
 
 # Matching fact
 fact = { type: :sensor, id: "bedroom", temp: 28 }
 # ✓ Type: :sensor == :sensor
 # ✓ Attribute id: "bedroom" == "bedroom"
-# ✓ Attribute temp: :?temp binds to 28
+# ✓ Attribute temp: :temp? binds to 28
 # MATCH!
 
 # Non-matching fact
@@ -104,22 +104,22 @@ Variables start with `?` and bind to fact attribute values:
 
 ```ruby
 # Condition with variable
-KBS::Condition.new(:sensor, { temp: :?t })
+KBS::Condition.new(:sensor, { temp: :t? })
 
 # Matching fact
 fact = { type: :sensor, temp: 28 }
 
 # After matching:
-bindings = { :?t => 28 }
+bindings = { :t? => 28 }
 ```
 
 ### Multiple Bindings
 
 ```ruby
 KBS::Condition.new(:stock, {
-  symbol: :?sym,
-  price: :?p,
-  volume: :?v
+  symbol: :sym?,
+  price: :p?,
+  volume: :v?
 })
 
 # Fact
@@ -127,9 +127,9 @@ KBS::Condition.new(:stock, {
 
 # Bindings
 {
-  :?sym => "AAPL",
-  :?p => 150,
-  :?v => 1000
+  :sym? => "AAPL",
+  :p? => 150,
+  :v? => 1000
 }
 ```
 
@@ -138,11 +138,11 @@ KBS::Condition.new(:stock, {
 ```ruby
 KBS::Condition.new(:sensor, {
   id: "bedroom",     # Literal (must equal "bedroom")
-  temp: :?temp       # Variable (binds to any value)
+  temp: :temp?       # Variable (binds to any value)
 })
 
 # Matches only bedroom sensor, binds temp
-{ type: :sensor, id: "bedroom", temp: 28 }  # ✓ binds :?temp => 28
+{ type: :sensor, id: "bedroom", temp: 28 }  # ✓ binds :temp? => 28
 { type: :sensor, id: "kitchen", temp: 28 }  # ✗ id doesn't match
 ```
 
@@ -152,11 +152,11 @@ Variables create join constraints across conditions:
 
 ```ruby
 r.conditions = [
-  # Condition 1: Binds :?sym
-  KBS::Condition.new(:stock, { symbol: :?sym, price: :?price }),
+  # Condition 1: Binds :sym?
+  KBS::Condition.new(:stock, { symbol: :sym?, price: :price? }),
 
-  # Condition 2: Tests :?sym (must be same value)
-  KBS::Condition.new(:watchlist, { symbol: :?sym })
+  # Condition 2: Tests :sym? (must be same value)
+  KBS::Condition.new(:watchlist, { symbol: :sym? })
 ]
 
 # Facts
@@ -165,10 +165,10 @@ stock2 = { type: :stock, symbol: "GOOGL", price: 2800 }
 watchlist = { type: :watchlist, symbol: "AAPL" }
 
 # Matches
-# stock1 + watchlist: ✓ (:?sym = "AAPL" in both)
+# stock1 + watchlist: ✓ (:sym? = "AAPL" in both)
 
 # Does not match
-# stock2 + watchlist: ✗ (:?sym = "GOOGL" in stock, "AAPL" in watchlist)
+# stock2 + watchlist: ✗ (:sym? = "GOOGL" in stock, "AAPL" in watchlist)
 ```
 
 ### Binding Semantics
@@ -179,9 +179,9 @@ watchlist = { type: :watchlist, symbol: "AAPL" }
 
 ```ruby
 r.conditions = [
-  KBS::Condition.new(:a, { x: :?v }),  # Binds :?v
-  KBS::Condition.new(:b, { y: :?v }),  # Tests :?v (must equal)
-  KBS::Condition.new(:c, { z: :?v })   # Tests :?v (must equal)
+  KBS::Condition.new(:a, { x: :v? }),  # Binds :v?
+  KBS::Condition.new(:b, { y: :v? }),  # Tests :v? (must equal)
+  KBS::Condition.new(:c, { z: :v? })   # Tests :v? (must equal)
 ]
 
 # All three facts must have same value for x, y, z
@@ -230,7 +230,7 @@ Predicates add complex matching beyond equality:
 ### Basic Predicate
 
 ```ruby
-KBS::Condition.new(:stock, { price: :?price },
+KBS::Condition.new(:stock, { price: :price? },
   predicate: lambda { |fact|
     fact[:price] > 100
   }
@@ -251,7 +251,7 @@ KBS::Condition.new(:stock, { price: :?price },
 4. **Predicate evaluation** (last)
 
 ```ruby
-KBS::Condition.new(:sensor, { id: "bedroom", temp: :?temp },
+KBS::Condition.new(:sensor, { id: "bedroom", temp: :temp? },
   predicate: lambda { |fact|
     fact[:temp].between?(20, 30)
   }
@@ -260,7 +260,7 @@ KBS::Condition.new(:sensor, { id: "bedroom", temp: :?temp },
 # Evaluation order:
 # 1. type == :sensor? ✓
 # 2. id == "bedroom"? ✓
-# 3. temp exists? ✓ → bind :?temp
+# 3. temp exists? ✓ → bind :temp?
 # 4. predicate(fact)? ✓
 # MATCH!
 ```
@@ -361,7 +361,7 @@ See [Negation Guide](negation.md) for details.
 
 ```ruby
 # Temperature in range 20-30
-KBS::Condition.new(:sensor, { temp: :?temp },
+KBS::Condition.new(:sensor, { temp: :temp? },
   predicate: lambda { |f|
     f[:temp].between?(20, 30)
   }
@@ -372,14 +372,14 @@ KBS::Condition.new(:sensor, { temp: :?temp },
 
 ```ruby
 # Symbol starts with "TECH"
-KBS::Condition.new(:stock, { symbol: :?sym },
+KBS::Condition.new(:stock, { symbol: :sym? },
   predicate: lambda { |f|
     f[:symbol].start_with?("TECH")
   }
 )
 
 # Regex match
-KBS::Condition.new(:log, { message: :?msg },
+KBS::Condition.new(:log, { message: :msg? },
   predicate: lambda { |f|
     f[:message] =~ /ERROR|FATAL/
   }
@@ -390,7 +390,7 @@ KBS::Condition.new(:log, { message: :?msg },
 
 ```ruby
 # Status is one of pending, processing, approved
-KBS::Condition.new(:order, { status: :?status },
+KBS::Condition.new(:order, { status: :status? },
   predicate: lambda { |f|
     %w[pending processing approved].include?(f[:status])
   }
@@ -401,7 +401,7 @@ KBS::Condition.new(:order, { status: :?status },
 
 ```ruby
 # Reading older than 5 minutes
-KBS::Condition.new(:sensor, { timestamp: :?time },
+KBS::Condition.new(:sensor, { timestamp: :time? },
   predicate: lambda { |f|
     (Time.now - f[:timestamp]) > 300
   }
@@ -413,9 +413,9 @@ KBS::Condition.new(:sensor, { timestamp: :?time },
 ```ruby
 # Price changed more than 10%
 KBS::Condition.new(:stock, {
-  symbol: :?sym,
-  current_price: :?curr,
-  previous_price: :?prev
+  symbol: :sym?,
+  current_price: :curr?,
+  previous_price: :prev?
 }, predicate: lambda { |f|
   change = ((f[:current_price] - f[:previous_price]).abs / f[:previous_price].to_f)
   change > 0.10
@@ -426,7 +426,7 @@ KBS::Condition.new(:stock, {
 
 ```ruby
 # Access nested hash
-KBS::Condition.new(:event, { data: :?data },
+KBS::Condition.new(:event, { data: :data? },
   predicate: lambda { |f|
     f[:data].is_a?(Hash) &&
     f[:data][:severity] == "critical"
@@ -539,7 +539,7 @@ end
 ### Test Patterns in Isolation
 
 ```ruby
-condition = KBS::Condition.new(:sensor, { temp: :?t },
+condition = KBS::Condition.new(:sensor, { temp: :t? },
   predicate: lambda { |f| f[:temp] > 30 }
 )
 

@@ -226,7 +226,7 @@ end
 # Usage
 condition = KBS::Condition.new(:sensor, {
   type: "temperature",
-  value: :?v
+  value: :v?
 }, predicate: lambda { |f| f[:value] > 25 })
 
 test_condition(engine, condition)

@@ -441,7 +441,7 @@ end
 KBS::Rule.new("cleanup_old_facts", priority: 1) do |r|
   r.conditions = [
     KBS::Condition.new(:market_data, {
-      timestamp: :?time
+      timestamp: :time?
     }, predicate: lambda { |f|
       (Time.now - f[:timestamp]) > 3600  # 1 hour old
     })
@@ -475,13 +475,13 @@ engine.update_fact(account2_id, { balance: new_balance2 })
 # Agent attempts to become leader
 KBS::Rule.new("become_leader") do |r|
   r.conditions = [
-    KBS::Condition.new(:agent, { name: :?name }),
+    KBS::Condition.new(:agent, { name: :name? }),
     KBS::Condition.new(:leader, {}, negated: true)
   ]
 
   r.action = lambda do |facts, bindings|
-    engine.add_fact(:leader, { name: bindings[:?name] })
-    puts "#{bindings[:?name]} is now leader"
+    engine.add_fact(:leader, { name: bindings[:name?] })
+    puts "#{bindings[:name?]} is now leader"
   end
 end
 ```

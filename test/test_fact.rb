@@ -52,9 +52,9 @@ class TestFact < Minitest::Test
   def test_matches_with_variable_binding
     fact = KBS::Fact.new(:person, name: "Alice", age: 30)
 
-    # Variables (symbols starting with ?) should match anything
-    assert fact.matches?(type: :person, name: :'?name')
-    assert fact.matches?(type: :person, age: :'?age')
+    # Variables (symbols ending with ?) should match anything
+    assert fact.matches?(type: :person, name: :name?)
+    assert fact.matches?(type: :person, age: :age?)
   end
 
   def test_matches_with_missing_attribute

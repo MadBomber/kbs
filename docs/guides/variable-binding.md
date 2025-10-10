@@ -7,9 +7,9 @@ Variables connect facts across conditions, enabling join constraints in the RETE
 Variables start with `?` and are symbols:
 
 ```ruby
-:?temp      # Variable named "temp"
-:?sensor_id # Variable named "sensor_id"
-:?x         # Variable named "x"
+:temp?      # Variable named "temp"
+:sensor_id? # Variable named "sensor_id"
+:x?         # Variable named "x"
 ```
 
 **Naming conventions:**
@@ -22,22 +22,22 @@ Variables start with `?` and are symbols:
 ### Single Variable
 
 ```ruby
-KBS::Condition.new(:sensor, { temp: :?t })
+KBS::Condition.new(:sensor, { temp: :t? })
 
 # Matches fact:
 { type: :sensor, temp: 28 }
 
 # Creates binding:
-{ :?t => 28 }
+{ :t? => 28 }
 ```
 
 ### Multiple Variables
 
 ```ruby
 KBS::Condition.new(:stock, {
-  symbol: :?sym,
-  price: :?price,
-  volume: :?vol
+  symbol: :sym?,
+  price: :price?,
+  volume: :vol?
 })
 
 # Matches:
@@ -45,9 +45,9 @@ KBS::Condition.new(:stock, {
 
 # Bindings:
 {
-  :?sym => "AAPL",
-  :?price => 150,
-  :?vol => 1000
+  :sym? => "AAPL",
+  :price? => 150,
+  :vol? => 1000
 }
 ```
 
@@ -59,11 +59,11 @@ Variables with the same name create equality constraints:
 
 ```ruby
 r.conditions = [
-  # Condition 1: Binds :?id to sensor's id
-  KBS::Condition.new(:sensor, { id: :?id, temp: :?temp }),
+  # Condition 1: Binds :id? to sensor's id
+  KBS::Condition.new(:sensor, { id: :id?, temp: :temp? }),
 
-  # Condition 2: Must match same :?id
-  KBS::Condition.new(:threshold, { sensor_id: :?id, max: :?max })
+  # Condition 2: Must match same :id?
+  KBS::Condition.new(:threshold, { sensor_id: :id?, max: :max? })
 ]
 ```
 
@@ -76,25 +76,25 @@ sensor[:id] == threshold[:sensor_id]
 
 ```ruby
 r.conditions = [
-  KBS::Condition.new(:a, { x: :?v1, y: :?v2 }),
-  KBS::Condition.new(:b, { p: :?v1, q: :?v3 }),
-  KBS::Condition.new(:c, { m: :?v2, n: :?v3 })
+  KBS::Condition.new(:a, { x: :v1?, y: :v2? }),
+  KBS::Condition.new(:b, { p: :v1?, q: :v3? }),
+  KBS::Condition.new(:c, { m: :v2?, n: :v3? })
 ]
 
 # Join tests:
-# a[:x] == b[:p]  (via :?v1)
-# a[:y] == c[:m]  (via :?v2)
-# b[:q] == c[:n]  (via :?v3)
+# a[:x] == b[:p]  (via :v1?)
+# a[:y] == c[:m]  (via :v2?)
+# b[:q] == c[:n]  (via :v3?)
 ```
 
 ### Visual Example
 
 ```
-Condition 1: stock(symbol: :?sym, price: :?p)
-Condition 2: watchlist(symbol: :?sym)
-Condition 3: alert_config(symbol: :?sym, threshold: :?t)
+Condition 1: stock(symbol: :sym?, price: :p?)
+Condition 2: watchlist(symbol: :sym?)
+Condition 3: alert_config(symbol: :sym?, threshold: :t?)
 
-Variable :?sym creates two joins:
+Variable :sym? creates two joins:
 ├─ stock[:symbol] == watchlist[:symbol]
 └─ stock[:symbol] == alert_config[:symbol]
 ```
@@ -104,21 +104,21 @@ Variable :?sym creates two joins:
 ### 1. First Occurrence: Bind
 
 ```ruby
-# First condition with :?sym
-KBS::Condition.new(:stock, { symbol: :?sym })
+# First condition with :sym?
+KBS::Condition.new(:stock, { symbol: :sym? })
 
 # Fact matches
 { type: :stock, symbol: "AAPL" }
 
 # Binding created:
-{ :?sym => "AAPL" }
+{ :sym? => "AAPL" }
 ```
 
 ### 2. Subsequent Occurrences: Test
 
 ```ruby
-# Second condition with :?sym
-KBS::Condition.new(:watchlist, { symbol: :?sym })
+# Second condition with :sym?
+KBS::Condition.new(:watchlist, { symbol: :sym? })
 
 # Checks if symbol == "AAPL" (from previous binding)
 # Matches:
@@ -133,8 +133,8 @@ KBS::Condition.new(:watchlist, { symbol: :?sym })
 ```ruby
 r.action = lambda do |facts, bindings|
   # Access bound variables
-  symbol = bindings[:?sym]
-  price = bindings[:?p]
+  symbol = bindings[:sym?]
+  price = bindings[:p?]
 
   puts "#{symbol} at $#{price}"
 end
@@ -148,8 +148,8 @@ A join test verifies that variable values match across facts:
 
 ```ruby
 r.conditions = [
-  KBS::Condition.new(:a, { x: :?v }),
-  KBS::Condition.new(:b, { y: :?v })
+  KBS::Condition.new(:a, { x: :v? }),
+  KBS::Condition.new(:b, { y: :v? })
 ]
 
 # Join test structure:
@@ -182,8 +182,8 @@ end
 ```ruby
 # Rule
 r.conditions = [
-  KBS::Condition.new(:sensor, { id: :?id, temp: :?temp }),
-  KBS::Condition.new(:threshold, { sensor_id: :?id, max: :?max })
+  KBS::Condition.new(:sensor, { id: :id?, temp: :temp? }),
+  KBS::Condition.new(:threshold, { sensor_id: :id?, max: :max? })
 ]
 
 # Facts
@@ -193,7 +193,7 @@ threshold = { type: :threshold, sensor_id: "bedroom", max: 25 }
 # Join execution:
 # 1. sensor matches → token created
 token = Token.new(parent: root, fact: sensor)
-# Bindings: { :?id => "bedroom", :?temp => 28 }
+# Bindings: { :id? => "bedroom", :temp? => 28 }
 
 # 2. threshold tested against token
 test = {
@@ -219,12 +219,12 @@ Connect facts via identifier:
 ```ruby
 r.conditions = [
   KBS::Condition.new(:order, {
-    id: :?order_id,
+    id: :order_id?,
     status: "pending"
   }),
 
   KBS::Condition.new(:payment, {
-    order_id: :?order_id,
+    order_id: :order_id?,
     verified: true
   })
 ]
@@ -239,14 +239,14 @@ Join on multiple fields:
 ```ruby
 r.conditions = [
   KBS::Condition.new(:trade, {
-    symbol: :?sym,
-    date: :?date,
-    volume: :?vol
+    symbol: :sym?,
+    date: :date?,
+    volume: :vol?
   }),
 
   KBS::Condition.new(:settlement, {
-    symbol: :?sym,
-    trade_date: :?date
+    symbol: :sym?,
+    trade_date: :date?
   })
 ]
 
@@ -259,9 +259,9 @@ Chain bindings across three+ conditions:
 
 ```ruby
 r.conditions = [
-  KBS::Condition.new(:a, { id: :?x }),
-  KBS::Condition.new(:b, { a_id: :?x, id: :?y }),
-  KBS::Condition.new(:c, { b_id: :?y })
+  KBS::Condition.new(:a, { id: :x? }),
+  KBS::Condition.new(:b, { a_id: :x?, id: :y? }),
+  KBS::Condition.new(:c, { b_id: :y? })
 ]
 
 # a[:id] == b[:a_id]
@@ -275,13 +275,13 @@ One fact joins with multiple:
 
 ```ruby
 r.conditions = [
-  KBS::Condition.new(:sensor, { id: :?id, temp: :?t }),
-  KBS::Condition.new(:threshold, { sensor_id: :?id }),
-  KBS::Condition.new(:alert_config, { sensor_id: :?id }),
-  KBS::Condition.new(:location, { sensor_id: :?id })
+  KBS::Condition.new(:sensor, { id: :id?, temp: :t? }),
+  KBS::Condition.new(:threshold, { sensor_id: :id? }),
+  KBS::Condition.new(:alert_config, { sensor_id: :id? }),
+  KBS::Condition.new(:location, { sensor_id: :id? })
 ]
 
-# All join on :?id
+# All join on :id?
 ```
 
 ## Performance Implications
@@ -290,17 +290,17 @@ r.conditions = [
 
 ```ruby
 # Condition 1: 100 sensor facts
-KBS::Condition.new(:sensor, { temp: :?t })
+KBS::Condition.new(:sensor, { temp: :t? })
 
 # Condition 2: 200 threshold facts
-KBS::Condition.new(:threshold, { max: :?m })
+KBS::Condition.new(:threshold, { max: :m? })
 
 # Without variable binding:
 # Potential matches: 100 × 200 = 20,000
 
 # With variable binding:
-KBS::Condition.new(:sensor, { id: :?id, temp: :?t })
-KBS::Condition.new(:threshold, { sensor_id: :?id, max: :?m })
+KBS::Condition.new(:sensor, { id: :id?, temp: :t? })
+KBS::Condition.new(:threshold, { sensor_id: :id?, max: :m? })
 
 # Actual matches: ~100 (1:1 relationship)
 ```
@@ -320,9 +320,9 @@ r.conditions = [
 
 # Good: Shared variables
 r.conditions = [
-  KBS::Condition.new(:a, { id: :?id }),
-  KBS::Condition.new(:b, { a_id: :?id }),
-  KBS::Condition.new(:c, { a_id: :?id })
+  KBS::Condition.new(:a, { id: :id? }),
+  KBS::Condition.new(:b, { a_id: :id? }),
+  KBS::Condition.new(:c, { a_id: :id? })
 ]
 # Beta memory: ~1000 tokens (assuming 1:1:1 relationship)
 ```
@@ -333,8 +333,8 @@ r.conditions = [
 
 ```ruby
 # Good: Binds sensor to specific readings
-KBS::Condition.new(:sensor, { id: :?id })
-KBS::Condition.new(:reading, { sensor_id: :?id })
+KBS::Condition.new(:sensor, { id: :id? })
+KBS::Condition.new(:reading, { sensor_id: :id? })
 
 # Bad: No binding (cross product)
 KBS::Condition.new(:sensor, {})
@@ -346,15 +346,15 @@ KBS::Condition.new(:reading, {})
 ```ruby
 # Good: Specific first
 r.conditions = [
-  KBS::Condition.new(:critical_alert, { id: :?id }),  # 1 fact
-  KBS::Condition.new(:sensor, { id: :?id })          # 1000 facts
+  KBS::Condition.new(:critical_alert, { id: :id? }),  # 1 fact
+  KBS::Condition.new(:sensor, { id: :id? })          # 1000 facts
 ]
 # Beta memory: 1 token
 
 # Bad: General first
 r.conditions = [
-  KBS::Condition.new(:sensor, { id: :?id }),          # 1000 facts
-  KBS::Condition.new(:critical_alert, { id: :?id })   # 1 fact
+  KBS::Condition.new(:sensor, { id: :id? }),          # 1000 facts
+  KBS::Condition.new(:critical_alert, { id: :id? })   # 1 fact
 ]
 # Beta memory: 1000 tokens
 ```
@@ -364,17 +364,17 @@ r.conditions = [
 ```ruby
 # Bad: No shared variables between first two conditions
 r.conditions = [
-  KBS::Condition.new(:a, { x: :?v1 }),
-  KBS::Condition.new(:b, { y: :?v2 }),  # No :?v1!
-  KBS::Condition.new(:c, { p: :?v1, q: :?v2 })
+  KBS::Condition.new(:a, { x: :v1? }),
+  KBS::Condition.new(:b, { y: :v2? }),  # No :v1?!
+  KBS::Condition.new(:c, { p: :v1?, q: :v2? })
 ]
 # Creates a × b cross product
 
 # Good: Progressive joining
 r.conditions = [
-  KBS::Condition.new(:a, { x: :?v1 }),
-  KBS::Condition.new(:c, { p: :?v1, q: :?v2 }),
-  KBS::Condition.new(:b, { y: :?v2 })
+  KBS::Condition.new(:a, { x: :v1? }),
+  KBS::Condition.new(:c, { p: :v1?, q: :v2? }),
+  KBS::Condition.new(:b, { y: :v2? })
 ]
 # Each condition reduces search space
 ```
@@ -387,12 +387,12 @@ r.conditions = [
 # One customer, many orders
 r.conditions = [
   KBS::Condition.new(:customer, {
-    id: :?cust_id,
+    id: :cust_id?,
     status: "active"
   }),
 
   KBS::Condition.new(:order, {
-    customer_id: :?cust_id,
+    customer_id: :cust_id?,
     status: "pending"
   })
 ]
@@ -405,12 +405,12 @@ r.conditions = [
 ```ruby
 # Students enrolled in courses
 r.conditions = [
-  KBS::Condition.new(:student, { id: :?student_id }),
+  KBS::Condition.new(:student, { id: :student_id? }),
   KBS::Condition.new(:enrollment, {
-    student_id: :?student_id,
-    course_id: :?course_id
+    student_id: :student_id?,
+    course_id: :course_id?
   }),
-  KBS::Condition.new(:course, { id: :?course_id })
+  KBS::Condition.new(:course, { id: :course_id? })
 ]
 
 # Fires for each student-course pair
@@ -421,14 +421,14 @@ r.conditions = [
 ```ruby
 # Parent → Child → Grandchild
 r.conditions = [
-  KBS::Condition.new(:category, { id: :?cat_id }),
+  KBS::Condition.new(:category, { id: :cat_id? }),
   KBS::Condition.new(:product, {
-    category_id: :?cat_id,
-    id: :?prod_id
+    category_id: :cat_id?,
+    id: :prod_id?
   }),
   KBS::Condition.new(:review, {
-    product_id: :?prod_id,
-    rating: :?rating
+    product_id: :prod_id?,
+    rating: :rating?
   })
 ]
 ```
@@ -467,7 +467,7 @@ end
 ```ruby
 r.action = lambda do |facts, bindings|
   # Ensure expected bindings exist
-  required = [:?sensor_id, :?temp, :?max]
+  required = [:sensor_id?, :temp?, :max?]
   missing = required - bindings.keys
 
   if missing.any?

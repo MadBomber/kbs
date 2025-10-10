@@ -65,17 +65,17 @@ engine = KBS::Blackboard::Engine.new(db_path: 'trading.db')
 # Define rules (persisted in the database)
 engine.add_rule(Rule.new("buy_signal") do |r|
   r.conditions = [
-    Condition.new(:stock, { symbol: :?sym, price: :?price }),
-    Condition.new(:threshold, { symbol: :?sym, max: :?max })
+    Condition.new(:stock, { symbol: :sym?, price: :price? }),
+    Condition.new(:threshold, { symbol: :sym?, max: :max? })
   ]
 
   r.action = lambda do |facts, bindings|
-    if bindings[:?price] < bindings[:?max]
+    if bindings[:price?] < bindings[:max?]
       # Write new fact to blackboard
       engine.add_fact(:order, {
-        symbol: bindings[:?sym],
+        symbol: bindings[:sym?],
         action: "BUY",
-        price: bindings[:?price]
+        price: bindings[:price?]
       })
     end
   end
@@ -284,13 +284,13 @@ blackboard = KBS::Blackboard::Engine.new(db_path: 'trading.db')
 data_agent = KBS::Rule.new("collect_data", priority: 5) do |r|
   r.conditions = [
     Condition.new(:market_open, { status: true }),
-    Condition.new(:stock_data, { symbol: :?sym }, negated: true)
+    Condition.new(:stock_data, { symbol: :sym? }, negated: true)
   ]
 
   r.action = lambda do |facts, bindings|
-    price = fetch_current_price(bindings[:?sym])
+    price = fetch_current_price(bindings[:sym?])
     blackboard.add_fact(:stock_data, {
-      symbol: bindings[:?sym],
+      symbol: bindings[:sym?],
       price: price,
       timestamp: Time.now
     })
@@ -300,16 +300,16 @@ end
 # Agent 2: Signal Generator
 signal_agent = KBS::Rule.new("generate_signals", priority: 10) do |r|
   r.conditions = [
-    Condition.new(:stock_data, { symbol: :?sym, price: :?price }),
-    Condition.new(:sma_data, { symbol: :?sym, sma: :?sma })
+    Condition.new(:stock_data, { symbol: :sym?, price: :price? }),
+    Condition.new(:sma_data, { symbol: :sym?, sma: :sma? })
   ]
 
   r.action = lambda do |facts, bindings|
-    if bindings[:?price] > bindings[:?sma]
+    if bindings[:price?] > bindings[:sma?]
       blackboard.add_fact(:signal, {
-        symbol: bindings[:?sym],
+        symbol: bindings[:sym?],
         direction: "BUY",
-        strength: (bindings[:?price] / bindings[:?sma]) - 1.0
+        strength: (bindings[:price?] / bindings[:sma?]) - 1.0
       })
     end
   end
@@ -318,20 +318,20 @@ end
 # Agent 3: Risk Manager
 risk_agent = KBS::Rule.new("check_risk", priority: 20) do |r|
   r.conditions = [
-    Condition.new(:signal, { symbol: :?sym, direction: :?dir }),
-    Condition.new(:portfolio, { symbol: :?sym, position: :?pos })
+    Condition.new(:signal, { symbol: :sym?, direction: :dir? }),
+    Condition.new(:portfolio, { symbol: :sym?, position: :pos? })
   ]
 
   r.action = lambda do |facts, bindings|
-    if bindings[:?pos] > 1000 && bindings[:?dir] == "BUY"
+    if bindings[:pos?] > 1000 && bindings[:dir?] == "BUY"
       blackboard.add_fact(:risk_alert, {
-        symbol: bindings[:?sym],
+        symbol: bindings[:sym?],
         reason: "Position limit exceeded"
       })
     else
       blackboard.add_fact(:approved_signal, {
-        symbol: bindings[:?sym],
-        direction: bindings[:?dir]
+        symbol: bindings[:sym?],
+        direction: bindings[:dir?]
       })
     end
   end
@@ -340,15 +340,15 @@ end
 # Agent 4: Order Executor
 exec_agent = KBS::Rule.new("execute_orders", priority: 30) do |r|
   r.conditions = [
-    Condition.new(:approved_signal, { symbol: :?sym, direction: :?dir }),
-    Condition.new(:risk_alert, { symbol: :?sym }, negated: true)
+    Condition.new(:approved_signal, { symbol: :sym?, direction: :dir? }),
+    Condition.new(:risk_alert, { symbol: :sym? }, negated: true)
   ]
 
   r.action = lambda do |facts, bindings|
-    execute_trade(bindings[:?sym], bindings[:?dir])
+    execute_trade(bindings[:sym?], bindings[:dir?])
     blackboard.add_fact(:execution, {
-      symbol: bindings[:?sym],
-      direction: bindings[:?dir],
+      symbol: bindings[:sym?],
+      direction: bindings[:dir?],
       timestamp: Time.now
     })
   end
@@ -519,7 +519,7 @@ Limit agent attention to relevant facts:
 recent_data_rule = Rule.new("analyze_recent") do |r|
   r.conditions = [
     Condition.new(:stock_data, {
-      symbol: :?sym,
+      symbol: :sym?,
       timestamp: ->(ts) { Time.now - ts < 300 }  # Last 5 minutes
     })
   ]

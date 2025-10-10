@@ -40,24 +40,24 @@ class MedicalExpertSystem
       r.conditions = [
         KBS::Condition.new(:symptom, {
           type: "temperature",
-          value: :?temp
+          value: :temp?
         }, predicate: lambda { |f| f[:value] > 38.0 }),
 
         KBS::Condition.new(:fever_detected, {}, negated: true)
       ]
 
       r.action = lambda do |facts, bindings|
-        confidence = calculate_fever_confidence(bindings[:?temp])
+        confidence = calculate_fever_confidence(bindings[:temp?])
 
         @engine.add_fact(:fever_detected, {
-          severity: fever_severity(bindings[:?temp]),
+          severity: fever_severity(bindings[:temp?]),
           confidence: confidence,
-          temperature: bindings[:?temp]
+          temperature: bindings[:temp?]
         })
 
         @explanations << {
           rule: "detect_fever",
-          reasoning: "Temperature #{bindings[:?temp]}°C exceeds normal (37°C)",
+          reasoning: "Temperature #{bindings[:temp?]}°C exceeds normal (37°C)",
           confidence: confidence
         }
       end
@@ -66,7 +66,7 @@ class MedicalExpertSystem
     # Rule 2: Flu hypothesis
     flu_rule = KBS::Rule.new("hypothesize_flu", priority: 90) do |r|
       r.conditions = [
-        KBS::Condition.new(:fever_detected, { severity: :?severity }),
+        KBS::Condition.new(:fever_detected, { severity: :severity? }),
 
         KBS::Condition.new(:symptom, {
           type: "body_aches",
@@ -86,7 +86,7 @@ class MedicalExpertSystem
         base_confidence = 0.6
 
         # Adjust for fever severity
-        fever_bonus = bindings[:?severity] == "high" ? 0.2 : 0.1
+        fever_bonus = bindings[:severity?] == "high" ? 0.2 : 0.1
 
         # Check for additional symptoms
         cough = @engine.facts.any? { |f|
@@ -115,7 +115,7 @@ class MedicalExpertSystem
       r.conditions = [
         KBS::Condition.new(:symptom, {
           type: "sore_throat",
-          severity: :?throat_severity
+          severity: :throat_severity?
         }),
 
         KBS::Condition.new(:symptom, {
@@ -138,7 +138,7 @@ class MedicalExpertSystem
         base_confidence = 0.7
 
         # Severe sore throat increases confidence
-        severity_bonus = bindings[:?throat_severity] == "severe" ? 0.2 : 0.1
+        severity_bonus = bindings[:throat_severity?] == "severe" ? 0.2 : 0.1
 
         confidence = [base_confidence + severity_bonus, 0.95].min
 
@@ -210,7 +210,7 @@ class MedicalExpertSystem
       r.conditions = [
         KBS::Condition.new(:symptom, {
           type: "sneezing",
-          frequency: :?freq
+          frequency: :freq?
         }, predicate: lambda { |f| f[:frequency] == "frequent" }),
 
         KBS::Condition.new(:symptom, {
@@ -252,7 +252,7 @@ class MedicalExpertSystem
         KBS::Condition.new(:symptom, {
           type: "headache",
           location: "unilateral",
-          severity: :?severity
+          severity: :severity?
         }, predicate: lambda { |f| f[:severity] == "severe" }),
 
         KBS::Condition.new(:symptom, {
@@ -297,27 +297,27 @@ class MedicalExpertSystem
     test_rule = KBS::Rule.new("recommend_diagnostic_test", priority: 70) do |r|
       r.conditions = [
         KBS::Condition.new(:diagnosis, {
-          disease: :?disease,
-          confidence: :?conf
+          disease: :disease?,
+          confidence: :conf?
         }, predicate: lambda { |f| f[:confidence] > 0.7 && f[:confidence] < 0.9 }),
 
         KBS::Condition.new(:test_recommended, {
-          disease: :?disease
+          disease: :disease?
         }, negated: true)
       ]
 
       r.action = lambda do |facts, bindings|
-        test = diagnostic_test_for(bindings[:?disease])
+        test = diagnostic_test_for(bindings[:disease?])
 
         @engine.add_fact(:test_recommended, {
-          disease: bindings[:?disease],
+          disease: bindings[:disease?],
           test: test,
-          reason: "Confidence #{bindings[:?conf]} warrants confirmation"
+          reason: "Confidence #{bindings[:conf?]} warrants confirmation"
         })
 
         @explanations << {
           rule: "recommend_diagnostic_test",
-          reasoning: "Moderate confidence (#{bindings[:?conf]}) suggests #{test} for confirmation",
+          reasoning: "Moderate confidence (#{bindings[:conf?]}) suggests #{test} for confirmation",
           confidence: 1.0
         }
       end
@@ -327,8 +327,8 @@ class MedicalExpertSystem
     final_diagnosis_rule = KBS::Rule.new("select_final_diagnosis", priority: 60) do |r|
       r.conditions = [
         KBS::Condition.new(:diagnosis, {
-          disease: :?disease,
-          confidence: :?conf
+          disease: :disease?,
+          confidence: :conf?
         }),
 
         KBS::Condition.new(:final_diagnosis, {}, negated: true)
@@ -512,7 +512,7 @@ Rules encode medical knowledge in a structured format:
 # Rule encodes: "IF fever AND body_aches AND fatigue THEN possibly flu"
 KBS::Rule.new("hypothesize_flu") do |r|
   r.conditions = [
-    KBS::Condition.new(:fever_detected, { severity: :?severity }),
+    KBS::Condition.new(:fever_detected, { severity: :severity? }),
     KBS::Condition.new(:symptom, { type: "body_aches", present: true }),
     KBS::Condition.new(:symptom, { type: "fatigue", present: true })
   ]
@@ -529,7 +529,7 @@ Probabilistic reasoning using confidence scores:
 
 ```ruby
 base_confidence = 0.6
-fever_bonus = bindings[:?severity] == "high" ? 0.2 : 0.1
+fever_bonus = bindings[:severity?] == "high" ? 0.2 : 0.1
 cough_bonus = cough_present? ? 0.1 : 0.0
 
 confidence = [base_confidence + fever_bonus + cough_bonus, 1.0].min
@@ -671,7 +671,7 @@ Rules about rules:
 KBS::Rule.new("recommend_test_meta", priority: 50) do |r|
   r.conditions = [
     KBS::Condition.new(:diagnosis, {
-      confidence: :?conf
+      confidence: :conf?
     }, predicate: lambda { |f| f[:confidence].between?(0.5, 0.85) })
   ]
 
@@ -706,14 +706,14 @@ class TemporalExpertSystem < MedicalExpertSystem
       r.conditions = [
         KBS::Condition.new(:symptom, {
           type: "fever",
-          onset: :?onset1
+          onset: :onset1?
         }, predicate: lambda { |f|
           (Time.now - f[:onset]) < 3600 * 24  # < 24 hours
         }),
 
         KBS::Condition.new(:symptom, {
           type: "headache",
-          onset: :?onset2
+          onset: :onset2?
         }, predicate: lambda { |f|
           (Time.now - f[:onset]) < 3600 * 24
         })
@@ -743,18 +743,18 @@ KBS::Rule.new("resolve_conflicts", priority: 55) do |r|
   r.conditions = [
     KBS::Condition.new(:diagnosis, {
       disease: "flu",
-      confidence: :?flu_conf
+      confidence: :flu_conf?
     }),
 
     KBS::Condition.new(:diagnosis, {
       disease: "common_cold",
-      confidence: :?cold_conf
+      confidence: :cold_conf?
     })
   ]
 
   r.action = lambda do |facts, bindings|
     # Flu and cold are mutually exclusive
-    if bindings[:?flu_conf] > bindings[:?cold_conf]
+    if bindings[:flu_conf?] > bindings[:cold_conf?]
       cold = facts.find { |f| f.type == :diagnosis && f[:disease] == "common_cold" }
       @engine.remove_fact(cold)
     else

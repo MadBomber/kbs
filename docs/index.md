@@ -35,16 +35,16 @@ engine = KBS::Engine.new
 engine.add_rule(Rule.new("buy_signal") do |r|
   r.conditions = [
     # Stock price is below threshold
-    Condition.new(:stock, { symbol: :?symbol, price: :?price }),
-    Condition.new(:threshold, { symbol: :?symbol, buy_below: :?threshold }),
+    Condition.new(:stock, { symbol: :symbol?, price: :price? }),
+    Condition.new(:threshold, { symbol: :symbol?, buy_below: :threshold? }),
 
     # No pending order exists (negation)
-    Condition.new(:order, { symbol: :?symbol }, negated: true)
+    Condition.new(:order, { symbol: :symbol? }, negated: true)
   ]
 
   r.action = lambda do |facts, bindings|
-    if bindings[:?price] < bindings[:?threshold]
-      puts "BUY #{bindings[:?symbol]} at #{bindings[:?price]}"
+    if bindings[:price?] < bindings[:threshold?]
+      puts "BUY #{bindings[:symbol?]} at #{bindings[:price?]}"
     end
   end
 end)

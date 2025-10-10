@@ -25,7 +25,7 @@ engine = KBS::Engine.new
 # Add rules
 rule = KBS::Rule.new("simple_rule") do |r|
   r.conditions = [
-    KBS::Condition.new(:fact, { value: :?v })
+    KBS::Condition.new(:fact, { value: :v? })
   ]
 
   r.action = lambda do |facts, bindings|
@@ -102,7 +102,7 @@ class KBSBenchmark
     rule_count.times do |i|
       rule = KBS::Rule.new("rule_#{i}") do |r|
         r.conditions = [
-          KBS::Condition.new(:fact, { value: :?v })
+          KBS::Condition.new(:fact, { value: :v? })
         ]
 
         r.action = lambda do |facts, bindings|
@@ -135,9 +135,9 @@ class KBSBenchmark
     # Rule with 3-way join
     rule = KBS::Rule.new("complex_join") do |r|
       r.conditions = [
-        KBS::Condition.new(:a, { id: :?id, value: :?v }),
-        KBS::Condition.new(:b, { a_id: :?id, score: :?s }),
-        KBS::Condition.new(:c, { b_score: :?s })
+        KBS::Condition.new(:a, { id: :id?, value: :v? }),
+        KBS::Condition.new(:b, { a_id: :id?, score: :s? }),
+        KBS::Condition.new(:c, { b_score: :s? })
       ]
 
       r.action = lambda do |facts, bindings|
@@ -171,8 +171,8 @@ class KBSBenchmark
     # Rule with negation
     rule = KBS::Rule.new("negation_rule") do |r|
       r.conditions = [
-        KBS::Condition.new(:positive, { id: :?id }),
-        KBS::Condition.new(:negative, { id: :?id }, negated: true)
+        KBS::Condition.new(:positive, { id: :id? }),
+        KBS::Condition.new(:negative, { id: :id? }, negated: true)
       ]
 
       r.action = lambda do |facts, bindings|
@@ -258,7 +258,7 @@ end
 KBS::Rule.new("efficient") do |r|
   r.conditions = [
     KBS::Condition.new(:critical_error, { severity: "critical" }),  # Selective
-    KBS::Condition.new(:any_event, { error_id: :?id })  # Filtered by join
+    KBS::Condition.new(:any_event, { error_id: :id? })  # Filtered by join
   ]
 end
 ```
@@ -287,7 +287,7 @@ Use simple predicates:
 
 ```ruby
 # Bad: Complex predicate
-KBS::Condition.new(:data, { value: :?v }, predicate: lambda { |f|
+KBS::Condition.new(:data, { value: :v? }, predicate: lambda { |f|
   # Expensive operations
   json = JSON.parse(f[:raw_data])
   result = ComplexCalculation.new(json).process
@@ -300,7 +300,7 @@ engine.add_fact(:data, {
   processed: true
 })
 
-KBS::Condition.new(:data, { value: :?v }, predicate: lambda { |f|
+KBS::Condition.new(:data, { value: :v? }, predicate: lambda { |f|
   f[:value] > threshold  # Simple comparison
 })
 ```
@@ -313,13 +313,13 @@ Leverage shared alpha and beta memories:
 # Inefficient: Duplicate alpha nodes
 rule1 = KBS::Rule.new("rule1") do |r|
   r.conditions = [
-    KBS::Condition.new(:sensor, { type: "temperature", value: :?v1 })
+    KBS::Condition.new(:sensor, { type: "temperature", value: :v1? })
   ]
 end
 
 rule2 = KBS::Rule.new("rule2") do |r|
   r.conditions = [
-    KBS::Condition.new(:sensor, { type: "temperature", value: :?v2 })  # SAME pattern
+    KBS::Condition.new(:sensor, { type: "temperature", value: :v2? })  # SAME pattern
   ]
 end
 
@@ -604,7 +604,7 @@ KBS::Condition.new(:data, {}, predicate: lambda { |f|
 processed_value = expensive_calculation(raw_data)
 engine.add_fact(:data, { processed: processed_value })
 
-KBS::Condition.new(:data, { processed: :?v })
+KBS::Condition.new(:data, { processed: :v? })
 ```
 
 ### 3. Action Overhead
@@ -665,7 +665,7 @@ end
 cleanup_rule = KBS::Rule.new("cleanup_old_readings", priority: 1) do |r|
   r.conditions = [
     KBS::Condition.new(:sensor_reading, {
-      timestamp: :?time
+      timestamp: :time?
     }, predicate: lambda { |f|
       (Time.now - f[:timestamp]) > 300  # 5 minutes old
     })

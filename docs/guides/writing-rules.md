@@ -66,7 +66,7 @@ r.conditions = [
   KBS::Condition.new(:critical_alert, { severity: "critical" }),
 
   # Less selective last (more matches)
-  KBS::Condition.new(:sensor, { id: :?sensor_id })
+  KBS::Condition.new(:sensor, { id: :sensor_id? })
 ]
 ```
 
@@ -81,7 +81,7 @@ r.action = lambda do |facts, bindings|
   sensor = facts[1]
 
   # Access variable bindings
-  sensor_id = bindings[:?sensor_id]
+  sensor_id = bindings[:sensor_id?]
 
   # Perform action
   notify_operator(sensor_id, alert[:message])
@@ -152,15 +152,15 @@ One action, one purpose:
 ```ruby
 # Good: Focused action
 r.action = lambda do |facts, bindings|
-  send_email_alert(bindings[:?email], bindings[:?message])
+  send_email_alert(bindings[:email?], bindings[:message?])
 end
 
 # Bad: Multiple responsibilities
 r.action = lambda do |facts, bindings|
-  send_email_alert(bindings[:?email])
-  update_database(bindings[:?id])
-  call_external_api(bindings[:?data])
-  write_log_file(bindings[:?msg])
+  send_email_alert(bindings[:email?])
+  update_database(bindings[:id?])
+  call_external_api(bindings[:data?])
+  write_log_file(bindings[:msg?])
 end
 ```
 
@@ -170,33 +170,33 @@ Split complex actions into multiple rules:
 # Rule 1: Detect condition
 KBS::Rule.new("detect_high_temp", priority: 50) do |r|
   r.conditions = [
-    KBS::Condition.new(:sensor, { temp: :?temp }, predicate: ->(f) { f[:temp] > 30 })
+    KBS::Condition.new(:sensor, { temp: :temp? }, predicate: ->(f) { f[:temp] > 30 })
   ]
 
   r.action = lambda do |facts, bindings|
-    engine.add_fact(:high_temp_detected, { temp: bindings[:?temp] })
+    engine.add_fact(:high_temp_detected, { temp: bindings[:temp?] })
   end
 end
 
 # Rule 2: Send alert
 KBS::Rule.new("send_temp_alert", priority: 40) do |r|
   r.conditions = [
-    KBS::Condition.new(:high_temp_detected, { temp: :?temp })
+    KBS::Condition.new(:high_temp_detected, { temp: :temp? })
   ]
 
   r.action = lambda do |facts, bindings|
-    send_email("High temp: #{bindings[:?temp]}")
+    send_email("High temp: #{bindings[:temp?]}")
   end
 end
 
 # Rule 3: Log event
 KBS::Rule.new("log_temp_event", priority: 30) do |r|
   r.conditions = [
-    KBS::Condition.new(:high_temp_detected, { temp: :?temp })
+    KBS::Condition.new(:high_temp_detected, { temp: :temp? })
   ]
 
   r.action = lambda do |facts, bindings|
-    logger.info("Temperature spike: #{bindings[:?temp]}")
+    logger.info("Temperature spike: #{bindings[:temp?]}")
   end
 end
 ```
@@ -209,17 +209,17 @@ Actions should be deterministic and idempotent when possible:
 # Good: Idempotent (safe to run multiple times)
 r.action = lambda do |facts, bindings|
   # Remove old alert if exists
-  old = engine.facts.find { |f| f.type == :alert && f[:id] == bindings[:?id] }
+  old = engine.facts.find { |f| f.type == :alert && f[:id] == bindings[:id?] }
   engine.remove_fact(old) if old
 
   # Add new alert
-  engine.add_fact(:alert, { id: bindings[:?id], message: "Alert!" })
+  engine.add_fact(:alert, { id: bindings[:id?], message: "Alert!" })
 end
 
 # Bad: Non-idempotent (creates duplicates)
 r.action = lambda do |facts, bindings|
   # Always adds, even if alert already exists
-  engine.add_fact(:alert, { id: bindings[:?id], message: "Alert!" })
+  engine.add_fact(:alert, { id: bindings[:id?], message: "Alert!" })
 end
 ```
 
@@ -230,12 +230,12 @@ Protect against failures:
 ```ruby
 r.action = lambda do |facts, bindings|
   begin
-    send_email(bindings[:?email], bindings[:?message])
+    send_email(bindings[:email?], bindings[:message?])
   rescue Net::SMTPError => e
     logger.error("Failed to send email: #{e.message}")
     # Add failure fact for retry logic
     engine.add_fact(:email_failure, {
-      email: bindings[:?email],
+      email: bindings[:email?],
       error: e.message,
       timestamp: Time.now
     })
@@ -251,15 +251,15 @@ Use descriptive, consistent variable names:
 
 ```ruby
 # Good: Clear intent
-:?sensor_id
-:?temperature_celsius
-:?alert_threshold
-:?user_email
+:sensor_id?
+:temperature_celsius?
+:alert_threshold?
+:user_email?
 
 # Bad: Cryptic
-:?s
-:?t
-:?x
+:s?
+:t?
+:x?
 ```
 
 ### Join Patterns
@@ -270,13 +270,13 @@ Connect facts through shared variables:
 # Pattern: Join sensor reading with threshold
 r.conditions = [
   KBS::Condition.new(:sensor, {
-    id: :?sensor_id,
-    temp: :?current_temp
+    id: :sensor_id?,
+    temp: :current_temp?
   }),
 
   KBS::Condition.new(:threshold, {
-    sensor_id: :?sensor_id,  # Same variable = join constraint
-    max_temp: :?max_temp
+    sensor_id: :sensor_id?,  # Same variable = join constraint
+    max_temp: :max_temp?
   })
 ]
 
@@ -289,8 +289,8 @@ Derive values in actions:
 
 ```ruby
 r.action = lambda do |facts, bindings|
-  current = bindings[:?current_temp]
-  max = bindings[:?max_temp]
+  current = bindings[:current_temp?]
+  max = bindings[:max_temp?]
 
   # Compute derived values
   diff = current - max
@@ -311,7 +311,7 @@ Model state transitions:
 KBS::Rule.new("start_processing") do |r|
   r.conditions = [
     KBS::Condition.new(:order, {
-      id: :?order_id,
+      id: :order_id?,
       status: "pending"
     })
   ]
@@ -320,7 +320,7 @@ KBS::Rule.new("start_processing") do |r|
     old_order = facts[0]
     engine.remove_fact(old_order)
     engine.add_fact(:order, {
-      id: bindings[:?order_id],
+      id: bindings[:order_id?],
       status: "processing",
       started_at: Time.now
     })
@@ -331,11 +331,11 @@ end
 KBS::Rule.new("complete_processing") do |r|
   r.conditions = [
     KBS::Condition.new(:order, {
-      id: :?order_id,
+      id: :order_id?,
       status: "processing"
     }),
     KBS::Condition.new(:processing_done, {
-      order_id: :?order_id
+      order_id: :order_id?
     })
   ]
 
@@ -344,7 +344,7 @@ KBS::Rule.new("complete_processing") do |r|
     engine.remove_fact(order)
     engine.remove_fact(facts[1])  # Remove trigger
     engine.add_fact(:order, {
-      id: bindings[:?order_id],
+      id: bindings[:order_id?],
       status: "completed",
       completed_at: Time.now
     })
@@ -359,17 +359,17 @@ Prevent duplicate actions:
 ```ruby
 KBS::Rule.new("send_alert_once") do |r|
   r.conditions = [
-    KBS::Condition.new(:high_temp, { sensor_id: :?id }),
+    KBS::Condition.new(:high_temp, { sensor_id: :id? }),
 
     # Guard: Only fire if alert not already sent
-    KBS::Condition.new(:alert_sent, { sensor_id: :?id }, negated: true)
+    KBS::Condition.new(:alert_sent, { sensor_id: :id? }, negated: true)
   ]
 
   r.action = lambda do |facts, bindings|
-    send_alert(bindings[:?id])
+    send_alert(bindings[:id?])
 
     # Record that we sent this alert
-    engine.add_fact(:alert_sent, { sensor_id: bindings[:?id] })
+    engine.add_fact(:alert_sent, { sensor_id: bindings[:id?] })
   end
 end
 ```
@@ -382,7 +382,7 @@ Remove stale facts:
 KBS::Rule.new("cleanup_stale_alerts", priority: 1) do |r|
   r.conditions = [
     KBS::Condition.new(:alert, {
-      timestamp: :?time
+      timestamp: :time?
     }, predicate: lambda { |f|
       (Time.now - f[:timestamp]) > 3600  # 1 hour old
     })
@@ -426,12 +426,12 @@ React to time-based conditions:
 KBS::Rule.new("detect_delayed_response") do |r|
   r.conditions = [
     KBS::Condition.new(:request, {
-      id: :?req_id,
-      created_at: :?created
+      id: :req_id?,
+      created_at: :created?
     }),
 
     KBS::Condition.new(:response, {
-      request_id: :?req_id
+      request_id: :req_id?
     }, negated: true),
 
     KBS::Condition.new(:request, {},
@@ -442,7 +442,7 @@ KBS::Rule.new("detect_delayed_response") do |r|
   ]
 
   r.action = lambda do |facts, bindings|
-    alert("Request #{bindings[:?req_id]} delayed!")
+    alert("Request #{bindings[:req_id?]} delayed!")
   end
 end
 ```
@@ -486,9 +486,9 @@ end
 
 KBS::Rule.new("emergency_check", priority: 100) do |r|
   r.conditions = [
-    KBS::Condition.new(:risk_score, { value: :?risk })  # Depends on low priority rule!
+    KBS::Condition.new(:risk_score, { value: :risk? })  # Depends on low priority rule!
   ]
-  r.action = lambda { |f, b| emergency_shutdown if b[:?risk] > 90 }
+  r.action = lambda { |f, b| emergency_shutdown if b[:risk?] > 90 }
 end
 
 # Fix: Make dependency higher priority
@@ -511,12 +511,12 @@ class TestTemperatureRules < Minitest::Test
 
     @rule = KBS::Rule.new("high_temp_alert") do |r|
       r.conditions = [
-        KBS::Condition.new(:sensor, { id: :?id, temp: :?temp }),
-        KBS::Condition.new(:threshold, { id: :?id, max: :?max })
+        KBS::Condition.new(:sensor, { id: :id?, temp: :temp? }),
+        KBS::Condition.new(:threshold, { id: :id?, max: :max? })
       ]
 
       r.action = lambda do |facts, bindings|
-        @alert_fired = true if bindings[:?temp] > bindings[:?max]
+        @alert_fired = true if bindings[:temp?] > bindings[:max?]
       end
     end
 
@@ -650,7 +650,7 @@ end
 # Good: Cache as fact, recompute only when needed
 KBS::Rule.new("update_average", priority: 100) do |r|
   r.conditions = [
-    KBS::Condition.new(:sensor, { temp: :?temp })  # Triggers when sensor added
+    KBS::Condition.new(:sensor, { temp: :temp? })  # Triggers when sensor added
   ]
 
   r.action = lambda do |facts, bindings|
@@ -661,11 +661,11 @@ end
 
 KBS::Rule.new("check_average", priority: 50) do |r|
   r.conditions = [
-    KBS::Condition.new(:cached_average, { value: :?avg })
+    KBS::Condition.new(:cached_average, { value: :avg? })
   ]
 
   r.action = lambda do |facts, bindings|
-    alert(bindings[:?avg]) if bindings[:?avg] > threshold
+    alert(bindings[:avg?]) if bindings[:avg?] > threshold
   end
 end
 ```
@@ -678,24 +678,24 @@ end
 # Bad: Rule fires itself indefinitely
 KBS::Rule.new("infinite_loop") do |r|
   r.conditions = [
-    KBS::Condition.new(:sensor, { temp: :?temp })
+    KBS::Condition.new(:sensor, { temp: :temp? })
   ]
 
   r.action = lambda do |facts, bindings|
     # This triggers the rule again!
-    engine.add_fact(:sensor, { temp: bindings[:?temp] + 1 })
+    engine.add_fact(:sensor, { temp: bindings[:temp?] + 1 })
   end
 end
 
 # Fix: Add termination condition
 KBS::Rule.new("limited_increment") do |r|
   r.conditions = [
-    KBS::Condition.new(:sensor, { temp: :?temp }),
+    KBS::Condition.new(:sensor, { temp: :temp? }),
     KBS::Condition.new(:increment_done, {}, negated: true)
   ]
 
   r.action = lambda do |facts, bindings|
-    engine.add_fact(:sensor, { temp: bindings[:?temp] + 1 })
+    engine.add_fact(:sensor, { temp: bindings[:temp?] + 1 })
     engine.add_fact(:increment_done, {})
   end
 end

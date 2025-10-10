@@ -58,12 +58,12 @@ Provides a Ruby-native interface for defining rules, conditions, and patterns.
 ```ruby
 Rule.new("alert") do |r|
   r.conditions = [
-    Condition.new(:sensor, { temp: :?t }),
-    Condition.new(:threshold, { max: :?max })
+    Condition.new(:sensor, { temp: :t? }),
+    Condition.new(:threshold, { max: :max? })
   ]
 
   r.action = lambda { |facts, bindings|
-    puts "Alert!" if bindings[:?t] > bindings[:?max]
+    puts "Alert!" if bindings[:t?] > bindings[:max?]
   }
 end
 ```
@@ -148,10 +148,10 @@ When you add a rule, KBS compiles it into a discrimination network:
 ```ruby
 rule = Rule.new("example") do |r|
   r.conditions = [
-    Condition.new(:stock, { symbol: :?sym }),
-    Condition.new(:alert, { symbol: :?sym }, negated: true)
+    Condition.new(:stock, { symbol: :sym? }),
+    Condition.new(:alert, { symbol: :sym? }, negated: true)
   ]
-  r.action = ->(facts, bindings) { puts bindings[:?sym] }
+  r.action = ->(facts, bindings) { puts bindings[:sym?] }
 end
 
 engine.add_rule(rule)
@@ -235,7 +235,7 @@ Actions are lambdas - inject any Ruby code:
 
 ```ruby
 r.action = lambda do |facts, bindings|
-  send_email(bindings[:?alert])
+  send_email(bindings[:alert?])
   log_to_database(facts)
   trigger_api_call(bindings)
 end

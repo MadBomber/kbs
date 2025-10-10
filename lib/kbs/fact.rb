@@ -26,7 +26,7 @@ module KBS
 
         if value.is_a?(Proc)
           return false unless @attributes[key] && value.call(@attributes[key])
-        elsif value.is_a?(Symbol) && value.to_s.start_with?('?')
+        elsif value.is_a?(Symbol) && value.to_s.end_with?('?')
           next
         else
           return false unless @attributes[key] == value

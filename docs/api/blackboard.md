@@ -434,7 +434,7 @@ Logs a rule firing event.
 memory.log_rule_firing(
   "high_temperature_alert",
   [fact1.uuid, fact2.uuid],
-  { :?temp => 85, :?location => "server_room" }
+  { :temp? => 85, :location? => "server_room" }
 )
 ```
 
@@ -848,7 +848,7 @@ Logs a rule firing event.
 memory.audit_log.log_rule_firing(
   "high_temp_alert",
   [fact1.uuid, fact2.uuid],
-  { :?temp => 85 }
+  { :temp? => 85 }
 )
 ```
 

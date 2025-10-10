@@ -39,35 +39,35 @@ class TradingSystem
     signal_rule = KBS::Rule.new("ma_crossover_signal", priority: 100) do |r|
       r.conditions = [
         KBS::Condition.new(:market_data, {
-          symbol: :?sym,
-          price: :?price,
-          ma_short: :?ma_short,
-          ma_long: :?ma_long
+          symbol: :sym?,
+          price: :price?,
+          ma_short: :ma_short?,
+          ma_long: :ma_long?
         }),
 
         # No existing signal for this symbol
-        KBS::Condition.new(:signal, { symbol: :?sym }, negated: true)
+        KBS::Condition.new(:signal, { symbol: :sym? }, negated: true)
       ]
 
       r.action = lambda do |facts, bindings|
-        short = bindings[:?ma_short]
-        long = bindings[:?ma_long]
+        short = bindings[:ma_short?]
+        long = bindings[:ma_long?]
 
         # Golden cross: short MA crosses above long MA
         if short > long && (short - long) / long > 0.01  # 1% threshold
           @engine.add_fact(:signal, {
-            symbol: bindings[:?sym],
+            symbol: bindings[:sym?],
             type: "buy",
-            price: bindings[:?price],
+            price: bindings[:price?],
             confidence: calculate_confidence(short, long),
             timestamp: Time.now
           })
         # Death cross: short MA crosses below long MA
         elsif short < long && (long - short) / long > 0.01
           @engine.add_fact(:signal, {
-            symbol: bindings[:?sym],
+            symbol: bindings[:sym?],
             type: "sell",
-            price: bindings[:?price],
+            price: bindings[:price?],
             confidence: calculate_confidence(short, long),
             timestamp: Time.now
           })
@@ -79,25 +79,25 @@ class TradingSystem
     risk_check_buy = KBS::Rule.new("risk_check_buy", priority: 90) do |r|
       r.conditions = [
         KBS::Condition.new(:signal, {
-          symbol: :?sym,
+          symbol: :sym?,
           type: "buy",
-          price: :?price
+          price: :price?
         }),
 
         KBS::Condition.new(:portfolio, {
-          cash: :?cash,
-          positions: :?positions
+          cash: :cash?,
+          positions: :positions?
         }),
 
         # No risk approval yet
-        KBS::Condition.new(:risk_approved, { signal_id: :?sig_id }, negated: true)
+        KBS::Condition.new(:risk_approved, { signal_id: :sig_id? }, negated: true)
       ]
 
       r.action = lambda do |facts, bindings|
         signal = facts.find { |f| f.type == :signal }
-        cash = bindings[:?cash]
-        positions = bindings[:?positions]
-        price = bindings[:?price]
+        cash = bindings[:cash?]
+        positions = bindings[:positions?]
+        price = bindings[:price?]
 
         # Risk checks
         position_size = calculate_position_size(cash, price)
@@ -110,7 +110,7 @@ class TradingSystem
           if total_positions < 10  # Max 10 positions
             @engine.add_fact(:risk_approved, {
               signal_id: signal.id,
-              symbol: bindings[:?sym],
+              symbol: bindings[:sym?],
               quantity: position_size,
               approved_at: Time.now
             })
@@ -133,36 +133,36 @@ class TradingSystem
     execution_rule = KBS::Rule.new("execute_approved_orders", priority: 80) do |r|
       r.conditions = [
         KBS::Condition.new(:risk_approved, {
-          signal_id: :?sig_id,
-          symbol: :?sym,
-          quantity: :?qty
+          signal_id: :sig_id?,
+          symbol: :sym?,
+          quantity: :qty?
         }),
 
         KBS::Condition.new(:signal, {
-          symbol: :?sym,
-          type: :?type,
-          price: :?price
+          symbol: :sym?,
+          type: :type?,
+          price: :price?
         }),
 
         # Not yet executed
-        KBS::Condition.new(:order, { signal_id: :?sig_id }, negated: true)
+        KBS::Condition.new(:order, { signal_id: :sig_id? }, negated: true)
       ]
 
       r.action = lambda do |facts, bindings|
         order_id = execute_order(
-          symbol: bindings[:?sym],
-          type: bindings[:?type],
-          quantity: bindings[:?qty],
-          price: bindings[:?price]
+          symbol: bindings[:sym?],
+          type: bindings[:type?],
+          quantity: bindings[:qty?],
+          price: bindings[:price?]
         )
 
         @engine.add_fact(:order, {
-          signal_id: bindings[:?sig_id],
+          signal_id: bindings[:sig_id?],
           order_id: order_id,
-          symbol: bindings[:?sym],
-          type: bindings[:?type],
-          quantity: bindings[:?qty],
-          price: bindings[:?price],
+          symbol: bindings[:sym?],
+          type: bindings[:type?],
+          quantity: bindings[:qty?],
+          price: bindings[:price?],
           status: "submitted",
           timestamp: Time.now
         })
@@ -179,28 +179,28 @@ class TradingSystem
     stop_loss_rule = KBS::Rule.new("stop_loss_trigger", priority: 95) do |r|
       r.conditions = [
         KBS::Condition.new(:position, {
-          symbol: :?sym,
-          entry_price: :?entry,
-          quantity: :?qty
+          symbol: :sym?,
+          entry_price: :entry?,
+          quantity: :qty?
         }),
 
         KBS::Condition.new(:market_data, {
-          symbol: :?sym,
-          price: :?current_price
+          symbol: :sym?,
+          price: :current_price?
         }),
 
-        KBS::Condition.new(:stop_loss_triggered, { symbol: :?sym }, negated: true)
+        KBS::Condition.new(:stop_loss_triggered, { symbol: :sym? }, negated: true)
       ]
 
       r.action = lambda do |facts, bindings|
-        entry = bindings[:?entry]
-        current = bindings[:?current_price]
+        entry = bindings[:entry?]
+        current = bindings[:current_price?]
         loss_pct = (entry - current) / entry
 
         # 5% stop loss
         if loss_pct > 0.05
           @engine.add_fact(:signal, {
-            symbol: bindings[:?sym],
+            symbol: bindings[:sym?],
             type: "sell",
             price: current,
             confidence: 1.0,
@@ -209,7 +209,7 @@ class TradingSystem
           })
 
           @engine.add_fact(:stop_loss_triggered, {
-            symbol: bindings[:?sym],
+            symbol: bindings[:sym?],
             entry_price: entry,
             exit_price: current,
             loss_pct: loss_pct
@@ -222,28 +222,28 @@ class TradingSystem
     take_profit_rule = KBS::Rule.new("take_profit_trigger", priority: 95) do |r|
       r.conditions = [
         KBS::Condition.new(:position, {
-          symbol: :?sym,
-          entry_price: :?entry,
-          quantity: :?qty
+          symbol: :sym?,
+          entry_price: :entry?,
+          quantity: :qty?
         }),
 
         KBS::Condition.new(:market_data, {
-          symbol: :?sym,
-          price: :?current_price
+          symbol: :sym?,
+          price: :current_price?
         }),
 
-        KBS::Condition.new(:take_profit_triggered, { symbol: :?sym }, negated: true)
+        KBS::Condition.new(:take_profit_triggered, { symbol: :sym? }, negated: true)
       ]
 
       r.action = lambda do |facts, bindings|
-        entry = bindings[:?entry]
-        current = bindings[:?current_price]
+        entry = bindings[:entry?]
+        current = bindings[:current_price?]
         gain_pct = (current - entry) / entry
 
         # 15% take profit
         if gain_pct > 0.15
           @engine.add_fact(:signal, {
-            symbol: bindings[:?sym],
+            symbol: bindings[:sym?],
             type: "sell",
             price: current,
             confidence: 1.0,
@@ -252,7 +252,7 @@ class TradingSystem
           })
 
           @engine.add_fact(:take_profit_triggered, {
-            symbol: bindings[:?sym],
+            symbol: bindings[:sym?],
             entry_price: entry,
             exit_price: current,
             gain_pct: gain_pct

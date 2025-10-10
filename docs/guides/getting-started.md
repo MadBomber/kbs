@@ -45,13 +45,13 @@ The engine manages rules, facts, and executes the pattern matching algorithm.
 # Define a rule for high temperature alerts
 high_temp_rule = KBS::Rule.new("high_temperature_alert") do |r|
   r.conditions = [
-    KBS::Condition.new(:sensor, { id: :?sensor_id, temp: :?temp }),
-    KBS::Condition.new(:threshold, { id: :?sensor_id, max: :?max })
+    KBS::Condition.new(:sensor, { id: :sensor_id?, temp: :temp? }),
+    KBS::Condition.new(:threshold, { id: :sensor_id?, max: :max? })
   ]
 
   r.action = lambda do |facts, bindings|
-    if bindings[:?temp] > bindings[:?max]
-      puts "🚨 ALERT: Sensor #{bindings[:?sensor_id]} at #{bindings[:?temp]}°C"
+    if bindings[:temp?] > bindings[:max?]
+      puts "🚨 ALERT: Sensor #{bindings[:sensor_id?]} at #{bindings[:temp?]}°C"
     end
   end
 end
@@ -61,11 +61,11 @@ engine.add_rule(high_temp_rule)
 
 **What this rule does:**
 
-- **Condition 1**: Match any `:sensor` fact, binding its `id` to `:?sensor_id` and `temp` to `:?temp`
-- **Condition 2**: Match a `:threshold` fact with the same `id`, binding `max` to `:?max`
+- **Condition 1**: Match any `:sensor` fact, binding its `id` to `:sensor_id?` and `temp` to `:temp?`
+- **Condition 2**: Match a `:threshold` fact with the same `id`, binding `max` to `:max?`
 - **Action**: When both conditions match, compare temperature against threshold
 
-**Variable binding** (`:?sensor_id`) ensures we only compare sensors with their own thresholds.
+**Variable binding** (`:sensor_id?`) ensures we only compare sensors with their own thresholds.
 
 ### Step 3: Add Facts
 
@@ -98,19 +98,19 @@ Variable binding connects facts across conditions. Here's how it works:
 
 ```ruby
 r.conditions = [
-  KBS::Condition.new(:sensor, { id: :?sensor_id, temp: :?temp }),
-  KBS::Condition.new(:threshold, { id: :?sensor_id, max: :?max })
+  KBS::Condition.new(:sensor, { id: :sensor_id?, temp: :temp? }),
+  KBS::Condition.new(:threshold, { id: :sensor_id?, max: :max? })
 ]
 ```
 
 **Binding Process:**
 
 1. Engine finds a `:sensor` fact: `{ id: "bedroom", temp: 28 }`
-2. Binds `:?sensor_id` → `"bedroom"`, `:?temp` → `28`
+2. Binds `:sensor_id?` → `"bedroom"`, `:temp?` → `28`
 3. Searches for `:threshold` fact where `id` also equals `"bedroom"`
 4. Finds `{ id: "bedroom", max: 25 }`
-5. Binds `:?max` → `25`
-6. Both conditions satisfied → rule fires with bindings: `{ :?sensor_id => "bedroom", :?temp => 28, :?max => 25 }`
+5. Binds `:max?` → `25`
+6. Both conditions satisfied → rule fires with bindings: `{ :sensor_id? => "bedroom", :temp? => 28, :max? => 25 }`
 
 Without variable binding, the rule would incorrectly match bedroom sensors with kitchen thresholds.
 
@@ -121,17 +121,17 @@ Let's prevent the same alert from firing repeatedly:
 ```ruby
 smart_alert_rule = KBS::Rule.new("smart_temperature_alert") do |r|
   r.conditions = [
-    KBS::Condition.new(:sensor, { id: :?sensor_id, temp: :?temp }),
-    KBS::Condition.new(:threshold, { id: :?sensor_id, max: :?max }),
+    KBS::Condition.new(:sensor, { id: :sensor_id?, temp: :temp? }),
+    KBS::Condition.new(:threshold, { id: :sensor_id?, max: :max? }),
     # Only fire if no alert already exists for this sensor
-    KBS::Condition.new(:alert, { sensor_id: :?sensor_id }, negated: true)
+    KBS::Condition.new(:alert, { sensor_id: :sensor_id? }, negated: true)
   ]
 
   r.action = lambda do |facts, bindings|
-    if bindings[:?temp] > bindings[:?max]
-      puts "🚨 ALERT: Sensor #{bindings[:?sensor_id]} at #{bindings[:?temp]}°C"
+    if bindings[:temp?] > bindings[:max?]
+      puts "🚨 ALERT: Sensor #{bindings[:sensor_id?]} at #{bindings[:temp?]}°C"
       # Record that we sent this alert
-      engine.add_fact(:alert, sensor_id: bindings[:?sensor_id])
+      engine.add_fact(:alert, sensor_id: bindings[:sensor_id?])
     end
   end
 end
@@ -189,11 +189,11 @@ When multiple rules match, control firing order with priorities:
 ```ruby
 critical_rule = KBS::Rule.new("critical_alert", priority: 100) do |r|
   r.conditions = [
-    KBS::Condition.new(:sensor, { temp: :?temp })
+    KBS::Condition.new(:sensor, { temp: :temp? })
   ]
 
   r.action = lambda do |facts, bindings|
-    if bindings[:?temp] > 50
+    if bindings[:temp?] > 50
       puts "🔥 CRITICAL: Immediate shutdown required!"
       exit(1)
     end
@@ -231,15 +231,15 @@ class TemperatureMonitor
     # Rule 1: Send alert when temp exceeds threshold
     alert_rule = KBS::Rule.new("temperature_alert", priority: 50) do |r|
       r.conditions = [
-        KBS::Condition.new(:sensor, { id: :?id, temp: :?temp }),
-        KBS::Condition.new(:threshold, { id: :?id, max: :?max }),
-        KBS::Condition.new(:alert, { sensor_id: :?id }, negated: true)
+        KBS::Condition.new(:sensor, { id: :id?, temp: :temp? }),
+        KBS::Condition.new(:threshold, { id: :id?, max: :max? }),
+        KBS::Condition.new(:alert, { sensor_id: :id? }, negated: true)
       ]
 
       r.action = lambda do |facts, bindings|
-        if bindings[:?temp] > bindings[:?max]
-          send_alert(bindings[:?id], bindings[:?temp], bindings[:?max])
-          @engine.add_fact(:alert, sensor_id: bindings[:?id])
+        if bindings[:temp?] > bindings[:max?]
+          send_alert(bindings[:id?], bindings[:temp?], bindings[:max?])
+          @engine.add_fact(:alert, sensor_id: bindings[:id?])
         end
       end
     end
@@ -247,16 +247,16 @@ class TemperatureMonitor
     # Rule 2: Clear alert when temp drops below threshold
     clear_rule = KBS::Rule.new("clear_alert", priority: 40) do |r|
       r.conditions = [
-        KBS::Condition.new(:sensor, { id: :?id, temp: :?temp }),
-        KBS::Condition.new(:threshold, { id: :?id, max: :?max }),
-        KBS::Condition.new(:alert, { sensor_id: :?id })
+        KBS::Condition.new(:sensor, { id: :id?, temp: :temp? }),
+        KBS::Condition.new(:threshold, { id: :id?, max: :max? }),
+        KBS::Condition.new(:alert, { sensor_id: :id? })
       ]
 
       r.action = lambda do |facts, bindings|
-        if bindings[:?temp] <= bindings[:?max]
-          clear_alert(bindings[:?id])
+        if bindings[:temp?] <= bindings[:max?]
+          clear_alert(bindings[:id?])
           # Remove the alert fact
-          alert_fact = facts.find { |f| f.type == :alert && f[:sensor_id] == bindings[:?id] }
+          alert_fact = facts.find { |f| f.type == :alert && f[:sensor_id] == bindings[:id?] }
           @engine.remove_fact(alert_fact) if alert_fact
         end
       end
@@ -265,12 +265,12 @@ class TemperatureMonitor
     # Rule 3: Emergency shutdown for extreme temps
     emergency_rule = KBS::Rule.new("emergency_shutdown", priority: 100) do |r|
       r.conditions = [
-        KBS::Condition.new(:sensor, { temp: :?temp })
+        KBS::Condition.new(:sensor, { temp: :temp? })
       ]
 
       r.action = lambda do |facts, bindings|
-        if bindings[:?temp] > 60
-          emergency_shutdown(bindings[:?temp])
+        if bindings[:temp?] > 60
+          emergency_shutdown(bindings[:temp?])
         end
       end
     end
@@ -333,7 +333,7 @@ monitor.close
 ✅ **Rules** - Define patterns and actions
 ✅ **Facts** - Observations stored in working memory
 ✅ **Conditions** - Patterns that match facts
-✅ **Variable Binding** - Connect facts across conditions using `:?variable`
+✅ **Variable Binding** - Connect facts across conditions using `:variable?`
 ✅ **Negation** - Match when patterns are absent
 ✅ **Priorities** - Control rule firing order
 ✅ **Persistence** - Save facts to database with blackboard memory
@@ -346,7 +346,7 @@ monitor.close
 
 **Checklist**:
 1. Did you call `engine.run`?
-2. Do variable bindings match? (`:?sensor_id` must appear in both conditions)
+2. Do variable bindings match? (`:sensor_id?` must appear in both conditions)
 3. Check negated conditions - is there a blocking fact?
 4. Verify fact types match condition types exactly (`:sensor` vs `:sensors`)
 

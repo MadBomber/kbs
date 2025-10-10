@@ -7,7 +7,7 @@ module KBS
 
       def initialize(name)
         name_str = name.to_s
-        @name = name_str.start_with?('?') ? name_str.to_sym : "?#{name_str}".to_sym
+        @name = name_str.end_with?('?') ? name_str.to_sym : "#{name_str}?".to_sym
       end
 
       def to_sym

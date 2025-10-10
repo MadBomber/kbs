@@ -30,10 +30,10 @@ kb = KBS.knowledge_base do
     desc "Alert when temperature exceeds threshold"
     priority 10
 
-    on :temperature, value: greater_than(80), location: :?loc
+    on :temperature, value: greater_than(80), location: :loc?
 
     perform do |bindings|
-      puts "High temperature at #{bindings[:?loc]}"
+      puts "High temperature at #{bindings[:loc?]}"
     end
   end
 
@@ -310,7 +310,7 @@ rule "rule_name" do
   priority 10  # Optional, default: 0
 
   # Conditions (one or more)
-  on :fact_type, attribute: value, other: :?variable
+  on :fact_type, attribute: value, other: :variable?
   on :another_type, field: predicate
 
   # Action
@@ -366,8 +366,8 @@ end
 
 rule "log_reading" do
   priority 1  # Low priority
-  on :temperature, value: :?temp
-  perform { |b| log(b[:?temp]) }
+  on :temperature, value: :temp?
+  perform { |b| log(b[:temp?]) }
 end
 ```
 
@@ -433,20 +433,20 @@ on :order, status: "pending", total: 100  # Both must match exactly
 Capture attribute values in variables (symbols starting with `?`):
 
 ```ruby
-on :temperature, value: :?temp, location: :?loc
+on :temperature, value: :temp?, location: :loc?
 
 # In action:
 perform do |bindings|
-  puts "Temperature: #{bindings[:?temp]}"
-  puts "Location: #{bindings[:?loc]}"
+  puts "Temperature: #{bindings[:temp?]}"
+  puts "Location: #{bindings[:loc?]}"
 end
 ```
 
 **Join Test**: Same variable in multiple conditions creates a join:
 
 ```ruby
-on :order, product_id: :?pid, quantity: :?qty
-on :inventory, product_id: :?pid, available: :?avail
+on :order, product_id: :pid?, quantity: :qty?
+on :inventory, product_id: :pid?, available: :avail?
 
 # These conditions only match when product_id is the same in both facts
 ```
@@ -476,14 +476,14 @@ Define patterns using a block with method-missing magic:
 ```ruby
 on :temperature do
   value > 80        # Creates lambda: ->(v) { v > 80 }
-  location :?loc    # Binds variable
+  location :loc?    # Binds variable
   sensor_id 42      # Literal match
 end
 
 # Equivalent to:
 on :temperature,
    value: ->(v) { v > 80 },
-   location: :?loc,
+   location: :loc?,
    sensor_id: 42
 ```
 
@@ -651,9 +651,9 @@ Variables allow you to:
 Variables are symbols starting with `?`:
 
 ```ruby
-:?temp      # Variable named "temp"
-:?location  # Variable named "location"
-:?pid       # Variable named "pid"
+:temp?      # Variable named "temp"
+:location?  # Variable named "location"
+:pid?       # Variable named "pid"
 ```
 
 ---
@@ -662,11 +662,11 @@ Variables are symbols starting with `?`:
 
 ```ruby
 rule "temperature_report" do
-  on :temperature, value: :?temp, location: :?loc, timestamp: :?time
+  on :temperature, value: :temp?, location: :loc?, timestamp: :time?
 
   perform do |bindings|
-    puts "Temperature at #{bindings[:?loc]}: #{bindings[:?temp]}°F"
-    puts "Recorded: #{bindings[:?time]}"
+    puts "Temperature at #{bindings[:loc?]}: #{bindings[:temp?]}°F"
+    puts "Recorded: #{bindings[:time?]}"
   end
 end
 ```
@@ -679,12 +679,12 @@ Variables with the same name in different conditions create a join test:
 
 ```ruby
 rule "check_inventory" do
-  on :order, product_id: :?pid, quantity: :?qty
-  on :inventory, product_id: :?pid, available: :?avail
+  on :order, product_id: :pid?, quantity: :qty?
+  on :inventory, product_id: :pid?, available: :avail?
 
   perform do |bindings|
-    if bindings[:?avail] < bindings[:?qty]
-      puts "Insufficient inventory for product #{bindings[:?pid]}"
+    if bindings[:avail?] < bindings[:qty?]
+      puts "Insufficient inventory for product #{bindings[:pid?]}"
     end
   end
 end
@@ -701,14 +701,14 @@ end
 
 ```ruby
 rule "sensor_temperature_correlation" do
-  on :sensor, id: :?sensor_id, location: :?loc, status: "active"
-  on :temperature, sensor_id: :?sensor_id, value: :?temp
-  on :reading, sensor_id: :?sensor_id, timestamp: :?time
+  on :sensor, id: :sensor_id?, location: :loc?, status: "active"
+  on :temperature, sensor_id: :sensor_id?, value: :temp?
+  on :reading, sensor_id: :sensor_id?, timestamp: :time?
 
   perform do |bindings|
     # All three facts share the same sensor_id
-    puts "Sensor #{bindings[:?sensor_id]} at #{bindings[:?loc]}"
-    puts "Reading: #{bindings[:?temp]}°F at #{bindings[:?time]}"
+    puts "Sensor #{bindings[:sensor_id?]} at #{bindings[:loc?]}"
+    puts "Reading: #{bindings[:temp?]}°F at #{bindings[:time?]}"
   end
 end
 ```
@@ -774,11 +774,11 @@ Variables in negated conditions create "there is no fact with this value" tests:
 
 ```ruby
 rule "no_matching_inventory" do
-  on :order, product_id: :?pid
-  without :inventory, product_id: :?pid
+  on :order, product_id: :pid?
+  without :inventory, product_id: :pid?
 
   perform do |bindings|
-    puts "No inventory for product #{bindings[:?pid]}"
+    puts "No inventory for product #{bindings[:pid?]}"
   end
 end
 
@@ -808,9 +808,9 @@ end
 
 # Timeout detection
 rule "sensor_timeout" do
-  on :sensor, id: :?sensor_id, expected: true
-  without :reading, sensor_id: :?sensor_id
-  perform { |b| puts "Sensor #{b[:?sensor_id]} timeout" }
+  on :sensor, id: :sensor_id?, expected: true
+  without :reading, sensor_id: :sensor_id?
+  perform { |b| puts "Sensor #{b[:sensor_id?]} timeout" }
 end
 ```
 
@@ -837,11 +837,11 @@ Actions receive a `bindings` hash containing all variable bindings:
 
 ```ruby
 rule "example" do
-  on :temperature, value: :?temp, location: :?loc
+  on :temperature, value: :temp?, location: :loc?
 
   perform do |bindings|
-    temp = bindings[:?temp]
-    location = bindings[:?loc]
+    temp = bindings[:temp?]
+    location = bindings[:loc?]
     puts "Temperature at #{location}: #{temp}°F"
   end
 end
@@ -856,7 +856,7 @@ Actions can:
 1. **Read bindings**:
 ```ruby
 perform do |bindings|
-  value = bindings[:?temp]
+  value = bindings[:temp?]
 end
 ```
 
@@ -875,9 +875,9 @@ end
 3. **Call external methods**:
 ```ruby
 perform do |bindings|
-  send_email_alert(bindings[:?temp])
+  send_email_alert(bindings[:temp?])
   log_to_database(bindings)
-  trigger_alarm if bindings[:?level] == "critical"
+  trigger_alarm if bindings[:level?] == "critical"
 end
 ```
 
@@ -885,7 +885,7 @@ end
 ```ruby
 perform do |bindings|
   # Add derived fact
-  fact :alert, level: "high", source: bindings[:?sensor_id]
+  fact :alert, level: "high", source: bindings[:sensor_id?]
 
   # Remove triggering fact
   old_fact = query(:trigger, event: "start").first
@@ -900,27 +900,27 @@ end
 ```ruby
 # Simple logging
 rule "log_temperature" do
-  on :temperature, value: :?temp
-  perform { |b| puts "Temperature: #{b[:?temp]}" }
+  on :temperature, value: :temp?
+  perform { |b| puts "Temperature: #{b[:temp?]}" }
 end
 
 # State machine transition
 rule "pending_to_processing" do
-  on :order, id: :?order_id, status: "pending"
-  on :worker, status: "available", id: :?worker_id
+  on :order, id: :order_id?, status: "pending"
+  on :worker, status: "available", id: :worker_id?
 
   perform do |bindings|
     # Update order status
-    order = query(:order, id: bindings[:?order_id]).first
+    order = query(:order, id: bindings[:order_id?]).first
     retract order
-    fact :order, id: bindings[:?order_id],
+    fact :order, id: bindings[:order_id?],
                  status: "processing",
-                 worker_id: bindings[:?worker_id]
+                 worker_id: bindings[:worker_id?]
 
     # Update worker status
-    worker = query(:worker, id: bindings[:?worker_id]).first
+    worker = query(:worker, id: bindings[:worker_id?]).first
     retract worker
-    fact :worker, id: bindings[:?worker_id], status: "busy"
+    fact :worker, id: bindings[:worker_id?], status: "busy"
   end
 end
 
@@ -1078,8 +1078,8 @@ end
 ```ruby
 kb = KBS.knowledge_base do
   rule "example" do
-    on :temperature, value: :?temp
-    perform { |b| puts b[:?temp] }
+    on :temperature, value: :temp?
+    perform { |b| puts b[:temp?] }
   end
 end
 
@@ -1108,18 +1108,18 @@ kb = KBS.knowledge_base do
     desc "Alert when temperature exceeds safe threshold"
     priority 10
 
-    on :sensor, id: :?sensor_id, status: "active"
-    on :temperature, sensor_id: :?sensor_id, value: greater_than(80)
-    without :alert, sensor_id: :?sensor_id  # No existing alert
+    on :sensor, id: :sensor_id?, status: "active"
+    on :temperature, sensor_id: :sensor_id?, value: greater_than(80)
+    without :alert, sensor_id: :sensor_id?  # No existing alert
 
     perform do |bindings|
       puts "⚠️  HIGH TEMPERATURE ALERT"
-      puts "Sensor: #{bindings[:?sensor_id]}"
-      puts "Temperature: #{bindings[:?value]}°F"
+      puts "Sensor: #{bindings[:sensor_id?]}"
+      puts "Temperature: #{bindings[:value?]}°F"
 
       # Create alert fact
       fact :alert,
-           sensor_id: bindings[:?sensor_id],
+           sensor_id: bindings[:sensor_id?],
            level: "high",
            timestamp: Time.now
     end
@@ -1129,14 +1129,14 @@ kb = KBS.knowledge_base do
     desc "Clear alert when temperature returns to normal"
     priority 5
 
-    on :temperature, sensor_id: :?sensor_id, value: less_than(75)
-    on :alert, sensor_id: :?sensor_id
+    on :temperature, sensor_id: :sensor_id?, value: less_than(75)
+    on :alert, sensor_id: :sensor_id?
 
     perform do |bindings|
-      puts "✓ Temperature normal for sensor #{bindings[:?sensor_id]}"
+      puts "✓ Temperature normal for sensor #{bindings[:sensor_id?]}"
 
       # Remove alert
-      alerts = query(:alert, sensor_id: bindings[:?sensor_id])
+      alerts = query(:alert, sensor_id: bindings[:sensor_id?])
       alerts.each { |a| retract a }
     end
   end
@@ -1164,22 +1164,22 @@ kb = KBS.knowledge_base do
   rule "validate_order" do
     priority 100
 
-    on :order, id: :?order_id, status: "new", product_id: :?pid, quantity: :?qty
-    on :inventory, product_id: :?pid, quantity: :?available
+    on :order, id: :order_id?, status: "new", product_id: :pid?, quantity: :qty?
+    on :inventory, product_id: :pid?, quantity: :available?
 
     perform do |bindings|
-      if bindings[:?available] >= bindings[:?qty]
-        order = query(:order, id: bindings[:?order_id]).first
+      if bindings[:available?] >= bindings[:qty?]
+        order = query(:order, id: bindings[:order_id?]).first
         retract order
         fact :order,
-             id: bindings[:?order_id],
+             id: bindings[:order_id?],
              status: "validated",
-             product_id: bindings[:?pid],
-             quantity: bindings[:?qty]
+             product_id: bindings[:pid?],
+             quantity: bindings[:qty?]
       else
         fact :alert,
              type: "insufficient_inventory",
-             order_id: bindings[:?order_id]
+             order_id: bindings[:order_id?]
       end
     end
   end
@@ -1187,28 +1187,28 @@ kb = KBS.knowledge_base do
   rule "fulfill_order" do
     priority 50
 
-    on :order, id: :?order_id, status: "validated",
-               product_id: :?pid, quantity: :?qty
-    on :inventory, product_id: :?pid, quantity: :?available
+    on :order, id: :order_id?, status: "validated",
+               product_id: :pid?, quantity: :qty?
+    on :inventory, product_id: :pid?, quantity: :available?
 
     perform do |bindings|
       # Deduct inventory
-      inventory = query(:inventory, product_id: bindings[:?pid]).first
+      inventory = query(:inventory, product_id: bindings[:pid?]).first
       retract inventory
       fact :inventory,
-           product_id: bindings[:?pid],
-           quantity: bindings[:?available] - bindings[:?qty]
+           product_id: bindings[:pid?],
+           quantity: bindings[:available?] - bindings[:qty?]
 
       # Update order status
-      order = query(:order, id: bindings[:?order_id]).first
+      order = query(:order, id: bindings[:order_id?]).first
       retract order
       fact :order,
-           id: bindings[:?order_id],
+           id: bindings[:order_id?],
            status: "fulfilled",
-           product_id: bindings[:?pid],
-           quantity: bindings[:?qty]
+           product_id: bindings[:pid?],
+           quantity: bindings[:qty?]
 
-      puts "✓ Order #{bindings[:?order_id]} fulfilled"
+      puts "✓ Order #{bindings[:order_id?]} fulfilled"
     end
   end
 
@@ -1295,13 +1295,13 @@ on :order, status: ->(s) { ["pending", "processing"].include?(s) }
 ```ruby
 # Good - Simple, focused action
 rule "log_temperature" do
-  on :temperature, value: :?temp
-  perform { |b| logger.info("Temperature: #{b[:?temp]}") }
+  on :temperature, value: :temp?
+  perform { |b| logger.info("Temperature: #{b[:temp?]}") }
 end
 
 # Avoid - Complex logic in action
 rule "complex_action" do
-  on :temperature, value: :?temp
+  on :temperature, value: :temp?
   perform do |b|
     # 100 lines of complex logic...
     # Better to extract to methods

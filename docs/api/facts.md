@@ -203,14 +203,14 @@ fact.matches?(
 fact = KBS::Fact.new(:temperature, location: "server_room", value: 85)
 
 # Variables always match (they capture the value)
-fact.matches?(type: :temperature, location: :?loc)  # => true
-fact.matches?(type: :temperature, value: :?temp)    # => true
+fact.matches?(type: :temperature, location: :loc?)  # => true
+fact.matches?(type: :temperature, value: :temp?)    # => true
 
 # Variables with other constraints
 fact.matches?(
   type: :temperature,
   location: "server_room",  # Literal constraint
-  value: :?temp             # Variable binding
+  value: :temp?             # Variable binding
 )  # => true
 ```
 
@@ -223,7 +223,7 @@ fact.matches?(type: :temperature, location: "server_room")  # => false
 fact.matches?(type: :temperature, location: ->(l) { l.length > 5 })  # => false (no :location)
 
 # Missing attributes match variables
-fact.matches?(type: :temperature, location: :?loc)  # => true (variable matches nil)
+fact.matches?(type: :temperature, location: :loc?)  # => true (variable matches nil)
 ```
 
 **Algorithm**:
@@ -488,7 +488,7 @@ rule "auto_expire_old_alerts" do
   on :alert, timestamp: ->(ts) { Time.now - ts > 3600 }
   perform do |bindings|
     # Fact can remove itself
-    alert_fact = bindings[:?matched_fact]
+    alert_fact = bindings[:matched_fact?]
     alert_fact.retract
   end
 end
@@ -605,14 +605,14 @@ condition = KBS::Condition.new(:alert, { level: "critical" }, negated: true)
 
 **Example - Variable Binding**:
 ```ruby
-# Capture temperature value in :?temp variable
-condition = KBS::Condition.new(:temperature, value: :?temp)
+# Capture temperature value in :temp? variable
+condition = KBS::Condition.new(:temperature, value: :temp?)
 
 # Capture location and value
 condition = KBS::Condition.new(
   :temperature,
-  location: :?loc,
-  value: :?temp
+  location: :loc?,
+  value: :temp?
 )
 ```
 
@@ -630,7 +630,7 @@ condition = KBS::Condition.new(
 
 **Example**:
 ```ruby
-condition = KBS::Condition.new(:temperature, value: :?temp)
+condition = KBS::Condition.new(:temperature, value: :temp?)
 puts condition.type  # => :temperature
 ```
 
@@ -646,8 +646,8 @@ puts condition.type  # => :temperature
 
 **Example**:
 ```ruby
-condition = KBS::Condition.new(:temperature, location: "server_room", value: :?temp)
-puts condition.pattern  # => {:location=>"server_room", :value=>:?temp}
+condition = KBS::Condition.new(:temperature, location: "server_room", value: :temp?)
+puts condition.pattern  # => {:location=>"server_room", :value=>:temp?}
 ```
 
 ---
@@ -662,7 +662,7 @@ puts condition.pattern  # => {:location=>"server_room", :value=>:?temp}
 
 **Example**:
 ```ruby
-pos_condition = KBS::Condition.new(:temperature, value: :?temp)
+pos_condition = KBS::Condition.new(:temperature, value: :temp?)
 puts pos_condition.negated  # => false
 
 neg_condition = KBS::Condition.new(:alert, {}, negated: true)
@@ -677,18 +677,18 @@ puts neg_condition.negated  # => true
 
 **Read-only**: Yes (via `attr_reader`)
 
-**Description**: Map of variable names to attribute keys (e.g., `{:?temp => :value}`)
+**Description**: Map of variable names to attribute keys (e.g., `{:temp? => :value}`)
 
 **Example**:
 ```ruby
 condition = KBS::Condition.new(
   :temperature,
-  location: :?loc,
-  value: :?temp
+  location: :loc?,
+  value: :temp?
 )
 
 puts condition.variable_bindings
-# => {:?loc=>:location, :?temp=>:value}
+# => {:loc?=>:location, :temp?=>:value}
 ```
 
 **Use Case**: RETE engine uses this to extract bindings when condition matches:
@@ -700,7 +700,7 @@ condition.variable_bindings.each do |var, attr|
   bindings[var] = fact[attr]
 end
 
-puts bindings  # => {:?loc=>"server_room", :?temp=>85}
+puts bindings  # => {:loc?=>"server_room", :temp?=>85}
 ```
 
 ---
@@ -718,7 +718,7 @@ Patterns are hashes used to match facts. They appear in:
 {
   type: :fact_type,           # Optional: fact type constraint
   attribute1: literal_value,   # Literal constraint
-  attribute2: :?variable,      # Variable binding
+  attribute2: :variable?,      # Variable binding
   attribute3: ->(v) { ... }    # Predicate lambda
 }
 ```
@@ -786,13 +786,13 @@ Variables (symbols starting with `?`) capture attribute values for use in join t
 ```ruby
 condition = KBS::Condition.new(
   :temperature,
-  location: :?loc,
-  value: :?temp
+  location: :loc?,
+  value: :temp?
 )
 
-# Matches ANY temperature fact, binding :?loc and :?temp
+# Matches ANY temperature fact, binding :loc? and :temp?
 fact = KBS::Fact.new(:temperature, location: "server_room", value: 85)
-# Bindings: {:?loc => "server_room", :?temp => 85}
+# Bindings: {:loc? => "server_room", :temp? => 85}
 ```
 
 #### 5. Mixed Pattern
@@ -803,12 +803,12 @@ Combine literals, predicates, and variables.
 condition = KBS::Condition.new(
   :temperature,
   location: "server_room",      # Literal
-  value: :?temp,                # Variable
+  value: :temp?,                # Variable
   timestamp: ->(ts) { ts > cutoff_time }  # Predicate
 )
 
 # Only matches temperature facts from server_room with recent timestamp
-# Captures value in :?temp variable
+# Captures value in :temp? variable
 ```
 
 ---
@@ -852,7 +852,7 @@ fact.matches?(type: :temperature, location: "server_room")  # => false
 fact.matches?(type: :temperature, location: ->(l) { l.length > 5 })  # => false
 
 # Succeeds - variable matches nil
-fact.matches?(type: :temperature, location: :?loc)  # => true (binds :?loc => nil)
+fact.matches?(type: :temperature, location: :loc?)  # => true (binds :loc? => nil)
 ```
 
 ### Variable Binding Extraction
@@ -862,13 +862,13 @@ Variables are extracted during condition construction:
 ```ruby
 condition = KBS::Condition.new(
   :order,
-  symbol: :?sym,
-  quantity: :?qty,
-  price: :?price
+  symbol: :sym?,
+  quantity: :qty?,
+  price: :price?
 )
 
 puts condition.variable_bindings
-# => {:?sym=>:symbol, :?qty=>:quantity, :?price=>:price}
+# => {:sym?=>:symbol, :qty?=>:quantity, :price?=>:price}
 ```
 
 When a fact matches, bindings are populated:
@@ -882,7 +882,7 @@ condition.variable_bindings.each do |var, attr|
 end
 
 puts bindings
-# => {:?sym=>"AAPL", :?qty=>100, :?price=>150.25}
+# => {:sym?=>"AAPL", :qty?=>100, :price?=>150.25}
 ```
 
 ### Predicate Constraints
@@ -1046,9 +1046,9 @@ You can't directly compare two attributes of the same fact in one condition. Use
 
 # Instead: Capture variables and check in action or use join test
 rule "large_order" do
-  on :order, quantity: :?qty, price: :?price
+  on :order, quantity: :qty?, price: :price?
   perform do |bindings|
-    total = bindings[:?qty] * bindings[:?price]
+    total = bindings[:qty?] * bindings[:price?]
     if total > 10000
       puts "Large order: $#{total}"
     end
@@ -1062,9 +1062,9 @@ Variables capture `nil`, predicates fail on `nil`:
 
 ```ruby
 # Match facts with ANY value for :location (including nil)
-condition = KBS::Condition.new(:temperature, location: :?loc)
-# Matches fact.new(:temperature, location: nil)  → binds :?loc => nil
-# Matches fact.new(:temperature)  → binds :?loc => nil
+condition = KBS::Condition.new(:temperature, location: :loc?)
+# Matches fact.new(:temperature, location: nil)  → binds :loc? => nil
+# Matches fact.new(:temperature)  → binds :loc? => nil
 
 # Match facts with NON-NIL :location
 condition = KBS::Condition.new(
@@ -1110,9 +1110,9 @@ condition = KBS::Condition.new(
 
 # Better - Simple check first, complex check in action
 rule "complex_log_analysis" do
-  on :log_entry, level: "ERROR", message: :?msg  # Simple literal filter
+  on :log_entry, level: "ERROR", message: :msg?  # Simple literal filter
   perform do |bindings|
-    if bindings[:?msg] =~ /very.*complex.*regex.*pattern/
+    if bindings[:msg?] =~ /very.*complex.*regex.*pattern/
       # Expensive check runs only on ERROR logs
     end
   end
@@ -1160,7 +1160,7 @@ class TestFactMatching < Minitest::Test
     fact = KBS::Fact.new(:temperature, location: "server_room", value: 85)
 
     # Variables always match
-    assert fact.matches?(type: :temperature, location: :?loc, value: :?temp)
+    assert fact.matches?(type: :temperature, location: :loc?, value: :temp?)
   end
 
   def test_missing_attribute
@@ -1173,7 +1173,7 @@ class TestFactMatching < Minitest::Test
     refute fact.matches?(type: :temperature, location: ->(l) { l.length > 0 })
 
     # Variable succeeds on missing (binds to nil)
-    assert fact.matches?(type: :temperature, location: :?loc)
+    assert fact.matches?(type: :temperature, location: :loc?)
   end
 end
 ```
@@ -1185,11 +1185,11 @@ class TestVariableExtraction < Minitest::Test
   def test_variable_bindings
     condition = KBS::Condition.new(
       :temperature,
-      location: :?loc,
-      value: :?temp
+      location: :loc?,
+      value: :temp?
     )
 
-    expected = { :?loc => :location, :?temp => :value }
+    expected = { :loc? => :location, :temp? => :value }
     assert_equal expected, condition.variable_bindings
   end
 

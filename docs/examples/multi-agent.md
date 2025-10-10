@@ -111,26 +111,26 @@ class TemperatureAgent < Agent
       r.conditions = [
         KBS::Condition.new(:sensor_reading, {
           type: "temperature",
-          location: :?location,
-          value: :?temp
+          location: :location?,
+          value: :temp?
         }, predicate: lambda { |f| f[:value] > @target_temp + 2 }),
 
         KBS::Condition.new(:temperature_alert, {
-          location: :?location
+          location: :location?
         }, negated: true)
       ]
 
       r.action = lambda do |facts, bindings|
         @engine.add_fact(:temperature_alert, {
-          location: bindings[:?location],
-          temperature: bindings[:?temp],
+          location: bindings[:location?],
+          temperature: bindings[:temp?],
           severity: "high",
           timestamp: Time.now
         })
 
         send_message(:hvac_control, {
           action: "cool",
-          location: bindings[:?location],
+          location: bindings[:location?],
           target: @target_temp
         }, priority: 80)
       end
@@ -141,26 +141,26 @@ class TemperatureAgent < Agent
       r.conditions = [
         KBS::Condition.new(:sensor_reading, {
           type: "temperature",
-          location: :?location,
-          value: :?temp
+          location: :location?,
+          value: :temp?
         }, predicate: lambda { |f| f[:value] < @target_temp - 2 }),
 
         KBS::Condition.new(:temperature_alert, {
-          location: :?location
+          location: :location?
         }, negated: true)
       ]
 
       r.action = lambda do |facts, bindings|
         @engine.add_fact(:temperature_alert, {
-          location: bindings[:?location],
-          temperature: bindings[:?temp],
+          location: bindings[:location?],
+          temperature: bindings[:temp?],
           severity: "low",
           timestamp: Time.now
         })
 
         send_message(:hvac_control, {
           action: "heat",
-          location: bindings[:?location],
+          location: bindings[:location?],
           target: @target_temp
         }, priority: 80)
       end
@@ -171,26 +171,26 @@ class TemperatureAgent < Agent
       r.conditions = [
         KBS::Condition.new(:sensor_reading, {
           type: "temperature",
-          location: :?location,
-          value: :?temp
+          location: :location?,
+          value: :temp?
         }, predicate: lambda { |f|
           (f[:value] - @target_temp).abs <= 1
         }),
 
         KBS::Condition.new(:temperature_alert, {
-          location: :?location
+          location: :location?
         })
       ]
 
       r.action = lambda do |facts, bindings|
         alert = facts.find { |f|
-          f.type == :temperature_alert && f[:location] == bindings[:?location]
+          f.type == :temperature_alert && f[:location] == bindings[:location?]
         }
         @engine.remove_fact(alert) if alert
 
         send_message(:hvac_control, {
           action: "off",
-          location: bindings[:?location]
+          location: bindings[:location?]
         }, priority: 50)
       end
     end
@@ -218,7 +218,7 @@ class SecurityAgent < Agent
       r.conditions = [
         KBS::Condition.new(:sensor_reading, {
           type: "motion",
-          location: :?location,
+          location: :location?,
           detected: true
         }),
 
@@ -228,26 +228,26 @@ class SecurityAgent < Agent
 
         KBS::Condition.new(:security_alert, {
           type: "intrusion",
-          location: :?location
+          location: :location?
         }, negated: true)
       ]
 
       r.action = lambda do |facts, bindings|
         @engine.add_fact(:security_alert, {
           type: "intrusion",
-          location: bindings[:?location],
+          location: bindings[:location?],
           severity: "critical",
           timestamp: Time.now
         })
 
         send_message(:security_system, {
           action: "alarm",
-          location: bindings[:?location]
+          location: bindings[:location?]
         }, priority: 100)
 
         send_message(:notifications, {
           type: "security",
-          message: "Intrusion detected at #{bindings[:?location]}"
+          message: "Intrusion detected at #{bindings[:location?]}"
         }, priority: 100)
       end
     end
@@ -257,30 +257,30 @@ class SecurityAgent < Agent
       r.conditions = [
         KBS::Condition.new(:sensor_reading, {
           type: "door",
-          location: :?location,
+          location: :location?,
           state: "open",
-          timestamp: :?time
+          timestamp: :time?
         }, predicate: lambda { |f|
           (Time.now - f[:timestamp]) > 300  # Open for 5 minutes
         }),
 
         KBS::Condition.new(:security_alert, {
           type: "door_open",
-          location: :?location
+          location: :location?
         }, negated: true)
       ]
 
       r.action = lambda do |facts, bindings|
         @engine.add_fact(:security_alert, {
           type: "door_open",
-          location: bindings[:?location],
+          location: bindings[:location?],
           severity: "medium",
           timestamp: Time.now
         })
 
         send_message(:notifications, {
           type: "security",
-          message: "Door at #{bindings[:?location]} left open"
+          message: "Door at #{bindings[:location?]} left open"
         }, priority: 70)
       end
     end
@@ -308,7 +308,7 @@ class EnergyAgent < Agent
       r.conditions = [
         KBS::Condition.new(:sensor_reading, {
           type: "power",
-          value: :?usage
+          value: :usage?
         }, predicate: lambda { |f| f[:value] > @max_usage }),
 
         KBS::Condition.new(:energy_alert, {
@@ -319,7 +319,7 @@ class EnergyAgent < Agent
       r.action = lambda do |facts, bindings|
         @engine.add_fact(:energy_alert, {
           type: "high_consumption",
-          usage: bindings[:?usage],
+          usage: bindings[:usage?],
           limit: @max_usage,
           timestamp: Time.now
         })
@@ -332,7 +332,7 @@ class EnergyAgent < Agent
 
         send_message(:notifications, {
           type: "energy",
-          message: "High energy usage: #{bindings[:?usage]}W (limit: #{@max_usage}W)"
+          message: "High energy usage: #{bindings[:usage?]}W (limit: #{@max_usage}W)"
         }, priority: 60)
       end
     end
@@ -345,7 +345,7 @@ class EnergyAgent < Agent
         }),
 
         KBS::Condition.new(:temperature_alert, {
-          location: :?location
+          location: :location?
         })
       ]
 
@@ -353,7 +353,7 @@ class EnergyAgent < Agent
         # Ask temperature agent to reduce HVAC intensity
         send_message(:hvac_control, {
           action: "eco_mode",
-          location: bindings[:?location]
+          location: bindings[:location?]
         }, priority: 70)
       end
     end
@@ -380,7 +380,7 @@ class ScheduleAgent < Agent
       r.conditions = [
         KBS::Condition.new(:time_event, {
           event: "morning",
-          hour: :?hour
+          hour: :hour?
         }),
 
         KBS::Condition.new(:routine_executed, {
@@ -416,7 +416,7 @@ class ScheduleAgent < Agent
       r.conditions = [
         KBS::Condition.new(:time_event, {
           event: "night",
-          hour: :?hour
+          hour: :hour?
         }),
 
         KBS::Condition.new(:routine_executed, {
@@ -536,11 +536,11 @@ class ArbitrationAgent < Agent
     comfort_priority_rule = KBS::Rule.new("comfort_during_occupied", priority: 85) do |r|
       r.conditions = [
         KBS::Condition.new(:occupancy, {
-          status: :?status
+          status: :status?
         }, predicate: lambda { |f| f[:status] == "home" || f[:status] == "sleeping" }),
 
         KBS::Condition.new(:temperature_alert, {
-          severity: :?severity
+          severity: :severity?
         }),
 
         KBS::Condition.new(:energy_alert, {

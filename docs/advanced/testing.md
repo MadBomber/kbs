@@ -67,7 +67,7 @@ class TestTemperatureRule < Minitest::Test
       r.conditions = [
         KBS::Condition.new(:sensor, {
           type: "temperature",
-          value: :?temp
+          value: :temp?
         }, predicate: lambda { |f| f[:value] > 30 })
       ]
 
@@ -75,7 +75,7 @@ class TestTemperatureRule < Minitest::Test
         @fired = true
         @engine.add_fact(:alert, {
           type: "high_temperature",
-          temperature: bindings[:?temp]
+          temperature: bindings[:temp?]
         })
       end
     end
@@ -125,13 +125,13 @@ class TestMultiConditionRule < Minitest::Test
     @rule = KBS::Rule.new("high_temp_and_low_humidity") do |r|
       r.conditions = [
         KBS::Condition.new(:temperature, {
-          location: :?loc,
-          value: :?temp
+          location: :loc?,
+          value: :temp?
         }, predicate: lambda { |f| f[:value] > 30 }),
 
         KBS::Condition.new(:humidity, {
-          location: :?loc,
-          value: :?hum
+          location: :loc?,
+          value: :hum?
         }, predicate: lambda { |f| f[:value] < 40 })
       ]
 
@@ -187,8 +187,8 @@ class TestNegationRule < Minitest::Test
 
     @rule = KBS::Rule.new("alert_if_no_acknowledgment") do |r|
       r.conditions = [
-        KBS::Condition.new(:error, { id: :?id }),
-        KBS::Condition.new(:acknowledged, { error_id: :?id }, negated: true)
+        KBS::Condition.new(:error, { id: :id? }),
+        KBS::Condition.new(:acknowledged, { error_id: :id? }, negated: true)
       ]
 
       r.action = lambda do |facts, bindings|
@@ -229,7 +229,7 @@ class TestRuleInteractions < Minitest::Test
     # Rule 1: Detect high temperature
     @engine.add_rule(KBS::Rule.new("detect_high_temp") do |r|
       r.conditions = [
-        KBS::Condition.new(:sensor, { value: :?temp }, predicate: lambda { |f| f[:value] > 30 })
+        KBS::Condition.new(:sensor, { value: :temp? }, predicate: lambda { |f| f[:value] > 30 })
       ]
 
       r.action = lambda do |facts, bindings|
@@ -241,7 +241,7 @@ class TestRuleInteractions < Minitest::Test
     @engine.add_rule(KBS::Rule.new("escalate_critical") do |r|
       r.conditions = [
         KBS::Condition.new(:temp_alert, { severity: "high" }),
-        KBS::Condition.new(:sensor, { value: :?temp }, predicate: lambda { |f| f[:value] > 40 })
+        KBS::Condition.new(:sensor, { value: :temp? }, predicate: lambda { |f| f[:value] > 40 })
       ]
 
       r.action = lambda do |facts, bindings|
@@ -366,14 +366,14 @@ module RuleFixtures
     [
       KBS::Rule.new("detect_high") do |r|
         r.conditions = [
-          KBS::Condition.new(:sensor, { value: :?v }, predicate: lambda { |f| f[:value] > 30 })
+          KBS::Condition.new(:sensor, { value: :v? }, predicate: lambda { |f| f[:value] > 30 })
         ]
         r.action = lambda { |facts, bindings| facts[0][:alerted] = true }
       end,
 
       KBS::Rule.new("detect_low") do |r|
         r.conditions = [
-          KBS::Condition.new(:sensor, { value: :?v }, predicate: lambda { |f| f[:value] < 15 })
+          KBS::Condition.new(:sensor, { value: :v? }, predicate: lambda { |f| f[:value] < 15 })
         ]
         r.action = lambda { |facts, bindings| facts[0][:alerted] = true }
       end
@@ -510,7 +510,7 @@ class PerformanceTest < Minitest::Test
     # Add rule
     engine.add_rule(KBS::Rule.new("perf_test") do |r|
       r.conditions = [
-        KBS::Condition.new(:data, { value: :?v })
+        KBS::Condition.new(:data, { value: :v? })
       ]
       r.action = lambda { |facts, bindings| }
     end)

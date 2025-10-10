@@ -59,7 +59,7 @@ A condition specifies a pattern that facts must match. Patterns can include:
 
 - **Type matching**: `{ type: :stock }`
 - **Literal values**: `{ symbol: "AAPL" }`
-- **Variable bindings**: `{ price: :?price }` (variables start with `?`)
+- **Variable bindings**: `{ price: :price? }` (variables start with `?`)
 - **Predicates**: `{ price: ->(p) { p > 100 } }`
 - **Negation**: `negated: true` (match when pattern is absent)
 
@@ -68,7 +68,7 @@ A condition specifies a pattern that facts must match. Patterns can include:
 Condition.new(:stock, { symbol: "AAPL" })
 
 # Match stock and bind price to ?price variable
-Condition.new(:stock, { symbol: "AAPL", price: :?price })
+Condition.new(:stock, { symbol: "AAPL", price: :price? })
 
 # Match when there is NO alert for "AAPL"
 Condition.new(:alert, { symbol: "AAPL" }, negated: true)
@@ -87,13 +87,13 @@ Rules are production rules consisting of:
 ```ruby
 rule = Rule.new("high_price_alert") do |r|
   r.conditions = [
-    Condition.new(:stock, { symbol: :?symbol, price: :?price }),
-    Condition.new(:threshold, { symbol: :?symbol, max: :?max })
+    Condition.new(:stock, { symbol: :symbol?, price: :price? }),
+    Condition.new(:threshold, { symbol: :symbol?, max: :max? })
   ]
 
   r.action = lambda do |facts, bindings|
-    if bindings[:?price] > bindings[:?max]
-      puts "Alert: #{bindings[:?symbol]} at #{bindings[:?price]}"
+    if bindings[:price?] > bindings[:max?]
+      puts "Alert: #{bindings[:symbol?]} at #{bindings[:price?]}"
     end
   end
 end
@@ -196,7 +196,7 @@ end
 ```
 
 **Join tests** verify:
-- Variable consistency (e.g., both conditions match same `:?symbol`)
+- Variable consistency (e.g., both conditions match same `:symbol?`)
 - Cross-condition predicates (e.g., price1 > price2)
 
 **Implementation**: `lib/kbs/join_node.rb:4`
@@ -453,7 +453,7 @@ class Condition
     vars = {}
     pattern.each do |key, value|
       if value.is_a?(Symbol) && value.to_s.start_with?('?')
-        vars[value] = key  # { :?symbol => :symbol, :?price => :price }
+        vars[value] = key  # { :symbol? => :symbol, :price? => :price }
       end
     end
     vars
@@ -470,8 +470,8 @@ Variables create **join tests** to ensure consistency:
 ```ruby
 # Rule with shared ?symbol variable
 conditions = [
-  Condition.new(:stock, { symbol: :?symbol, price: :?price }),
-  Condition.new(:order, { symbol: :?symbol, quantity: 100 })
+  Condition.new(:stock, { symbol: :symbol?, price: :price? }),
+  Condition.new(:order, { symbol: :symbol?, quantity: 100 })
 ]
 
 # Generates join test:
@@ -492,7 +492,7 @@ When a rule fires, bindings are extracted for the action:
 ```ruby
 def fire(facts)
   bindings = extract_bindings(facts)
-  # bindings = { :?symbol => "AAPL", :?price => 150.0 }
+  # bindings = { :symbol? => "AAPL", :price? => 150.0 }
 
   @action.call(facts, bindings)
 end
@@ -627,7 +627,7 @@ end
 
 1. **Forgetting to call `engine.run()`**: Tokens accumulate but rules don't fire
 2. **Pattern mismatches**: `{ type: :stock }` vs `Condition.new(:stock, {})` - the latter doesn't filter by type!
-3. **Variable binding errors**: Using `?symbol` (string) instead of `:?symbol` (symbol)
+3. **Variable binding errors**: Using `?symbol` (string) instead of `:symbol?` (symbol)
 4. **Negation timing**: Negated conditions only fire when facts are **absent**, not after they're removed (use `engine.run()` to re-evaluate)
 
 ## Performance Characteristics

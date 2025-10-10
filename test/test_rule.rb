@@ -35,14 +35,14 @@ class TestRule < Minitest::Test
     extracted_bindings = nil
     action = ->(facts, bindings) { extracted_bindings = bindings }
 
-    condition = KBS::Condition.new(:person, { name: :'?name', age: :'?age' })
+    condition = KBS::Condition.new(:person, { name: :name?, age: :age? })
     rule = KBS::Rule.new("test", conditions: [condition], action: action)
 
     fact = KBS::Fact.new(:person, name: "Alice", age: 30)
     rule.fire([fact])
 
-    assert_equal "Alice", extracted_bindings[:'?name']
-    assert_equal 30, extracted_bindings[:'?age']
+    assert_equal "Alice", extracted_bindings[:name?]
+    assert_equal 30, extracted_bindings[:age?]
   end
 
   def test_fire_with_multiple_facts
@@ -67,7 +67,7 @@ class TestRule < Minitest::Test
     extracted_bindings = nil
     action = ->(facts, bindings) { extracted_bindings = bindings }
 
-    condition1 = KBS::Condition.new(:sensor, { temp: :'?temp' })
+    condition1 = KBS::Condition.new(:sensor, { temp: :temp? })
     condition2 = KBS::Condition.new(:alarm, { active: true }, negated: true)
     rule = KBS::Rule.new("test", conditions: [condition1, condition2], action: action)
 
@@ -76,7 +76,7 @@ class TestRule < Minitest::Test
     rule.fire([fact1])
 
     # Should only extract bindings from non-negated conditions
-    assert_equal 100, extracted_bindings[:'?temp']
+    assert_equal 100, extracted_bindings[:temp?]
     assert_equal 1, extracted_bindings.size
   end
 
@@ -107,8 +107,8 @@ class TestRule < Minitest::Test
     extracted_bindings = nil
     action = ->(facts, bindings) { extracted_bindings = bindings }
 
-    condition1 = KBS::Condition.new(:person, { name: :'?person_name' })
-    condition2 = KBS::Condition.new(:company, { name: :'?company_name' })
+    condition1 = KBS::Condition.new(:person, { name: :person_name? })
+    condition2 = KBS::Condition.new(:company, { name: :company_name? })
     rule = KBS::Rule.new("test", conditions: [condition1, condition2], action: action)
 
     fact1 = KBS::Fact.new(:person, name: "Alice")
@@ -116,7 +116,7 @@ class TestRule < Minitest::Test
 
     rule.fire([fact1, fact2])
 
-    assert_equal "Alice", extracted_bindings[:'?person_name']
-    assert_equal "Acme", extracted_bindings[:'?company_name']
+    assert_equal "Alice", extracted_bindings[:person_name?]
+    assert_equal "Acme", extracted_bindings[:company_name?]
   end
 end
