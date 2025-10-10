@@ -1,0 +1,3339 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A Ruby implementation of the RETE algorithm for production rule systems with persistent blackboard memory">
+      
+      
+        <meta name="author" content="Dewayne VanHoozer">
+      
+      
+        <link rel="canonical" href="https://madbomber.github.io/kbs/what-is-a-fact/">
+      
+      
+        <link rel="prev" href="../what-is-a-knowledge-base/">
+      
+      
+        <link rel="next" href="../what-is-a-rule/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.21">
+    
+    
+      
+        <title>What is a Fact? - KBS - Knowledge-Based Systems for Ruby</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.2a3383ac.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/css/custom.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#what-is-a-fact" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="KBS - Knowledge-Based Systems for Ruby" class="md-header__button md-logo" aria-label="KBS - Knowledge-Based Systems for Ruby" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            KBS - Knowledge-Based Systems for Ruby
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              What is a Fact?
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/madbomber/kbs" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    madbomber/kbs
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+    
+  
+  Home
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../installation/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Installation
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../quick-start/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Quick Start
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../architecture/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../guides/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../examples/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Examples
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../advanced/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Advanced
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../api/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="KBS - Knowledge-Based Systems for Ruby" class="md-nav__button md-logo" aria-label="KBS - Knowledge-Based Systems for Ruby" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    KBS - Knowledge-Based Systems for Ruby
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/madbomber/kbs" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    madbomber/kbs
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href=".." class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_1" id="__nav_1_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            Home
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../what-is-a-knowledge-base/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    What is aKnowledge Base?
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    What is a Fact?
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    What is a Fact?
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#core-concept" class="md-nav__link">
+    <span class="md-ellipsis">
+      Core Concept
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#anatomy-of-a-fact" class="md-nav__link">
+    <span class="md-ellipsis">
+      Anatomy of a Fact
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Anatomy of a Fact">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Structure
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#visual-representation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Visual Representation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-facts-differ-from-other-data-structures" class="md-nav__link">
+    <span class="md-ellipsis">
+      How Facts Differ from Other Data Structures
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fact-lifecycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fact Lifecycle
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Fact Lifecycle">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-creation" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Creation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-pattern-matching" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Pattern Matching
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-rule-firing" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Rule Firing
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-updates-blackboard-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Updates (Blackboard Only)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-retraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Retraction
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fact-types-implementations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fact Types (Implementations)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Fact Types (Implementations)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-transient-facts-kbsfact" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Transient Facts (KBS::Fact)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-persistent-facts-kbsblackboardfact" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Persistent Facts (KBS::Blackboard::Fact)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pattern-matching" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pattern Matching
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pattern Matching">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#literal-matching" class="md-nav__link">
+    <span class="md-ellipsis">
+      Literal Matching
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#predicate-matching" class="md-nav__link">
+    <span class="md-ellipsis">
+      Predicate Matching
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variable-binding" class="md-nav__link">
+    <span class="md-ellipsis">
+      Variable Binding
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#join-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      Join Tests
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-fact-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Common Fact Patterns
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Fact Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-entity-facts" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Entity Facts
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-event-facts" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Event Facts
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-sensor-facts" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Sensor Facts
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-state-facts" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. State Facts
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-derived-facts" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Derived Facts
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-flag-facts" class="md-nav__link">
+    <span class="md-ellipsis">
+      6. Flag Facts
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fact-vs-rule-relationship" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fact vs. Rule Relationship
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fact-semantics" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fact Semantics
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Fact Semantics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#open-world-assumption" class="md-nav__link">
+    <span class="md-ellipsis">
+      Open World Assumption
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#closed-attribute-assumption" class="md-nav__link">
+    <span class="md-ellipsis">
+      Closed Attribute Assumption
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#type-safety" class="md-nav__link">
+    <span class="md-ellipsis">
+      Type Safety
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#value-immutability-transient-facts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Value Immutability (Transient Facts)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#value-mutability-persistent-facts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Value Mutability (Persistent Facts)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#performance-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Performance Considerations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Performance Considerations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fact-count-impact" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fact Count Impact
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#attribute-count-impact" class="md-nav__link">
+    <span class="md-ellipsis">
+      Attribute Count Impact
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-complexity-impact" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pattern Complexity Impact
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-pitfalls" class="md-nav__link">
+    <span class="md-ellipsis">
+      Common Pitfalls
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Pitfalls">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-forgetting-fact-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Forgetting Fact Type
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-expecting-updates-to-re-trigger-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Expecting Updates to Re-trigger Rules
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-side-effects-in-predicates" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Side Effects in Predicates
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-missing-attributes-in-predicates" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Missing Attributes in Predicates
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-confusing-negation" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Confusing Negation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      Best Practices
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Best Practices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-use-descriptive-fact-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Use Descriptive Fact Types
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-include-identifying-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Include Identifying Attributes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-add-timestamps-for-time-based-reasoning" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Add Timestamps for Time-Based Reasoning
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-use-fact-types-to-model-domain" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Use Fact Types to Model Domain
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-keep-facts-focused" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Keep Facts Focused
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#further-reading" class="md-nav__link">
+    <span class="md-ellipsis">
+      Further Reading
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      Summary
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../what-is-a-rule/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    What is a Rule?
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Installation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quick-start/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Quick Start
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../architecture/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Architecture
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Architecture
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/rete-algorithm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    RETE Algorithm
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/blackboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Blackboard System
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/network-structure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Network Structure
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../guides/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Guides
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Guides
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/getting-started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Getting Started
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/writing-rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Writing Rules
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/dsl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    DSL Reference
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/facts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Working with Facts
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/pattern-matching/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Pattern Matching
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/variable-binding/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Variable Binding
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/negation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Negation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/blackboard-memory/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Blackboard Memory
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/persistence/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Persistence Options
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../examples/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Examples
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Examples
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/stock-trading/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Stock Trading
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/expert-systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Expert Systems
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../examples/multi-agent/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Multi-Agent Systems
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../advanced/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    Advanced
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Advanced
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../advanced/performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Performance Tuning
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../advanced/custom-persistence/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Custom Persistence
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../advanced/debugging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Debugging
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../advanced/testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Testing Rules
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../api/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    API Reference
+    
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8" id="__nav_8_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            API Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/engine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    ReteEngine
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/facts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Facts
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Rules
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/blackboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Blackboard
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#core-concept" class="md-nav__link">
+    <span class="md-ellipsis">
+      Core Concept
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#anatomy-of-a-fact" class="md-nav__link">
+    <span class="md-ellipsis">
+      Anatomy of a Fact
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Anatomy of a Fact">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Structure
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#visual-representation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Visual Representation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-facts-differ-from-other-data-structures" class="md-nav__link">
+    <span class="md-ellipsis">
+      How Facts Differ from Other Data Structures
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fact-lifecycle" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fact Lifecycle
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Fact Lifecycle">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-creation" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Creation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-pattern-matching" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Pattern Matching
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-rule-firing" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Rule Firing
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-updates-blackboard-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Updates (Blackboard Only)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-retraction" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Retraction
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fact-types-implementations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fact Types (Implementations)
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Fact Types (Implementations)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-transient-facts-kbsfact" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Transient Facts (KBS::Fact)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-persistent-facts-kbsblackboardfact" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Persistent Facts (KBS::Blackboard::Fact)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pattern-matching" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pattern Matching
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pattern Matching">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#literal-matching" class="md-nav__link">
+    <span class="md-ellipsis">
+      Literal Matching
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#predicate-matching" class="md-nav__link">
+    <span class="md-ellipsis">
+      Predicate Matching
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#variable-binding" class="md-nav__link">
+    <span class="md-ellipsis">
+      Variable Binding
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#join-tests" class="md-nav__link">
+    <span class="md-ellipsis">
+      Join Tests
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-fact-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Common Fact Patterns
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Fact Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-entity-facts" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Entity Facts
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-event-facts" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Event Facts
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-sensor-facts" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Sensor Facts
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-state-facts" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. State Facts
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-derived-facts" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Derived Facts
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-flag-facts" class="md-nav__link">
+    <span class="md-ellipsis">
+      6. Flag Facts
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fact-vs-rule-relationship" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fact vs. Rule Relationship
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fact-semantics" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fact Semantics
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Fact Semantics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#open-world-assumption" class="md-nav__link">
+    <span class="md-ellipsis">
+      Open World Assumption
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#closed-attribute-assumption" class="md-nav__link">
+    <span class="md-ellipsis">
+      Closed Attribute Assumption
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#type-safety" class="md-nav__link">
+    <span class="md-ellipsis">
+      Type Safety
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#value-immutability-transient-facts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Value Immutability (Transient Facts)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#value-mutability-persistent-facts" class="md-nav__link">
+    <span class="md-ellipsis">
+      Value Mutability (Persistent Facts)
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#performance-considerations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Performance Considerations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Performance Considerations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fact-count-impact" class="md-nav__link">
+    <span class="md-ellipsis">
+      Fact Count Impact
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#attribute-count-impact" class="md-nav__link">
+    <span class="md-ellipsis">
+      Attribute Count Impact
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-complexity-impact" class="md-nav__link">
+    <span class="md-ellipsis">
+      Pattern Complexity Impact
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-pitfalls" class="md-nav__link">
+    <span class="md-ellipsis">
+      Common Pitfalls
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Pitfalls">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-forgetting-fact-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Forgetting Fact Type
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-expecting-updates-to-re-trigger-rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Expecting Updates to Re-trigger Rules
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-side-effects-in-predicates" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Side Effects in Predicates
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-missing-attributes-in-predicates" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Missing Attributes in Predicates
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-confusing-negation" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Confusing Negation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      Best Practices
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Best Practices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-use-descriptive-fact-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Use Descriptive Fact Types
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-include-identifying-attributes" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Include Identifying Attributes
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-add-timestamps-for-time-based-reasoning" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Add Timestamps for Time-Based Reasoning
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-use-fact-types-to-model-domain" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Use Fact Types to Model Domain
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-keep-facts-focused" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Keep Facts Focused
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#further-reading" class="md-nav__link">
+    <span class="md-ellipsis">
+      Further Reading
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      Summary
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/madbomber/kbs/edit/main/docs/what-is-a-fact.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+    
+      
+    
+    <a href="https://github.com/madbomber/kbs/raw/main/docs/what-is-a-fact.md" title="View source of this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"/></svg>
+    </a>
+  
+
+
+<h1 id="what-is-a-fact">What is a Fact?<a class="headerlink" href="#what-is-a-fact" title="Permanent link">&para;</a></h1>
+<p>A <strong>fact</strong> is the fundamental unit of knowledge in KBS - a piece of information about your domain that the system can reason about. Facts are the "data" on which rules operate.</p>
+<h2 id="core-concept">Core Concept<a class="headerlink" href="#core-concept" title="Permanent link">&para;</a></h2>
+<p>Think of a fact as a <strong>typed data record</strong> that represents something true at a particular moment:</p>
+<ul>
+<li>"The temperature in the server room is 85°F"</li>
+<li>"Stock AAPL is trading at $150.25 with volume 1.2M"</li>
+<li>"Sensor <a class="magiclink magiclink-github magiclink-issue" href="https://github.com/madbomber/kbs/issues/42" title="GitHub Issue: madbomber/kbs #42">#42</a> is active"</li>
+<li>"Order <a class="magiclink magiclink-github magiclink-issue" href="https://github.com/madbomber/kbs/issues/123" title="GitHub Issue: madbomber/kbs #123">#123</a> is pending"</li>
+</ul>
+<p>Each fact has:</p>
+<ol>
+<li><strong>Type</strong> - What kind of thing this is (<code>:temperature</code>, <code>:stock</code>, <code>:sensor</code>, <code>:order</code>)</li>
+<li><strong>Attributes</strong> - Key-value pairs describing it (<code>location: "server_room"</code>, <code>value: 85</code>)</li>
+</ol>
+<h2 id="anatomy-of-a-fact">Anatomy of a Fact<a class="headerlink" href="#anatomy-of-a-fact" title="Permanent link">&para;</a></h2>
+<h3 id="structure">Structure<a class="headerlink" href="#structure" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Fact</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">location</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;server_room&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span><span class="p">)</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">fact</span><span class="o">.</span><span class="n">type</span><span class="w">        </span><span class="c1"># =&gt; :temperature</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">fact</span><span class="o">.</span><span class="n">attributes</span><span class="w">  </span><span class="c1"># =&gt; {:location =&gt; &quot;server_room&quot;, :value =&gt; 85}</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">fact</span><span class="o">[</span><span class="ss">:location</span><span class="o">]</span><span class="w">  </span><span class="c1"># =&gt; &quot;server_room&quot;</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="n">fact</span><span class="o">[</span><span class="ss">:value</span><span class="o">]</span><span class="w">     </span><span class="c1"># =&gt; 85</span>
+</span></code></pre></div>
+<h3 id="visual-representation">Visual Representation<a class="headerlink" href="#visual-representation" title="Permanent link">&para;</a></h3>
+<p><img alt="Fact Structure" src="../assets/images/fact-structure.svg" /></p>
+<p><em>A fact consists of a type symbol and a hash of attribute key-value pairs.</em></p>
+<h2 id="how-facts-differ-from-other-data-structures">How Facts Differ from Other Data Structures<a class="headerlink" href="#how-facts-differ-from-other-data-structures" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Fact</th>
+<th>Plain Hash</th>
+<th>Database Row</th>
+<th>Object</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Type</strong></td>
+<td>Explicit (<code>:temperature</code>)</td>
+<td>None</td>
+<td>Table name</td>
+<td>Class</td>
+</tr>
+<tr>
+<td><strong>Pattern Matching</strong></td>
+<td>Built-in</td>
+<td>Manual</td>
+<td>SQL WHERE</td>
+<td>Manual</td>
+</tr>
+<tr>
+<td><strong>Identity</strong></td>
+<td>By content &amp; type</td>
+<td>By reference</td>
+<td>By primary key</td>
+<td>By reference</td>
+</tr>
+<tr>
+<td><strong>Purpose</strong></td>
+<td>Reasoning &amp; inference</td>
+<td>General storage</td>
+<td>Persistent storage</td>
+<td>Behavior + data</td>
+</tr>
+<tr>
+<td><strong>Lifecycle</strong></td>
+<td>Add/retract from KB</td>
+<td>Create/destroy</td>
+<td>Insert/delete</td>
+<td>New/GC</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example Comparison:</strong></p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Plain Hash</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">location</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;server_room&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># What kind of data is this? No way to tell.</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1"># Database Row</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="c1"># SELECT * FROM temperatures WHERE location = &#39;server_room&#39;</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="c1"># Requires SQL, separate from logic</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="c1"># Object</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="k">class</span><span class="w"> </span><span class="nc">Temperature</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">  </span><span class="kp">attr_accessor</span><span class="w"> </span><span class="ss">:location</span><span class="p">,</span><span class="w"> </span><span class="ss">:value</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="k">end</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="n">temp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">Temperature</span><span class="o">.</span><span class="n">new</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="c1"># Has behavior but no built-in pattern matching</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="c1"># Fact</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="n">fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Fact</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">location</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;server_room&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span><span class="p">)</span>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="c1"># Self-describing, pattern-matchable, inference-ready</span>
+</span></code></pre></div>
+<h2 id="fact-lifecycle">Fact Lifecycle<a class="headerlink" href="#fact-lifecycle" title="Permanent link">&para;</a></h2>
+<h3 id="1-creation">1. Creation<a class="headerlink" href="#1-creation" title="Permanent link">&para;</a></h3>
+<p>Facts are created and added to a knowledge base:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># In-memory knowledge base</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">kb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">.</span><span class="n">knowledge_base</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="n">fact</span><span class="w"> </span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">location</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;server_room&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="k">end</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="c1"># Blackboard (persistent)</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="n">engine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Engine</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">db_path</span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;kb.db&#39;</span><span class="p">)</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">location</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;server_room&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span><span class="p">)</span>
+</span></code></pre></div>
+<h3 id="2-pattern-matching">2. Pattern Matching<a class="headerlink" href="#2-pattern-matching" title="Permanent link">&para;</a></h3>
+<p>Once added, facts are automatically matched against rule patterns:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">rule</span><span class="w"> </span><span class="s2">&quot;high_temperature&quot;</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="c1"># This pattern matches our fact above</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="n">on</span><span class="w"> </span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">location</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;server_room&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="n">greater_than</span><span class="p">(</span><span class="mi">80</span><span class="p">)</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="n">perform</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;Alert!&quot;</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="k">end</span>
+</span></code></pre></div>
+<h3 id="3-rule-firing">3. Rule Firing<a class="headerlink" href="#3-rule-firing" title="Permanent link">&para;</a></h3>
+<p>When all conditions of a rule match, the rule fires:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">kb</span><span class="o">.</span><span class="n">run</span><span class="w">  </span><span class="c1"># → &quot;Alert!&quot; (rule fires because fact matches)</span>
+</span></code></pre></div>
+<h3 id="4-updates-blackboard-only">4. Updates (Blackboard Only)<a class="headerlink" href="#4-updates-blackboard-only" title="Permanent link">&para;</a></h3>
+<p>Persistent facts can be updated:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">fact</span><span class="o">[</span><span class="ss">:value</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">90</span><span class="w">  </span><span class="c1"># Update persisted immediately</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">fact</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">90</span><span class="p">,</span><span class="w"> </span><span class="ss">timestamp</span><span class="p">:</span><span class="w"> </span><span class="no">Time</span><span class="o">.</span><span class="n">now</span><span class="p">)</span><span class="w">  </span><span class="c1"># Bulk update</span>
+</span></code></pre></div>
+<p><strong>Note</strong>: Updates do NOT trigger rule re-evaluation. To re-trigger rules, retract and re-add.</p>
+<h3 id="5-retraction">5. Retraction<a class="headerlink" href="#5-retraction" title="Permanent link">&para;</a></h3>
+<p>Facts can be removed from working memory:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># DSL</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">retract</span><span class="w"> </span><span class="n">fact</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="c1"># Blackboard - fact can retract itself</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="n">fact</span><span class="o">.</span><span class="n">retract</span>
+</span></code></pre></div>
+<h2 id="fact-types-implementations">Fact Types (Implementations)<a class="headerlink" href="#fact-types-implementations" title="Permanent link">&para;</a></h2>
+<p>KBS provides two fact implementations:</p>
+<h3 id="1-transient-facts-kbsfact">1. Transient Facts (<code>KBS::Fact</code>)<a class="headerlink" href="#1-transient-facts-kbsfact" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Used by</strong>: In-memory knowledge bases</li>
+<li><strong>Identity</strong>: Ruby object ID</li>
+<li><strong>Persistence</strong>: None (lost on process exit)</li>
+<li><strong>Performance</strong>: Fast (no I/O)</li>
+</ul>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Fact</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span><span class="p">)</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="nb">puts</span><span class="w"> </span><span class="n">fact</span><span class="o">.</span><span class="n">id</span><span class="w">  </span><span class="c1"># =&gt; 70123456789012 (Ruby object ID)</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="c1"># Lightweight, perfect for short-lived reasoning</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="n">kb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">.</span><span class="n">knowledge_base</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">  </span><span class="n">fact</span><span class="w"> </span><span class="ss">:stock</span><span class="p">,</span><span class="w"> </span><span class="ss">symbol</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;AAPL&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">price</span><span class="p">:</span><span class="w"> </span><span class="mi">150</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">  </span><span class="n">run</span>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="k">end</span>
+</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="c1"># Facts disappear when kb goes out of scope</span>
+</span></code></pre></div>
+<p><strong>Best for</strong>:</p>
+<ul>
+<li>Event stream processing</li>
+<li>Short-lived analyses</li>
+<li>Prototyping and testing</li>
+<li>When restart durability isn't needed</li>
+</ul>
+<h3 id="2-persistent-facts-kbsblackboardfact">2. Persistent Facts (<code>KBS::Blackboard::Fact</code>)<a class="headerlink" href="#2-persistent-facts-kbsblackboardfact" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Used by</strong>: Blackboard knowledge bases</li>
+<li><strong>Identity</strong>: UUID (stable across restarts)</li>
+<li><strong>Persistence</strong>: SQLite, Redis, or Hybrid storage</li>
+<li><strong>Audit Trail</strong>: Complete change history</li>
+<li><strong>Performance</strong>: Slower (I/O overhead)</li>
+</ul>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">engine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Engine</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">db_path</span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;kb.db&#39;</span><span class="p">)</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span><span class="p">)</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="nb">puts</span><span class="w"> </span><span class="n">fact</span><span class="o">.</span><span class="n">uuid</span><span class="w">  </span><span class="c1"># =&gt; &quot;550e8400-e29b-41d4-a716-446655440000&quot;</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="c1"># Update persists</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="n">fact</span><span class="o">[</span><span class="ss">:value</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">90</span>
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>
+</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="c1"># Restart process</span>
+</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="n">engine2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Engine</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">db_path</span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;kb.db&#39;</span><span class="p">)</span>
+</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="n">reloaded</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">engine2</span><span class="o">.</span><span class="n">blackboard</span><span class="o">.</span><span class="n">get_facts_by_type</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">)</span><span class="o">.</span><span class="n">first</span>
+</span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="nb">puts</span><span class="w"> </span><span class="n">reloaded</span><span class="o">[</span><span class="ss">:value</span><span class="o">]</span><span class="w">  </span><span class="c1"># =&gt; 90 (persisted)</span>
+</span></code></pre></div>
+<p><strong>Best for</strong>:</p>
+<ul>
+<li>Long-running systems</li>
+<li>Multi-agent coordination</li>
+<li>Audit requirements</li>
+<li>Systems that must survive restarts</li>
+<li>Distributed reasoning</li>
+</ul>
+<h2 id="pattern-matching">Pattern Matching<a class="headerlink" href="#pattern-matching" title="Permanent link">&para;</a></h2>
+<p>Facts excel at pattern matching—the ability to find facts that satisfy specific criteria.</p>
+<h3 id="literal-matching">Literal Matching<a class="headerlink" href="#literal-matching" title="Permanent link">&para;</a></h3>
+<p>Match exact values:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Fact</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:stock</span><span class="p">,</span><span class="w"> </span><span class="ss">symbol</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;AAPL&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">price</span><span class="p">:</span><span class="w"> </span><span class="mi">150</span><span class="o">.</span><span class="mi">25</span><span class="p">)</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="c1"># Matches</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="n">fact</span><span class="o">.</span><span class="n">matches?</span><span class="p">(</span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:stock</span><span class="p">,</span><span class="w"> </span><span class="ss">symbol</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;AAPL&quot;</span><span class="p">)</span><span class="w">  </span><span class="c1"># =&gt; true</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="c1"># Doesn&#39;t match</span>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="n">fact</span><span class="o">.</span><span class="n">matches?</span><span class="p">(</span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:stock</span><span class="p">,</span><span class="w"> </span><span class="ss">symbol</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;GOOGL&quot;</span><span class="p">)</span><span class="w">  </span><span class="c1"># =&gt; false</span>
+</span></code></pre></div>
+<h3 id="predicate-matching">Predicate Matching<a class="headerlink" href="#predicate-matching" title="Permanent link">&para;</a></h3>
+<p>Match with lambda conditions:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Fact</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span><span class="p">)</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="c1"># Matches</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="n">fact</span><span class="o">.</span><span class="n">matches?</span><span class="p">(</span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="o">-&gt;</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">v</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">80</span><span class="w"> </span><span class="p">})</span><span class="w">  </span><span class="c1"># =&gt; true</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="n">fact</span><span class="o">.</span><span class="n">matches?</span><span class="p">(</span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="o">-&gt;</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">v</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">100</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="c1"># =&gt; true</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="c1"># Doesn&#39;t match</span>
+</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="n">fact</span><span class="o">.</span><span class="n">matches?</span><span class="p">(</span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="o">-&gt;</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">v</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">90</span><span class="w"> </span><span class="p">})</span><span class="w">  </span><span class="c1"># =&gt; false</span>
+</span></code></pre></div>
+<h3 id="variable-binding">Variable Binding<a class="headerlink" href="#variable-binding" title="Permanent link">&para;</a></h3>
+<p>Capture values for use in rule actions:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">rule</span><span class="w"> </span><span class="s2">&quot;report_temperature&quot;</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span><span class="n">on</span><span class="w"> </span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">location</span><span class="p">:</span><span class="w"> </span><span class="ss">:loc?</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="ss">:temp?</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">  </span><span class="c1">#                         ^^^^^^         ^^^^^^</span>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">  </span><span class="c1">#                    Variables (end with ?)</span>
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">  </span><span class="n">perform</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">facts</span><span class="p">,</span><span class="w"> </span><span class="n">bindings</span><span class="o">|</span>
+</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="w">    </span><span class="c1"># bindings contains captured values</span>
+</span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;</span><span class="si">#{</span><span class="n">bindings</span><span class="o">[</span><span class="ss">:loc?</span><span class="o">]</span><span class="si">}</span><span class="s2">: </span><span class="si">#{</span><span class="n">bindings</span><span class="o">[</span><span class="ss">:temp?</span><span class="o">]</span><span class="si">}</span><span class="s2">°F&quot;</span>
+</span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-11-10"><a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="k">end</span>
+</span><span id="__span-11-11"><a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>
+</span><span id="__span-11-12"><a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="c1"># Add fact</span>
+</span><span id="__span-11-13"><a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">location</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;server_room&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span>
+</span><span id="__span-11-14"><a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>
+</span><span id="__span-11-15"><a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a><span class="n">run</span><span class="w">  </span><span class="c1"># → &quot;server_room: 85°F&quot;</span>
+</span></code></pre></div>
+<h3 id="join-tests">Join Tests<a class="headerlink" href="#join-tests" title="Permanent link">&para;</a></h3>
+<p>Variables create joins across multiple facts:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">rule</span><span class="w"> </span><span class="s2">&quot;inventory_check&quot;</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="n">on</span><span class="w"> </span><span class="ss">:order</span><span class="p">,</span><span class="w"> </span><span class="ss">product_id</span><span class="p">:</span><span class="w"> </span><span class="ss">:pid?</span><span class="p">,</span><span class="w"> </span><span class="ss">quantity</span><span class="p">:</span><span class="w"> </span><span class="ss">:qty?</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">  </span><span class="n">on</span><span class="w"> </span><span class="ss">:inventory</span><span class="p">,</span><span class="w"> </span><span class="ss">product_id</span><span class="p">:</span><span class="w"> </span><span class="ss">:pid?</span><span class="p">,</span><span class="w"> </span><span class="ss">available</span><span class="p">:</span><span class="w"> </span><span class="ss">:avail?</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">  </span><span class="c1">#                          ^^^^^^</span>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">  </span><span class="c1">#                   Same variable = JOIN condition</span>
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="w">  </span><span class="n">perform</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">facts</span><span class="p">,</span><span class="w"> </span><span class="n">bindings</span><span class="o">|</span>
+</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="w">    </span><span class="c1"># Only fires when BOTH facts have same product_id</span>
+</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">bindings</span><span class="o">[</span><span class="ss">:avail?</span><span class="o">]</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">bindings</span><span class="o">[</span><span class="ss">:qty?</span><span class="o">]</span>
+</span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="w">      </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;Insufficient inventory for </span><span class="si">#{</span><span class="n">bindings</span><span class="o">[</span><span class="ss">:pid?</span><span class="o">]</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-12-11"><a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="w">    </span><span class="k">end</span>
+</span><span id="__span-12-12"><a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-12-13"><a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a><span class="k">end</span>
+</span></code></pre></div>
+<h2 id="common-fact-patterns">Common Fact Patterns<a class="headerlink" href="#common-fact-patterns" title="Permanent link">&para;</a></h2>
+<h3 id="1-entity-facts">1. Entity Facts<a class="headerlink" href="#1-entity-facts" title="Permanent link">&para;</a></h3>
+<p>Represent domain objects:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:customer</span><span class="p">,</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="mi">12345</span><span class="p">,</span><span class="w"> </span><span class="nb">name</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Acme Corp&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">tier</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;gold&quot;</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:product</span><span class="p">,</span><span class="w"> </span><span class="ss">sku</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ABC-123&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">price</span><span class="p">:</span><span class="w"> </span><span class="mi">49</span><span class="o">.</span><span class="mi">99</span><span class="p">,</span><span class="w"> </span><span class="ss">in_stock</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:order</span><span class="p">,</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="mi">789</span><span class="p">,</span><span class="w"> </span><span class="ss">customer_id</span><span class="p">:</span><span class="w"> </span><span class="mi">12345</span><span class="p">,</span><span class="w"> </span><span class="ss">total</span><span class="p">:</span><span class="w"> </span><span class="mi">499</span><span class="o">.</span><span class="mi">90</span>
+</span></code></pre></div>
+<h3 id="2-event-facts">2. Event Facts<a class="headerlink" href="#2-event-facts" title="Permanent link">&para;</a></h3>
+<p>Represent things that happened:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:order_placed</span><span class="p">,</span><span class="w"> </span><span class="ss">order_id</span><span class="p">:</span><span class="w"> </span><span class="mi">789</span><span class="p">,</span><span class="w"> </span><span class="ss">timestamp</span><span class="p">:</span><span class="w"> </span><span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:payment_received</span><span class="p">,</span><span class="w"> </span><span class="ss">order_id</span><span class="p">:</span><span class="w"> </span><span class="mi">789</span><span class="p">,</span><span class="w"> </span><span class="ss">amount</span><span class="p">:</span><span class="w"> </span><span class="mi">499</span><span class="o">.</span><span class="mi">90</span>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:item_shipped</span><span class="p">,</span><span class="w"> </span><span class="ss">tracking</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1Z999&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">order_id</span><span class="p">:</span><span class="w"> </span><span class="mi">789</span>
+</span></code></pre></div>
+<h3 id="3-sensor-facts">3. Sensor Facts<a class="headerlink" href="#3-sensor-facts" title="Permanent link">&para;</a></h3>
+<p>Real-time measurements:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">sensor_id</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span><span class="p">,</span><span class="w"> </span><span class="ss">timestamp</span><span class="p">:</span><span class="w"> </span><span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:pressure</span><span class="p">,</span><span class="w"> </span><span class="ss">sensor_id</span><span class="p">:</span><span class="w"> </span><span class="mi">43</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">14</span><span class="o">.</span><span class="mi">7</span><span class="p">,</span><span class="w"> </span><span class="ss">unit</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;psi&quot;</span>
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:motion_detected</span><span class="p">,</span><span class="w"> </span><span class="ss">camera_id</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="ss">location</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;entrance&quot;</span>
+</span></code></pre></div>
+<h3 id="4-state-facts">4. State Facts<a class="headerlink" href="#4-state-facts" title="Permanent link">&para;</a></h3>
+<p>Current system state:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:connection</span><span class="p">,</span><span class="w"> </span><span class="ss">server</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;db-1&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">status</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;active&quot;</span>
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:worker</span><span class="p">,</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="ss">status</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;busy&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">task_id</span><span class="p">:</span><span class="w"> </span><span class="mi">456</span>
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:cache</span><span class="p">,</span><span class="w"> </span><span class="ss">key</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;user:123&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">valid_until</span><span class="p">:</span><span class="w"> </span><span class="no">Time</span><span class="o">.</span><span class="n">now</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">3600</span>
+</span></code></pre></div>
+<h3 id="5-derived-facts">5. Derived Facts<a class="headerlink" href="#5-derived-facts" title="Permanent link">&para;</a></h3>
+<p>Facts inferred from other facts:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="n">rule</span><span class="w"> </span><span class="s2">&quot;derive_alert&quot;</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">  </span><span class="n">on</span><span class="w"> </span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="n">greater_than</span><span class="p">(</span><span class="mi">80</span><span class="p">),</span><span class="w"> </span><span class="ss">location</span><span class="p">:</span><span class="w"> </span><span class="ss">:loc?</span>
+</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">  </span><span class="n">without</span><span class="w"> </span><span class="ss">:alert</span><span class="p">,</span><span class="w"> </span><span class="ss">location</span><span class="p">:</span><span class="w"> </span><span class="ss">:loc?</span><span class="w">  </span><span class="c1"># No existing alert</span>
+</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>
+</span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="w">  </span><span class="n">perform</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">facts</span><span class="p">,</span><span class="w"> </span><span class="n">bindings</span><span class="o">|</span>
+</span><span id="__span-17-6"><a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="w">    </span><span class="c1"># Add derived fact</span>
+</span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="w">    </span><span class="n">fact</span><span class="w"> </span><span class="ss">:alert</span><span class="p">,</span>
+</span><span id="__span-17-8"><a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="w">         </span><span class="ss">location</span><span class="p">:</span><span class="w"> </span><span class="n">bindings</span><span class="o">[</span><span class="ss">:loc?</span><span class="o">]</span><span class="p">,</span>
+</span><span id="__span-17-9"><a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="w">         </span><span class="ss">level</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;high&quot;</span><span class="p">,</span>
+</span><span id="__span-17-10"><a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a><span class="w">         </span><span class="ss">source</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;temperature_monitor&quot;</span>
+</span><span id="__span-17-11"><a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-17-12"><a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a><span class="k">end</span>
+</span></code></pre></div>
+<h3 id="6-flag-facts">6. Flag Facts<a class="headerlink" href="#6-flag-facts" title="Permanent link">&para;</a></h3>
+<p>Boolean markers (attributes optional):</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:system_ready</span>
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:maintenance_mode</span>
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:debug_enabled</span>
+</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:cache_warmed</span>
+</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>
+</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="c1"># Used in rules</span>
+</span><span id="__span-18-7"><a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="n">rule</span><span class="w"> </span><span class="s2">&quot;process_requests&quot;</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-18-8"><a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="w">  </span><span class="n">on</span><span class="w"> </span><span class="ss">:system_ready</span>
+</span><span id="__span-18-9"><a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="w">  </span><span class="n">without</span><span class="w"> </span><span class="ss">:maintenance_mode</span>
+</span><span id="__span-18-10"><a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="w">  </span><span class="n">on</span><span class="w"> </span><span class="ss">:request</span><span class="p">,</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="ss">:req_id?</span>
+</span><span id="__span-18-11"><a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a><span class="w">  </span><span class="n">perform</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">facts</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="o">|</span><span class="w"> </span><span class="n">handle_request</span><span class="p">(</span><span class="n">b</span><span class="o">[</span><span class="ss">:req_id?</span><span class="o">]</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-18-12"><a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a><span class="k">end</span>
+</span></code></pre></div>
+<h2 id="fact-vs-rule-relationship">Fact vs. Rule Relationship<a class="headerlink" href="#fact-vs-rule-relationship" title="Permanent link">&para;</a></h2>
+<p>Facts and rules work together in a symbiotic relationship:</p>
+<p><img alt="Fact-Rule Relationship" src="../assets/images/fact-rule-relationship.svg" /></p>
+<p><em>Facts (data) and rules (logic) interact through pattern matching: rules match facts, execute actions, and may create new facts, continuing the inference cycle.</em></p>
+<p><strong>Example:</strong></p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="c1"># FACTS represent the current state</span>
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:stock</span><span class="p">,</span><span class="w"> </span><span class="ss">symbol</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;AAPL&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">price</span><span class="p">:</span><span class="w"> </span><span class="mi">150</span><span class="p">,</span><span class="w"> </span><span class="ss">volume</span><span class="p">:</span><span class="w"> </span><span class="mi">1_000_000</span>
+</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:portfolio</span><span class="p">,</span><span class="w"> </span><span class="ss">cash</span><span class="p">:</span><span class="w"> </span><span class="mi">10_000</span><span class="p">,</span><span class="w"> </span><span class="ss">max_position</span><span class="p">:</span><span class="w"> </span><span class="mi">5_000</span>
+</span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>
+</span><span id="__span-19-5"><a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="c1"># RULES define logic</span>
+</span><span id="__span-19-6"><a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="n">rule</span><span class="w"> </span><span class="s2">&quot;momentum_buy&quot;</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-19-7"><a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a><span class="w">  </span><span class="c1"># IF these facts exist with these patterns...</span>
+</span><span id="__span-19-8"><a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a><span class="w">  </span><span class="n">on</span><span class="w"> </span><span class="ss">:stock</span><span class="p">,</span><span class="w"> </span><span class="ss">symbol</span><span class="p">:</span><span class="w"> </span><span class="ss">:sym?</span><span class="p">,</span><span class="w"> </span><span class="ss">price</span><span class="p">:</span><span class="w"> </span><span class="ss">:price?</span><span class="p">,</span><span class="w"> </span><span class="ss">volume</span><span class="p">:</span><span class="w"> </span><span class="n">greater_than</span><span class="p">(</span><span class="mi">500_000</span><span class="p">)</span>
+</span><span id="__span-19-9"><a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a><span class="w">  </span><span class="n">on</span><span class="w"> </span><span class="ss">:portfolio</span><span class="p">,</span><span class="w"> </span><span class="ss">cash</span><span class="p">:</span><span class="w"> </span><span class="ss">:cash?</span><span class="p">,</span><span class="w"> </span><span class="ss">max_position</span><span class="p">:</span><span class="w"> </span><span class="ss">:max?</span>
+</span><span id="__span-19-10"><a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a>
+</span><span id="__span-19-11"><a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a><span class="w">  </span><span class="c1"># THEN execute this action</span>
+</span><span id="__span-19-12"><a id="__codelineno-19-12" name="__codelineno-19-12" href="#__codelineno-19-12"></a><span class="w">  </span><span class="n">perform</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">facts</span><span class="p">,</span><span class="w"> </span><span class="n">bindings</span><span class="o">|</span>
+</span><span id="__span-19-13"><a id="__codelineno-19-13" name="__codelineno-19-13" href="#__codelineno-19-13"></a><span class="w">    </span><span class="n">position_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[</span><span class="n">bindings</span><span class="o">[</span><span class="ss">:max?</span><span class="o">]</span><span class="p">,</span><span class="w"> </span><span class="n">bindings</span><span class="o">[</span><span class="ss">:cash?</span><span class="o">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">0</span><span class="o">.</span><span class="mi">1</span><span class="o">].</span><span class="n">min</span>
+</span><span id="__span-19-14"><a id="__codelineno-19-14" name="__codelineno-19-14" href="#__codelineno-19-14"></a><span class="w">    </span><span class="n">shares</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">position_size</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">bindings</span><span class="o">[</span><span class="ss">:price?</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">floor</span>
+</span><span id="__span-19-15"><a id="__codelineno-19-15" name="__codelineno-19-15" href="#__codelineno-19-15"></a>
+</span><span id="__span-19-16"><a id="__codelineno-19-16" name="__codelineno-19-16" href="#__codelineno-19-16"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">shares</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span>
+</span><span id="__span-19-17"><a id="__codelineno-19-17" name="__codelineno-19-17" href="#__codelineno-19-17"></a><span class="w">      </span><span class="c1"># Action may create new facts</span>
+</span><span id="__span-19-18"><a id="__codelineno-19-18" name="__codelineno-19-18" href="#__codelineno-19-18"></a><span class="w">      </span><span class="n">fact</span><span class="w"> </span><span class="ss">:order</span><span class="p">,</span>
+</span><span id="__span-19-19"><a id="__codelineno-19-19" name="__codelineno-19-19" href="#__codelineno-19-19"></a><span class="w">           </span><span class="ss">symbol</span><span class="p">:</span><span class="w"> </span><span class="n">bindings</span><span class="o">[</span><span class="ss">:sym?</span><span class="o">]</span><span class="p">,</span>
+</span><span id="__span-19-20"><a id="__codelineno-19-20" name="__codelineno-19-20" href="#__codelineno-19-20"></a><span class="w">           </span><span class="ss">shares</span><span class="p">:</span><span class="w"> </span><span class="n">shares</span><span class="p">,</span>
+</span><span id="__span-19-21"><a id="__codelineno-19-21" name="__codelineno-19-21" href="#__codelineno-19-21"></a><span class="w">           </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;market_buy&quot;</span>
+</span><span id="__span-19-22"><a id="__codelineno-19-22" name="__codelineno-19-22" href="#__codelineno-19-22"></a><span class="w">    </span><span class="k">end</span>
+</span><span id="__span-19-23"><a id="__codelineno-19-23" name="__codelineno-19-23" href="#__codelineno-19-23"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-19-24"><a id="__codelineno-19-24" name="__codelineno-19-24" href="#__codelineno-19-24"></a><span class="k">end</span>
+</span></code></pre></div>
+<h2 id="fact-semantics">Fact Semantics<a class="headerlink" href="#fact-semantics" title="Permanent link">&para;</a></h2>
+<h3 id="open-world-assumption">Open World Assumption<a class="headerlink" href="#open-world-assumption" title="Permanent link">&para;</a></h3>
+<p>Facts can have any attributes. Patterns only constrain what they mention:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="c1"># Fact has 4 attributes</span>
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="n">fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Fact</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:stock</span><span class="p">,</span>
+</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="w">  </span><span class="ss">symbol</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;AAPL&quot;</span><span class="p">,</span>
+</span><span id="__span-20-4"><a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="w">  </span><span class="ss">price</span><span class="p">:</span><span class="w"> </span><span class="mi">150</span><span class="p">,</span>
+</span><span id="__span-20-5"><a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="w">  </span><span class="ss">volume</span><span class="p">:</span><span class="w"> </span><span class="mi">1_000_000</span><span class="p">,</span>
+</span><span id="__span-20-6"><a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="w">  </span><span class="ss">exchange</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;NASDAQ&quot;</span>
+</span><span id="__span-20-7"><a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="p">)</span>
+</span><span id="__span-20-8"><a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a>
+</span><span id="__span-20-9"><a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a><span class="c1"># Pattern only constrains 2 - still matches!</span>
+</span><span id="__span-20-10"><a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a><span class="n">fact</span><span class="o">.</span><span class="n">matches?</span><span class="p">(</span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:stock</span><span class="p">,</span><span class="w"> </span><span class="ss">symbol</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;AAPL&quot;</span><span class="p">)</span><span class="w">  </span><span class="c1"># =&gt; true</span>
+</span></code></pre></div>
+<h3 id="closed-attribute-assumption">Closed Attribute Assumption<a class="headerlink" href="#closed-attribute-assumption" title="Permanent link">&para;</a></h3>
+<p>If a pattern requires an attribute, the fact must have it:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="n">fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Fact</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:stock</span><span class="p">,</span><span class="w"> </span><span class="ss">symbol</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;AAPL&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">price</span><span class="p">:</span><span class="w"> </span><span class="mi">150</span><span class="p">)</span>
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="c1"># No :volume attribute</span>
+</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>
+</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="c1"># Fails - fact missing required :volume</span>
+</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="n">fact</span><span class="o">.</span><span class="n">matches?</span><span class="p">(</span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:stock</span><span class="p">,</span><span class="w"> </span><span class="ss">volume</span><span class="p">:</span><span class="w"> </span><span class="n">greater_than</span><span class="p">(</span><span class="mi">1000</span><span class="p">))</span><span class="w">  </span><span class="c1"># =&gt; false</span>
+</span></code></pre></div>
+<h3 id="type-safety">Type Safety<a class="headerlink" href="#type-safety" title="Permanent link">&para;</a></h3>
+<p>Type is always checked first:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="n">fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Fact</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:stock</span><span class="p">,</span><span class="w"> </span><span class="ss">symbol</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;AAPL&quot;</span><span class="p">)</span>
+</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>
+</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="c1"># Fails immediately - wrong type</span>
+</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="n">fact</span><span class="o">.</span><span class="n">matches?</span><span class="p">(</span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:temperature</span><span class="p">)</span><span class="w">  </span><span class="c1"># =&gt; false</span>
+</span><span id="__span-22-5"><a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a>
+</span><span id="__span-22-6"><a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a><span class="c1"># Succeeds - right type</span>
+</span><span id="__span-22-7"><a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a><span class="n">fact</span><span class="o">.</span><span class="n">matches?</span><span class="p">(</span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:stock</span><span class="p">)</span><span class="w">  </span><span class="c1"># =&gt; true</span>
+</span></code></pre></div>
+<h3 id="value-immutability-transient-facts">Value Immutability (Transient Facts)<a class="headerlink" href="#value-immutability-transient-facts" title="Permanent link">&para;</a></h3>
+<p>Transient facts should be treated as immutable. Changing attributes doesn't trigger re-evaluation:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="n">fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Fact</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span><span class="p">)</span>
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span>
+</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>
+</span><span id="__span-23-4"><a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="c1"># Don&#39;t do this - change not tracked</span>
+</span><span id="__span-23-5"><a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="n">fact</span><span class="o">[</span><span class="ss">:value</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">90</span><span class="w">  </span><span class="c1"># Rules won&#39;t re-fire</span>
+</span><span id="__span-23-6"><a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a>
+</span><span id="__span-23-7"><a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a><span class="c1"># Instead, retract and re-add</span>
+</span><span id="__span-23-8"><a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a><span class="n">engine</span><span class="o">.</span><span class="n">remove_fact</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span>
+</span><span id="__span-23-9"><a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a><span class="n">new_fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Fact</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">90</span><span class="p">)</span>
+</span><span id="__span-23-10"><a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="n">new_fact</span><span class="p">)</span>
+</span></code></pre></div>
+<h3 id="value-mutability-persistent-facts">Value Mutability (Persistent Facts)<a class="headerlink" href="#value-mutability-persistent-facts" title="Permanent link">&para;</a></h3>
+<p>Persistent facts track updates but don't re-trigger rules:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="n">fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span><span class="p">)</span>
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>
+</span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="c1"># This persists but doesn&#39;t re-fire rules</span>
+</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="n">fact</span><span class="o">[</span><span class="ss">:value</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">90</span>
+</span><span id="__span-24-5"><a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>
+</span><span id="__span-24-6"><a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="c1"># To re-trigger rules, retract and re-add</span>
+</span><span id="__span-24-7"><a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a><span class="n">fact</span><span class="o">.</span><span class="n">retract</span>
+</span><span id="__span-24-8"><a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a><span class="n">new_fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">90</span><span class="p">)</span>
+</span></code></pre></div>
+<h2 id="performance-considerations">Performance Considerations<a class="headerlink" href="#performance-considerations" title="Permanent link">&para;</a></h2>
+<h3 id="fact-count-impact">Fact Count Impact<a class="headerlink" href="#fact-count-impact" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>RETE strength</strong>: Efficient with many facts and stable rules</li>
+<li><strong>Alpha memories</strong>: Facts indexed by type</li>
+<li><strong>Beta network</strong>: Partial matches cached as tokens</li>
+<li><strong>Unlinking</strong>: Empty nodes deactivated automatically</li>
+</ul>
+<p><strong>Scaling characteristics</strong>:</p>
+<ul>
+<li>10-1,000 facts: Excellent performance</li>
+<li>1,000-10,000 facts: Very good (alpha memory indexing helps)</li>
+<li>10,000-100,000 facts: Good (consider indexing strategies)</li>
+<li>100,000+ facts: Consider domain-specific optimizations</li>
+</ul>
+<h3 id="attribute-count-impact">Attribute Count Impact<a class="headerlink" href="#attribute-count-impact" title="Permanent link">&para;</a></h3>
+<p>Facts can have any number of attributes:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="c1"># Small fact (fast)</span>
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:flag</span><span class="p">,</span><span class="w"> </span><span class="ss">active</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span>
+</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>
+</span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a><span class="c1"># Medium fact (typical)</span>
+</span><span id="__span-25-5"><a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:order</span><span class="p">,</span>
+</span><span id="__span-25-6"><a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a><span class="w">  </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="mi">123</span><span class="p">,</span>
+</span><span id="__span-25-7"><a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a><span class="w">  </span><span class="ss">customer_id</span><span class="p">:</span><span class="w"> </span><span class="mi">456</span><span class="p">,</span>
+</span><span id="__span-25-8"><a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a><span class="w">  </span><span class="ss">total</span><span class="p">:</span><span class="w"> </span><span class="mi">99</span><span class="o">.</span><span class="mi">99</span><span class="p">,</span>
+</span><span id="__span-25-9"><a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a><span class="w">  </span><span class="ss">status</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pending&quot;</span>
+</span><span id="__span-25-10"><a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a>
+</span><span id="__span-25-11"><a id="__codelineno-25-11" name="__codelineno-25-11" href="#__codelineno-25-11"></a><span class="c1"># Large fact (fine, but consider if all attributes needed)</span>
+</span><span id="__span-25-12"><a id="__codelineno-25-12" name="__codelineno-25-12" href="#__codelineno-25-12"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:trade</span><span class="p">,</span>
+</span><span id="__span-25-13"><a id="__codelineno-25-13" name="__codelineno-25-13" href="#__codelineno-25-13"></a><span class="w">  </span><span class="ss">symbol</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;AAPL&quot;</span><span class="p">,</span>
+</span><span id="__span-25-14"><a id="__codelineno-25-14" name="__codelineno-25-14" href="#__codelineno-25-14"></a><span class="w">  </span><span class="ss">price</span><span class="p">:</span><span class="w"> </span><span class="mi">150</span><span class="o">.</span><span class="mi">25</span><span class="p">,</span>
+</span><span id="__span-25-15"><a id="__codelineno-25-15" name="__codelineno-25-15" href="#__codelineno-25-15"></a><span class="w">  </span><span class="ss">volume</span><span class="p">:</span><span class="w"> </span><span class="mi">1000</span><span class="p">,</span>
+</span><span id="__span-25-16"><a id="__codelineno-25-16" name="__codelineno-25-16" href="#__codelineno-25-16"></a><span class="w">  </span><span class="ss">timestamp</span><span class="p">:</span><span class="w"> </span><span class="no">Time</span><span class="o">.</span><span class="n">now</span><span class="p">,</span>
+</span><span id="__span-25-17"><a id="__codelineno-25-17" name="__codelineno-25-17" href="#__codelineno-25-17"></a><span class="w">  </span><span class="ss">order_id</span><span class="p">:</span><span class="w"> </span><span class="mi">789</span><span class="p">,</span>
+</span><span id="__span-25-18"><a id="__codelineno-25-18" name="__codelineno-25-18" href="#__codelineno-25-18"></a><span class="w">  </span><span class="ss">account_id</span><span class="p">:</span><span class="w"> </span><span class="mi">456</span><span class="p">,</span>
+</span><span id="__span-25-19"><a id="__codelineno-25-19" name="__codelineno-25-19" href="#__codelineno-25-19"></a><span class="w">  </span><span class="ss">commission</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="o">.</span><span class="mi">50</span><span class="p">,</span>
+</span><span id="__span-25-20"><a id="__codelineno-25-20" name="__codelineno-25-20" href="#__codelineno-25-20"></a><span class="w">  </span><span class="ss">exchange</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;NASDAQ&quot;</span><span class="p">,</span>
+</span><span id="__span-25-21"><a id="__codelineno-25-21" name="__codelineno-25-21" href="#__codelineno-25-21"></a><span class="w">  </span><span class="c1"># ... 20 more attributes</span>
+</span></code></pre></div>
+<p><strong>Guideline</strong>: Include attributes you'll pattern match on. Store auxiliary data in external systems if not needed for rules.</p>
+<h3 id="pattern-complexity-impact">Pattern Complexity Impact<a class="headerlink" href="#pattern-complexity-impact" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="c1"># Fast - literal match (hash equality)</span>
+</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="n">on</span><span class="w"> </span><span class="ss">:stock</span><span class="p">,</span><span class="w"> </span><span class="ss">symbol</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;AAPL&quot;</span>
+</span><span id="__span-26-3"><a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>
+</span><span id="__span-26-4"><a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a><span class="c1"># Medium - simple predicate</span>
+</span><span id="__span-26-5"><a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a><span class="n">on</span><span class="w"> </span><span class="ss">:stock</span><span class="p">,</span><span class="w"> </span><span class="ss">price</span><span class="p">:</span><span class="w"> </span><span class="o">-&gt;</span><span class="p">(</span><span class="nb">p</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">p</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">100</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-26-6"><a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a>
+</span><span id="__span-26-7"><a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a><span class="c1"># Slow - complex predicate (runs on every match attempt)</span>
+</span><span id="__span-26-8"><a id="__codelineno-26-8" name="__codelineno-26-8" href="#__codelineno-26-8"></a><span class="n">on</span><span class="w"> </span><span class="ss">:stock</span><span class="p">,</span><span class="w"> </span><span class="ss">price</span><span class="p">:</span><span class="w"> </span><span class="o">-&gt;</span><span class="p">(</span><span class="nb">p</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-26-9"><a id="__codelineno-26-9" name="__codelineno-26-9" href="#__codelineno-26-9"></a><span class="w">  </span><span class="n">historical_data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fetch_history</span><span class="p">(</span><span class="nb">p</span><span class="p">)</span><span class="w">  </span><span class="c1"># External call!</span>
+</span><span id="__span-26-10"><a id="__codelineno-26-10" name="__codelineno-26-10" href="#__codelineno-26-10"></a><span class="w">  </span><span class="n">calculate_volatility</span><span class="p">(</span><span class="n">historical_data</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">threshold</span>
+</span><span id="__span-26-11"><a id="__codelineno-26-11" name="__codelineno-26-11" href="#__codelineno-26-11"></a><span class="p">}</span>
+</span></code></pre></div>
+<p><strong>Guideline</strong>: Keep predicates simple. Do expensive checks in rule actions, not patterns.</p>
+<h2 id="common-pitfalls">Common Pitfalls<a class="headerlink" href="#common-pitfalls" title="Permanent link">&para;</a></h2>
+<h3 id="1-forgetting-fact-type">1. Forgetting Fact Type<a class="headerlink" href="#1-forgetting-fact-type" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="c1"># Wrong - no type</span>
+</span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="n">fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">location</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;server_room&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-27-3"><a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>
+</span><span id="__span-27-4"><a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a><span class="c1"># Right - always include type</span>
+</span><span id="__span-27-5"><a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">location</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;server_room&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span>
+</span></code></pre></div>
+<h3 id="2-expecting-updates-to-re-trigger-rules">2. Expecting Updates to Re-trigger Rules<a class="headerlink" href="#2-expecting-updates-to-re-trigger-rules" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="n">fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span><span class="p">)</span>
+</span><span id="__span-28-2"><a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>
+</span><span id="__span-28-3"><a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a><span class="c1"># This rule fires</span>
+</span><span id="__span-28-4"><a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a><span class="n">rule</span><span class="w"> </span><span class="s2">&quot;high_temp&quot;</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-28-5"><a id="__codelineno-28-5" name="__codelineno-28-5" href="#__codelineno-28-5"></a><span class="w">  </span><span class="n">on</span><span class="w"> </span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="n">greater_than</span><span class="p">(</span><span class="mi">80</span><span class="p">)</span>
+</span><span id="__span-28-6"><a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a><span class="w">  </span><span class="n">perform</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;High!&quot;</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-28-7"><a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a><span class="k">end</span>
+</span><span id="__span-28-8"><a id="__codelineno-28-8" name="__codelineno-28-8" href="#__codelineno-28-8"></a>
+</span><span id="__span-28-9"><a id="__codelineno-28-9" name="__codelineno-28-9" href="#__codelineno-28-9"></a><span class="c1"># Update doesn&#39;t re-fire rule</span>
+</span><span id="__span-28-10"><a id="__codelineno-28-10" name="__codelineno-28-10" href="#__codelineno-28-10"></a><span class="n">fact</span><span class="o">[</span><span class="ss">:value</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">90</span><span class="w">  </span><span class="c1"># Rule doesn&#39;t fire again</span>
+</span><span id="__span-28-11"><a id="__codelineno-28-11" name="__codelineno-28-11" href="#__codelineno-28-11"></a>
+</span><span id="__span-28-12"><a id="__codelineno-28-12" name="__codelineno-28-12" href="#__codelineno-28-12"></a><span class="c1"># Must retract and re-add to re-trigger</span>
+</span><span id="__span-28-13"><a id="__codelineno-28-13" name="__codelineno-28-13" href="#__codelineno-28-13"></a><span class="n">fact</span><span class="o">.</span><span class="n">retract</span>
+</span><span id="__span-28-14"><a id="__codelineno-28-14" name="__codelineno-28-14" href="#__codelineno-28-14"></a><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">90</span><span class="p">)</span>
+</span><span id="__span-28-15"><a id="__codelineno-28-15" name="__codelineno-28-15" href="#__codelineno-28-15"></a><span class="n">engine</span><span class="o">.</span><span class="n">run</span><span class="w">  </span><span class="c1"># Now rule fires</span>
+</span></code></pre></div>
+<h3 id="3-side-effects-in-predicates">3. Side Effects in Predicates<a class="headerlink" href="#3-side-effects-in-predicates" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="c1"># Wrong - side effects</span>
+</span><span id="__span-29-2"><a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a><span class="n">counter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+</span><span id="__span-29-3"><a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a><span class="n">on</span><span class="w"> </span><span class="ss">:stock</span><span class="p">,</span><span class="w"> </span><span class="ss">price</span><span class="p">:</span><span class="w"> </span><span class="o">-&gt;</span><span class="p">(</span><span class="nb">p</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-29-4"><a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a><span class="w">  </span><span class="n">counter</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="mi">1</span><span class="w">  </span><span class="c1"># Bad! Runs on every match attempt</span>
+</span><span id="__span-29-5"><a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a><span class="w">  </span><span class="nb">p</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">100</span>
+</span><span id="__span-29-6"><a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a><span class="p">}</span>
+</span><span id="__span-29-7"><a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a>
+</span><span id="__span-29-8"><a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a><span class="c1"># Right - pure predicate</span>
+</span><span id="__span-29-9"><a id="__codelineno-29-9" name="__codelineno-29-9" href="#__codelineno-29-9"></a><span class="n">threshold</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">100</span>
+</span><span id="__span-29-10"><a id="__codelineno-29-10" name="__codelineno-29-10" href="#__codelineno-29-10"></a><span class="n">on</span><span class="w"> </span><span class="ss">:stock</span><span class="p">,</span><span class="w"> </span><span class="ss">price</span><span class="p">:</span><span class="w"> </span><span class="o">-&gt;</span><span class="p">(</span><span class="nb">p</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">p</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">threshold</span><span class="w"> </span><span class="p">}</span>
+</span></code></pre></div>
+<h3 id="4-missing-attributes-in-predicates">4. Missing Attributes in Predicates<a class="headerlink" href="#4-missing-attributes-in-predicates" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="n">fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Fact</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:stock</span><span class="p">,</span><span class="w"> </span><span class="ss">symbol</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;AAPL&quot;</span><span class="p">)</span><span class="w">  </span><span class="c1"># No :price</span>
+</span><span id="__span-30-2"><a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>
+</span><span id="__span-30-3"><a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="c1"># Fails - predicate can&#39;t evaluate nil</span>
+</span><span id="__span-30-4"><a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="n">fact</span><span class="o">.</span><span class="n">matches?</span><span class="p">(</span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:stock</span><span class="p">,</span><span class="w"> </span><span class="ss">price</span><span class="p">:</span><span class="w"> </span><span class="o">-&gt;</span><span class="p">(</span><span class="nb">p</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">p</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">100</span><span class="w"> </span><span class="p">})</span><span class="w">  </span><span class="c1"># =&gt; false</span>
+</span><span id="__span-30-5"><a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a>
+</span><span id="__span-30-6"><a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a><span class="c1"># Use variable to capture nil</span>
+</span><span id="__span-30-7"><a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a><span class="n">fact</span><span class="o">.</span><span class="n">matches?</span><span class="p">(</span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:stock</span><span class="p">,</span><span class="w"> </span><span class="ss">price</span><span class="p">:</span><span class="w"> </span><span class="ss">:price?</span><span class="p">)</span><span class="w">  </span><span class="c1"># =&gt; true (binds :price? =&gt; nil)</span>
+</span></code></pre></div>
+<h3 id="5-confusing-negation">5. Confusing Negation<a class="headerlink" href="#5-confusing-negation" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="c1"># Matches when NO critical alert EXISTS</span>
+</span><span id="__span-31-2"><a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a><span class="n">without</span><span class="w"> </span><span class="ss">:alert</span><span class="p">,</span><span class="w"> </span><span class="ss">level</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;critical&quot;</span>
+</span><span id="__span-31-3"><a id="__codelineno-31-3" name="__codelineno-31-3" href="#__codelineno-31-3"></a>
+</span><span id="__span-31-4"><a id="__codelineno-31-4" name="__codelineno-31-4" href="#__codelineno-31-4"></a><span class="c1"># NOT the same as: Match alerts that aren&#39;t critical</span>
+</span><span id="__span-31-5"><a id="__codelineno-31-5" name="__codelineno-31-5" href="#__codelineno-31-5"></a><span class="c1"># For that, use:</span>
+</span><span id="__span-31-6"><a id="__codelineno-31-6" name="__codelineno-31-6" href="#__codelineno-31-6"></a><span class="n">on</span><span class="w"> </span><span class="ss">:alert</span><span class="p">,</span><span class="w"> </span><span class="ss">level</span><span class="p">:</span><span class="w"> </span><span class="o">-&gt;</span><span class="p">(</span><span class="n">l</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">l</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="s2">&quot;critical&quot;</span><span class="w"> </span><span class="p">}</span>
+</span></code></pre></div>
+<h2 id="best-practices">Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h2>
+<h3 id="1-use-descriptive-fact-types">1. Use Descriptive Fact Types<a class="headerlink" href="#1-use-descriptive-fact-types" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-32-1"><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="c1"># Good - clear semantic meaning</span>
+</span><span id="__span-32-2"><a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:temperature_reading</span><span class="p">,</span><span class="w"> </span><span class="ss">sensor_id</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span>
+</span><span id="__span-32-3"><a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:order_placed</span><span class="p">,</span><span class="w"> </span><span class="ss">order_id</span><span class="p">:</span><span class="w"> </span><span class="mi">123</span><span class="p">,</span><span class="w"> </span><span class="ss">timestamp</span><span class="p">:</span><span class="w"> </span><span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+</span><span id="__span-32-4"><a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:inventory_shortage</span><span class="p">,</span><span class="w"> </span><span class="ss">product_id</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ABC&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">deficit</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span>
+</span><span id="__span-32-5"><a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a>
+</span><span id="__span-32-6"><a id="__codelineno-32-6" name="__codelineno-32-6" href="#__codelineno-32-6"></a><span class="c1"># Avoid - vague types</span>
+</span><span id="__span-32-7"><a id="__codelineno-32-7" name="__codelineno-32-7" href="#__codelineno-32-7"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:data</span><span class="p">,</span><span class="w"> </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;temp&quot;</span><span class="p">,</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span><span class="w"> </span><span class="ss">val</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span>
+</span><span id="__span-32-8"><a id="__codelineno-32-8" name="__codelineno-32-8" href="#__codelineno-32-8"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:event</span><span class="p">,</span><span class="w"> </span><span class="ss">kind</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;order&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">timestamp</span><span class="p">:</span><span class="w"> </span><span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+</span></code></pre></div>
+<h3 id="2-include-identifying-attributes">2. Include Identifying Attributes<a class="headerlink" href="#2-include-identifying-attributes" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-33-1"><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="c1"># Good - can query and match specifically</span>
+</span><span id="__span-33-2"><a id="__codelineno-33-2" name="__codelineno-33-2" href="#__codelineno-33-2"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:sensor</span><span class="p">,</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span><span class="w"> </span><span class="ss">status</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;active&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">location</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;room_1&quot;</span>
+</span><span id="__span-33-3"><a id="__codelineno-33-3" name="__codelineno-33-3" href="#__codelineno-33-3"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:order</span><span class="p">,</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="mi">123</span><span class="p">,</span><span class="w"> </span><span class="ss">customer_id</span><span class="p">:</span><span class="w"> </span><span class="mi">456</span><span class="p">,</span><span class="w"> </span><span class="ss">total</span><span class="p">:</span><span class="w"> </span><span class="mi">99</span><span class="o">.</span><span class="mi">99</span>
+</span><span id="__span-33-4"><a id="__codelineno-33-4" name="__codelineno-33-4" href="#__codelineno-33-4"></a>
+</span><span id="__span-33-5"><a id="__codelineno-33-5" name="__codelineno-33-5" href="#__codelineno-33-5"></a><span class="c1"># Harder to work with - no unique identifier</span>
+</span><span id="__span-33-6"><a id="__codelineno-33-6" name="__codelineno-33-6" href="#__codelineno-33-6"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:sensor</span><span class="p">,</span><span class="w"> </span><span class="ss">status</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;active&quot;</span>
+</span></code></pre></div>
+<h3 id="3-add-timestamps-for-time-based-reasoning">3. Add Timestamps for Time-Based Reasoning<a class="headerlink" href="#3-add-timestamps-for-time-based-reasoning" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-34-1"><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:temperature</span><span class="p">,</span>
+</span><span id="__span-34-2"><a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="w">  </span><span class="ss">sensor_id</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span>
+</span><span id="__span-34-3"><a id="__codelineno-34-3" name="__codelineno-34-3" href="#__codelineno-34-3"></a><span class="w">  </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span><span class="p">,</span>
+</span><span id="__span-34-4"><a id="__codelineno-34-4" name="__codelineno-34-4" href="#__codelineno-34-4"></a><span class="w">  </span><span class="ss">timestamp</span><span class="p">:</span><span class="w"> </span><span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+</span><span id="__span-34-5"><a id="__codelineno-34-5" name="__codelineno-34-5" href="#__codelineno-34-5"></a>
+</span><span id="__span-34-6"><a id="__codelineno-34-6" name="__codelineno-34-6" href="#__codelineno-34-6"></a><span class="c1"># Enables rules like:</span>
+</span><span id="__span-34-7"><a id="__codelineno-34-7" name="__codelineno-34-7" href="#__codelineno-34-7"></a><span class="n">rule</span><span class="w"> </span><span class="s2">&quot;stale_data&quot;</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-34-8"><a id="__codelineno-34-8" name="__codelineno-34-8" href="#__codelineno-34-8"></a><span class="w">  </span><span class="n">on</span><span class="w"> </span><span class="ss">:temperature</span><span class="p">,</span>
+</span><span id="__span-34-9"><a id="__codelineno-34-9" name="__codelineno-34-9" href="#__codelineno-34-9"></a><span class="w">    </span><span class="ss">timestamp</span><span class="p">:</span><span class="w"> </span><span class="o">-&gt;</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="no">Time</span><span class="o">.</span><span class="n">now</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">ts</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">300</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-34-10"><a id="__codelineno-34-10" name="__codelineno-34-10" href="#__codelineno-34-10"></a><span class="w">  </span><span class="n">perform</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">&quot;Stale data!&quot;</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-34-11"><a id="__codelineno-34-11" name="__codelineno-34-11" href="#__codelineno-34-11"></a><span class="k">end</span>
+</span></code></pre></div>
+<h3 id="4-use-fact-types-to-model-domain">4. Use Fact Types to Model Domain<a class="headerlink" href="#4-use-fact-types-to-model-domain" title="Permanent link">&para;</a></h3>
+<p>Organize facts around your domain concepts:</p>
+<p><strong>Stock Trading:</strong>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-35-1"><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:stock</span><span class="p">,</span><span class="w"> </span><span class="ss">symbol</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;AAPL&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">price</span><span class="p">:</span><span class="w"> </span><span class="mi">150</span><span class="p">,</span><span class="w"> </span><span class="ss">volume</span><span class="p">:</span><span class="w"> </span><span class="mi">1_000_000</span>
+</span><span id="__span-35-2"><a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:order</span><span class="p">,</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="mi">123</span><span class="p">,</span><span class="w"> </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;buy&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">shares</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span>
+</span><span id="__span-35-3"><a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:position</span><span class="p">,</span><span class="w"> </span><span class="ss">symbol</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;AAPL&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">shares</span><span class="p">:</span><span class="w"> </span><span class="mi">500</span><span class="p">,</span><span class="w"> </span><span class="ss">cost_basis</span><span class="p">:</span><span class="w"> </span><span class="mi">145</span>
+</span><span id="__span-35-4"><a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:alert</span><span class="p">,</span><span class="w"> </span><span class="ss">level</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;high&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">message</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Price spike detected&quot;</span>
+</span></code></pre></div></p>
+<p><strong>IoT Monitoring:</strong>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-36-1"><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:sensor</span><span class="p">,</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span><span class="w"> </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;temperature&quot;</span><span class="p">,</span><span class="w"> </span><span class="ss">location</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;server_1&quot;</span>
+</span><span id="__span-36-2"><a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:reading</span><span class="p">,</span><span class="w"> </span><span class="ss">sensor_id</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span><span class="p">,</span><span class="w"> </span><span class="ss">timestamp</span><span class="p">:</span><span class="w"> </span><span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+</span><span id="__span-36-3"><a id="__codelineno-36-3" name="__codelineno-36-3" href="#__codelineno-36-3"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:threshold</span><span class="p">,</span><span class="w"> </span><span class="ss">sensor_id</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span><span class="w"> </span><span class="ss">max</span><span class="p">:</span><span class="w"> </span><span class="mi">80</span><span class="p">,</span><span class="w"> </span><span class="ss">min</span><span class="p">:</span><span class="w"> </span><span class="mi">60</span>
+</span><span id="__span-36-4"><a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:alert</span><span class="p">,</span><span class="w"> </span><span class="ss">sensor_id</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span><span class="w"> </span><span class="ss">severity</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;warning&quot;</span>
+</span></code></pre></div></p>
+<h3 id="5-keep-facts-focused">5. Keep Facts Focused<a class="headerlink" href="#5-keep-facts-focused" title="Permanent link">&para;</a></h3>
+<p>One fact = one piece of knowledge</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-37-1"><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="c1"># Good - focused facts</span>
+</span><span id="__span-37-2"><a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:order</span><span class="p">,</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="mi">123</span><span class="p">,</span><span class="w"> </span><span class="ss">status</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;pending&quot;</span>
+</span><span id="__span-37-3"><a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:customer</span><span class="p">,</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="mi">456</span><span class="p">,</span><span class="w"> </span><span class="nb">name</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Acme&quot;</span>
+</span><span id="__span-37-4"><a id="__codelineno-37-4" name="__codelineno-37-4" href="#__codelineno-37-4"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:payment</span><span class="p">,</span><span class="w"> </span><span class="ss">order_id</span><span class="p">:</span><span class="w"> </span><span class="mi">123</span><span class="p">,</span><span class="w"> </span><span class="ss">amount</span><span class="p">:</span><span class="w"> </span><span class="mi">99</span><span class="o">.</span><span class="mi">99</span>
+</span><span id="__span-37-5"><a id="__codelineno-37-5" name="__codelineno-37-5" href="#__codelineno-37-5"></a>
+</span><span id="__span-37-6"><a id="__codelineno-37-6" name="__codelineno-37-6" href="#__codelineno-37-6"></a><span class="c1"># Avoid - bloated fact with everything</span>
+</span><span id="__span-37-7"><a id="__codelineno-37-7" name="__codelineno-37-7" href="#__codelineno-37-7"></a><span class="n">fact</span><span class="w"> </span><span class="ss">:transaction</span><span class="p">,</span>
+</span><span id="__span-37-8"><a id="__codelineno-37-8" name="__codelineno-37-8" href="#__codelineno-37-8"></a><span class="w">  </span><span class="ss">order_id</span><span class="p">:</span><span class="w"> </span><span class="mi">123</span><span class="p">,</span>
+</span><span id="__span-37-9"><a id="__codelineno-37-9" name="__codelineno-37-9" href="#__codelineno-37-9"></a><span class="w">  </span><span class="ss">customer_id</span><span class="p">:</span><span class="w"> </span><span class="mi">456</span><span class="p">,</span>
+</span><span id="__span-37-10"><a id="__codelineno-37-10" name="__codelineno-37-10" href="#__codelineno-37-10"></a><span class="w">  </span><span class="ss">customer_name</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Acme&quot;</span><span class="p">,</span>
+</span><span id="__span-37-11"><a id="__codelineno-37-11" name="__codelineno-37-11" href="#__codelineno-37-11"></a><span class="w">  </span><span class="ss">payment_method</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;credit&quot;</span><span class="p">,</span>
+</span><span id="__span-37-12"><a id="__codelineno-37-12" name="__codelineno-37-12" href="#__codelineno-37-12"></a><span class="w">  </span><span class="c1"># ... 30 more fields</span>
+</span></code></pre></div>
+<h2 id="further-reading">Further Reading<a class="headerlink" href="#further-reading" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong><a href="../api/facts/">Facts API Reference</a></strong> - Complete method documentation</li>
+<li><strong><a href="../guides/pattern-matching/">Pattern Matching Guide</a></strong> - Detailed matching semantics</li>
+<li><strong><a href="../guides/variable-binding/">Variable Binding Guide</a></strong> - Join tests and captures</li>
+<li><strong><a href="../what-is-a-knowledge-base/">Knowledge Base</a></strong> - How facts fit into knowledge bases</li>
+<li><strong><a href="../architecture/rete-algorithm/">RETE Algorithm</a></strong> - How facts are matched efficiently</li>
+</ul>
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<p>A <strong>fact</strong> is:</p>
+<ul>
+<li>The fundamental unit of knowledge in KBS</li>
+<li>A <strong>typed record</strong> with attributes (<code>:type</code> + <code>{key: value}</code>)</li>
+<li><strong>Pattern-matchable</strong> using literals, predicates, and variables</li>
+<li>Available in both <strong>transient</strong> (fast, volatile) and <strong>persistent</strong> (durable, auditable) forms</li>
+<li>The "data" that rules reason about</li>
+</ul>
+<p>Think of facts as <strong>statements of truth</strong> that the knowledge base can automatically reason about and act upon.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2024 Dewayne VanHoozer
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/madbomber/kbs" target="_blank" rel="noopener" title="KBS on GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://rubygems.org/gems/kbs" target="_blank" rel="noopener" title="KBS on RubyGems" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M116.7 33.8c4.5-6.1 11.7-9.8 19.3-9.8h240c7.6 0 14.8 3.6 19.3 9.8l112 152c6.8 9.2 6.1 21.9-1.5 30.4l-232 256c-4.5 5-11 7.9-17.8 7.9s-13.2-2.9-17.8-7.9l-232-256c-7.7-8.5-8.3-21.2-1.5-30.4zm38.5 39.8c-3.3 2.5-4.2 7-2.1 10.5l57.4 95.7L63.3 192c-4.1.3-7.3 3.8-7.3 8s3.2 7.6 7.3 8l192 16h1.3l192-16c4.1-.3 7.3-3.8 7.3-8s-3.2-7.6-7.3-8l-147.2-12.3 57.4-95.6c2.1-3.5 1.2-8.1-2.1-10.5s-7.9-2-10.7 1l-90 97.6-90.1-97.6c-2.8-3-7.4-3.4-10.7-1"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.path", "navigation.indexes", "navigation.top", "toc.follow", "search.suggest", "search.highlight", "search.share", "header.autohide", "content.code.copy", "content.code.annotate", "content.tabs.link", "content.tooltips", "content.action.edit", "content.action.view"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.f55a23d4.min.js"></script>
+      
+        <script src="../assets/js/mathjax.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 380">
+  <defs>
+    <style>
+      .outer-box { fill: none; stroke: #60a5fa; stroke-width: 2; }
+      .inner-box { fill: #1e293b; stroke: #94a3b8; stroke-width: 1.5; }
+      .text { fill: #e2e8f0; font-family: 'Courier New', monospace; font-size: 13px; }
+      .title { fill: #60a5fa; font-family: 'Courier New', monospace; font-size: 16px; font-weight: bold; }
+      .subtitle { fill: #94a3b8; font-family: 'Courier New', monospace; font-size: 12px; }
+      .check { fill: #22c55e; font-size: 16px; }
+      .arrow { stroke: #60a5fa; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#60a5fa" />
+    </marker>
+  </defs>
+
+  <!-- Main container -->
+  <rect x="20" y="20" width="480" height="340" rx="5" class="outer-box"/>
+  <text x="260" y="45" text-anchor="middle" class="title">Rule: "high_temperature_alert"</text>
+
+  <!-- Metadata section -->
+  <rect x="40" y="60" width="440" height="80" rx="5" class="inner-box"/>
+  <text x="260" y="80" text-anchor="middle" class="title" font-size="14">METADATA</text>
+  <text x="80" y="105" class="subtitle">- Name: "high_temperature_alert"</text>
+  <text x="80" y="125" class="subtitle">- Description: "Alert when..."</text>
+  <text x="350" y="125" class="subtitle">- Priority: 10</text>
+
+  <!-- Conditions section -->
+  <rect x="40" y="155" width="440" height="80" rx="5" class="inner-box"/>
+  <text x="260" y="175" text-anchor="middle" class="title" font-size="14">CONDITIONS (IF)</text>
+  <text x="80" y="200" class="check">✓</text>
+  <text x="100" y="200" class="subtitle">temperature in server_room > 80°F</text>
+  <text x="80" y="220" class="check">✓</text>
+  <text x="100" y="220" class="subtitle">sensor in server_room is active</text>
+
+  <!-- Arrow -->
+  <path d="M 260 235 L 260 255" class="arrow"/>
+  <text x="290" y="250" class="subtitle">(when ALL match)</text>
+
+  <!-- Action section -->
+  <rect x="40" y="255" width="440" height="80" rx="5" class="inner-box"/>
+  <text x="260" y="275" text-anchor="middle" class="title" font-size="14">ACTION (THEN)</text>
+  <text x="80" y="300" class="subtitle">→ send_alert(...)</text>
+</svg>

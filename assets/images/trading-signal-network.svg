@@ -114,7 +114,7 @@
   <rect x="160" y="810" width="280" height="90" class="prod-box" rx="5"/>
   <text x="300" y="840" class="node-title" text-anchor="middle">ProductionNode</text>
   <text x="300" y="860" class="label" text-anchor="middle">(rule: "trading_signal")</text>
-  <text x="300" y="880" class="detail" text-anchor="middle">Action: if price < threshold,</text>
+  <text x="300" y="880" class="detail" text-anchor="middle">Action: if price &lt; threshold,</text>
   <text x="300" y="892" class="detail" text-anchor="middle">BUY symbol</text>
 
   <!-- Legend -->
