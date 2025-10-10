@@ -79,7 +79,7 @@ engine.add_rule(rule)
 kb = KBS.knowledge_base do
   rule "high_temperature", priority: 10 do
     on :temperature, location: "server_room", value: greater_than(80)
-    perform do |bindings|
+    perform do |facts, bindings|
       puts "Alert: #{bindings[:location?]} is #{bindings[:value?]}°F"
     end
   end
@@ -639,7 +639,7 @@ engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
 kb = KBS.knowledge_base do
   rule "high_temp_alert", priority: 10 do
     on :temperature, value: greater_than(80)
-    perform do |bindings|
+    perform do |facts, bindings|
       puts "Alert! Temperature: #{bindings[:value?]}"
     end
   end
@@ -894,7 +894,7 @@ old_facts.each { |f| engine.remove_fact(f) }
 ```ruby
 rule "expire_old_facts", priority: 0 do
   on :temperature, timestamp: ->(ts) { Time.now - ts > 3600 }
-  perform do |bindings|
+  perform do |facts, bindings|
     fact = bindings[:matched_fact?]
     engine.remove_fact(fact)
   end
@@ -910,7 +910,7 @@ end
 ```ruby
 rule "risky_operation" do
   on :task, status: "pending"
-  perform do |bindings|
+  perform do |facts, bindings|
     begin
       perform_risky_operation(bindings[:task_id?])
     rescue => e

@@ -486,7 +486,7 @@ engine.remove_fact(fact)
 ```ruby
 rule "auto_expire_old_alerts" do
   on :alert, timestamp: ->(ts) { Time.now - ts > 3600 }
-  perform do |bindings|
+  perform do |facts, bindings|
     # Fact can remove itself
     alert_fact = bindings[:matched_fact?]
     alert_fact.retract
@@ -1047,7 +1047,7 @@ You can't directly compare two attributes of the same fact in one condition. Use
 # Instead: Capture variables and check in action or use join test
 rule "large_order" do
   on :order, quantity: :qty?, price: :price?
-  perform do |bindings|
+  perform do |facts, bindings|
     total = bindings[:qty?] * bindings[:price?]
     if total > 10000
       puts "Large order: $#{total}"
@@ -1111,7 +1111,7 @@ condition = KBS::Condition.new(
 # Better - Simple check first, complex check in action
 rule "complex_log_analysis" do
   on :log_entry, level: "ERROR", message: :msg?  # Simple literal filter
-  perform do |bindings|
+  perform do |facts, bindings|
     if bindings[:msg?] =~ /very.*complex.*regex.*pattern/
       # Expensive check runs only on ERROR logs
     end

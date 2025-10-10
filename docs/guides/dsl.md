@@ -22,7 +22,7 @@ Complete reference for the KBS Domain-Specific Language for defining knowledge b
 The KBS DSL provides a natural, English-like syntax for defining knowledge-based systems:
 
 ```ruby
-require 'kbs'
+require 'kbs/dsl'
 
 kb = KBS.knowledge_base do
   # Define a rule
@@ -32,7 +32,7 @@ kb = KBS.knowledge_base do
 
     on :temperature, value: greater_than(80), location: :loc?
 
-    perform do |bindings|
+    perform do |facts, bindings|
       puts "High temperature at #{bindings[:loc?]}"
     end
   end
@@ -314,7 +314,7 @@ rule "rule_name" do
   on :another_type, field: predicate
 
   # Action
-  perform do |bindings|
+  perform do |facts, bindings|
     # Code to execute
   end
 end
@@ -367,7 +367,7 @@ end
 rule "log_reading" do
   priority 1  # Low priority
   on :temperature, value: :temp?
-  perform { |b| log(b[:temp?]) }
+  perform { |facts, b| log(b[:temp?]) }
 end
 ```
 
@@ -436,7 +436,7 @@ Capture attribute values in variables (symbols starting with `?`):
 on :temperature, value: :temp?, location: :loc?
 
 # In action:
-perform do |bindings|
+perform do |facts, bindings|
   puts "Temperature: #{bindings[:temp?]}"
   puts "Location: #{bindings[:loc?]}"
 end
@@ -648,7 +648,7 @@ Variables allow you to:
 
 ### Variable Syntax
 
-Variables are symbols starting with `?`:
+Variables are symbols ending with `?`:
 
 ```ruby
 :temp?      # Variable named "temp"
@@ -664,7 +664,7 @@ Variables are symbols starting with `?`:
 rule "temperature_report" do
   on :temperature, value: :temp?, location: :loc?, timestamp: :time?
 
-  perform do |bindings|
+  perform do |facts, bindings|
     puts "Temperature at #{bindings[:loc?]}: #{bindings[:temp?]}°F"
     puts "Recorded: #{bindings[:time?]}"
   end
@@ -682,7 +682,7 @@ rule "check_inventory" do
   on :order, product_id: :pid?, quantity: :qty?
   on :inventory, product_id: :pid?, available: :avail?
 
-  perform do |bindings|
+  perform do |facts, bindings|
     if bindings[:avail?] < bindings[:qty?]
       puts "Insufficient inventory for product #{bindings[:pid?]}"
     end
@@ -705,7 +705,7 @@ rule "sensor_temperature_correlation" do
   on :temperature, sensor_id: :sensor_id?, value: :temp?
   on :reading, sensor_id: :sensor_id?, timestamp: :time?
 
-  perform do |bindings|
+  perform do |facts, bindings|
     # All three facts share the same sensor_id
     puts "Sensor #{bindings[:sensor_id?]} at #{bindings[:loc?]}"
     puts "Reading: #{bindings[:temp?]}°F at #{bindings[:time?]}"
@@ -777,7 +777,7 @@ rule "no_matching_inventory" do
   on :order, product_id: :pid?
   without :inventory, product_id: :pid?
 
-  perform do |bindings|
+  perform do |facts, bindings|
     puts "No inventory for product #{bindings[:pid?]}"
   end
 end
@@ -810,7 +810,7 @@ end
 rule "sensor_timeout" do
   on :sensor, id: :sensor_id?, expected: true
   without :reading, sensor_id: :sensor_id?
-  perform { |b| puts "Sensor #{b[:sensor_id?]} timeout" }
+  perform { |facts, b| puts "Sensor #{b[:sensor_id?]} timeout" }
 end
 ```
 
@@ -827,7 +827,7 @@ All of these are **aliases**:
 - **`perform(&block)`** - Primary action keyword
 - **`action(&block)`** - Alias
 - **`execute(&block)`** - Alias
-- **`then(&block)`** - Alias
+- **`then(&block)`** - Alias  - TODO: isn't "then" a ruby keyword?
 
 ---
 
@@ -839,7 +839,7 @@ Actions receive a `bindings` hash containing all variable bindings:
 rule "example" do
   on :temperature, value: :temp?, location: :loc?
 
-  perform do |bindings|
+  perform do |facts, bindings|
     temp = bindings[:temp?]
     location = bindings[:loc?]
     puts "Temperature at #{location}: #{temp}°F"
@@ -855,7 +855,7 @@ Actions can:
 
 1. **Read bindings**:
 ```ruby
-perform do |bindings|
+perform do |facts, bindings|
   value = bindings[:temp?]
 end
 ```
@@ -874,7 +874,7 @@ end
 
 3. **Call external methods**:
 ```ruby
-perform do |bindings|
+perform do |facts, bindings|
   send_email_alert(bindings[:temp?])
   log_to_database(bindings)
   trigger_alarm if bindings[:level?] == "critical"
@@ -883,7 +883,7 @@ end
 
 4. **Add/remove facts**:
 ```ruby
-perform do |bindings|
+perform do |facts, bindings|
   # Add derived fact
   fact :alert, level: "high", source: bindings[:sensor_id?]
 
@@ -901,7 +901,7 @@ end
 # Simple logging
 rule "log_temperature" do
   on :temperature, value: :temp?
-  perform { |b| puts "Temperature: #{b[:temp?]}" }
+  perform { |facts, b| puts "Temperature: #{b[:temp?]}" }
 end
 
 # State machine transition
@@ -909,7 +909,7 @@ rule "pending_to_processing" do
   on :order, id: :order_id?, status: "pending"
   on :worker, status: "available", id: :worker_id?
 
-  perform do |bindings|
+  perform do |facts, bindings|
     # Update order status
     order = query(:order, id: bindings[:order_id?]).first
     retract order
@@ -1079,7 +1079,7 @@ end
 kb = KBS.knowledge_base do
   rule "example" do
     on :temperature, value: :temp?
-    perform { |b| puts b[:temp?] }
+    perform { |facts, b| puts b[:temp?] }
   end
 end
 
@@ -1100,7 +1100,7 @@ kb.engine.rules  # => Array<KBS::Rule>
 ### Temperature Monitoring
 
 ```ruby
-require 'kbs'
+require 'kbs/dsl'
 
 kb = KBS.knowledge_base do
   # Rules
@@ -1112,7 +1112,7 @@ kb = KBS.knowledge_base do
     on :temperature, sensor_id: :sensor_id?, value: greater_than(80)
     without :alert, sensor_id: :sensor_id?  # No existing alert
 
-    perform do |bindings|
+    perform do |facts, bindings|
       puts "⚠️  HIGH TEMPERATURE ALERT"
       puts "Sensor: #{bindings[:sensor_id?]}"
       puts "Temperature: #{bindings[:value?]}°F"
@@ -1132,7 +1132,7 @@ kb = KBS.knowledge_base do
     on :temperature, sensor_id: :sensor_id?, value: less_than(75)
     on :alert, sensor_id: :sensor_id?
 
-    perform do |bindings|
+    perform do |facts, bindings|
       puts "✓ Temperature normal for sensor #{bindings[:sensor_id?]}"
 
       # Remove alert
@@ -1167,7 +1167,7 @@ kb = KBS.knowledge_base do
     on :order, id: :order_id?, status: "new", product_id: :pid?, quantity: :qty?
     on :inventory, product_id: :pid?, quantity: :available?
 
-    perform do |bindings|
+    perform do |facts, bindings|
       if bindings[:available?] >= bindings[:qty?]
         order = query(:order, id: bindings[:order_id?]).first
         retract order
@@ -1191,7 +1191,7 @@ kb = KBS.knowledge_base do
                product_id: :pid?, quantity: :qty?
     on :inventory, product_id: :pid?, quantity: :available?
 
-    perform do |bindings|
+    perform do |facts, bindings|
       # Deduct inventory
       inventory = query(:inventory, product_id: bindings[:pid?]).first
       retract inventory
@@ -1296,13 +1296,13 @@ on :order, status: ->(s) { ["pending", "processing"].include?(s) }
 # Good - Simple, focused action
 rule "log_temperature" do
   on :temperature, value: :temp?
-  perform { |b| logger.info("Temperature: #{b[:temp?]}") }
+  perform { |facts, b| logger.info("Temperature: #{b[:temp?]}") }
 end
 
 # Avoid - Complex logic in action
 rule "complex_action" do
   on :temperature, value: :temp?
-  perform do |b|
+  perform do |facts, b|
     # 100 lines of complex logic...
     # Better to extract to methods
   end

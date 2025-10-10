@@ -67,7 +67,7 @@ end
 kb = KBS.knowledge_base do
   rule "high_temperature", priority: 10 do
     on :temperature, value: greater_than(80)
-    perform do |bindings|
+    perform do |facts, bindings|
       puts "High temperature: #{bindings[:value?]}"
     end
   end
@@ -155,7 +155,7 @@ priority: -10
 kb = KBS.knowledge_base do
   rule "log_temperature", priority: 0 do
     on :temperature, value: :temp?
-    perform { |b| puts "Logged: #{b[:temp?]}" }
+    perform { |facts, b| puts "Logged: #{b[:temp?]}" }
   end
 
   rule "critical_alert", priority: 100 do
@@ -258,7 +258,7 @@ end
 ```ruby
 rule "temperature_alert" do
   on :temperature, value: :temp?, location: :loc?
-  perform do |bindings|
+  perform do |facts, bindings|
     # Cleaner - DSL automatically provides bindings
     puts "#{bindings[:loc?]}: #{bindings[:temp?]}°F"
   end
@@ -316,7 +316,7 @@ rule.fire([fact])
 kb = KBS.knowledge_base do
   rule "my_rule", priority: 10 do
     on :temperature, value: :temp?
-    perform { |b| puts b[:temp?] }
+    perform { |facts, b| puts b[:temp?] }
   end
 end
 
@@ -386,7 +386,7 @@ Rules can fire multiple times:
 ```ruby
 rule "log_temperature" do
   on :temperature, value: :temp?
-  perform { |b| puts "Temperature: #{b[:temp?]}" }
+  perform { |facts, b| puts "Temperature: #{b[:temp?]}" }
 end
 
 engine.add_fact(:temperature, value: 85)
@@ -413,7 +413,7 @@ Match single fact type:
 ```ruby
 rule "log_all_temperatures" do
   on :temperature, value: :temp?
-  perform do |bindings|
+  perform do |facts, bindings|
     puts "Temperature: #{bindings[:temp?]}"
   end
 end
@@ -429,7 +429,7 @@ Match multiple related facts:
 rule "sensor_temperature_alert" do
   on :sensor, id: :sensor_id?, status: "active"
   on :temperature, sensor_id: :sensor_id?, value: greater_than(80)
-  perform do |bindings|
+  perform do |facts, bindings|
     puts "Sensor #{bindings[:sensor_id?]} reports high temperature"
   end
 end
@@ -467,7 +467,7 @@ Rules can implement state transitions:
 rule "pending_to_processing" do
   on :order, id: :order_id?, status: "pending"
   on :worker, status: "available", id: :worker_id?
-  perform do |bindings|
+  perform do |facts, bindings|
     # Transition order to processing
     order = find_order(bindings[:order_id?])
     order.update(status: "processing", worker_id: bindings[:worker_id?])
@@ -488,7 +488,7 @@ Low-priority rules that clean up old facts:
 ```ruby
 rule "expire_old_temperatures", priority: 0 do
   on :temperature, timestamp: less_than(Time.now - 3600)
-  perform do |bindings|
+  perform do |facts, bindings|
     fact = bindings[:matched_fact?]
     fact.retract  # Remove old temperature reading
   end
@@ -527,7 +527,7 @@ Higher priority rule overrides lower priority:
 ```ruby
 rule "high_risk_order", priority: 100 do
   on :order, id: :order_id?, total: greater_than(10000)
-  perform do |bindings|
+  perform do |facts, bindings|
     puts "HIGH RISK: Order #{bindings[:order_id?]} requires manual review"
     # This fires first due to priority
   end
@@ -535,7 +535,7 @@ end
 
 rule "auto_approve_order", priority: 10 do
   on :order, id: :order_id?, status: "pending"
-  perform do |bindings|
+  perform do |facts, bindings|
     puts "Auto-approving order #{bindings[:order_id?]}"
     # This fires later (if at all)
   end
@@ -552,7 +552,7 @@ Rule that adds facts triggering other rules:
 rule "calculate_fibonacci" do
   on :fib_request, n: :n?
   negated :fib_result, n: :n?  # Not already calculated
-  perform do |bindings|
+  perform do |facts, bindings|
     n = bindings[:n?]
 
     if n <= 1
@@ -572,7 +572,7 @@ rule "combine_fibonacci" do
   on :fib_result, n: :n_minus_1?, value: :val1?
   on :fib_result, n: :n_minus_2?, value: :val2?
   # ... (complex join test: ?n_minus_1 == ?n - 1, etc.)
-  perform do |bindings|
+  perform do |facts, bindings|
     result = bindings[:val1?] + bindings[:val2?]
     engine.add_fact(:fib_result, n: bindings[:n?], value: result)
   end
@@ -633,7 +633,7 @@ end
 
 rule "log_temperature", priority: 0 do
   on :temperature, value: :temp?
-  perform { |b| log(b[:temp?]) }
+  perform { |facts, b| log(b[:temp?]) }
 end
 ```
 
@@ -647,7 +647,7 @@ Critical safety rules should have high priority to fire before less important ru
 # Good - Idempotent (safe to run multiple times)
 rule "alert_high_temp" do
   on :temperature, value: greater_than(80)
-  perform do |bindings|
+  perform do |facts, bindings|
     # Check if alert already sent
     unless alert_sent?(bindings[:temp?])
       send_alert(bindings[:temp?])
@@ -659,7 +659,7 @@ end
 # Bad - Not idempotent (sends duplicate alerts)
 rule "alert_high_temp" do
   on :temperature, value: greater_than(80)
-  perform do |bindings|
+  perform do |facts, bindings|
     send_alert(bindings[:temp?])  # Sends every time rule fires
   end
 end
@@ -696,7 +696,7 @@ end
 rule "order_inventory_check" do
   on :order, product_id: :pid?, quantity: :qty?
   on :inventory, product_id: :pid?, available: :available?
-  perform do |bindings|
+  perform do |facts, bindings|
     if bindings[:available?] < bindings[:qty?]
       puts "Insufficient inventory for product #{bindings[:pid?]}"
     end
@@ -707,7 +707,7 @@ end
 rule "order_inventory_check" do
   on :order, product_id: :pid1?, quantity: :qty?
   on :inventory, product_id: :pid2?, available: :available?
-  perform do |bindings|
+  perform do |facts, bindings|
     # No guarantee pid1 == pid2!
     if bindings[:pid1?] == bindings[:pid2?]  # Manual check in action (inefficient)
       ...
@@ -733,7 +733,7 @@ rule "portfolio_rebalancing", priority: 50 do
 
   on :portfolio, id: :portfolio_id?, status: "active"
   on :drift_calculation, portfolio_id: :portfolio_id?, drift: greater_than(0.05)
-  perform do |bindings|
+  perform do |facts, bindings|
     # Implementation...
   end
 end
@@ -806,7 +806,7 @@ end
 # Good - Cleanup rule prevents unbounded growth
 rule "expire_old_facts", priority: 0 do
   on :temperature, timestamp: less_than(Time.now - 3600)
-  perform do |bindings|
+  perform do |facts, bindings|
     fact = bindings[:matched_fact?]
     fact.retract
   end
@@ -867,7 +867,7 @@ action: ->(facts, bindings) do
 end
 
 # 3. DSL style (cleanest)
-perform do |bindings|
+perform do |facts, bindings|
   puts bindings[:temp?]
 end
 ```
@@ -962,18 +962,18 @@ Keep actions fast:
 
 ```ruby
 # Good - Fast action
-perform do |bindings|
+perform do |facts, bindings|
   puts "Temperature: #{bindings[:temp?]}"
 end
 
 # Bad - Slow action blocks engine
-perform do |bindings|
+perform do |facts, bindings|
   sleep 5  # Blocks engine for 5 seconds!
   send_email_alert(bindings[:temp?])  # Network I/O
 end
 
 # Better - Offload slow work
-perform do |bindings|
+perform do |facts, bindings|
   # Post message for async worker
   engine.post_message("alert_system", "email_queue", bindings)
 end
