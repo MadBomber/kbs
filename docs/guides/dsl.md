@@ -22,7 +22,7 @@ Complete reference for the KBS Domain-Specific Language for defining knowledge b
 The KBS DSL provides a natural, English-like syntax for defining knowledge-based systems:
 
 ```ruby
-require 'kbs/dsl'
+require 'kbs'
 
 kb = KBS.knowledge_base do
   # Define a rule
@@ -1100,7 +1100,7 @@ kb.engine.rules  # => Array<KBS::Rule>
 ### Temperature Monitoring
 
 ```ruby
-require 'kbs/dsl'
+require 'kbs'
 
 kb = KBS.knowledge_base do
   # Rules

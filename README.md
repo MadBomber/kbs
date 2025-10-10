@@ -71,30 +71,25 @@ gem install kbs
 ```ruby
 require 'kbs'
 
-# Create inference engine
-engine = KBS::ReteEngine.new
+# Create knowledge base with DSL
+kb = KBS.knowledge_base do
+  rule "high_temperature_alert" do
+    on :sensor, type: "temperature"
+    on :reading, value: greater_than(100)
 
-# Define a rule
-rule = KBS::Rule.new(
-  "high_temperature_alert",
-  conditions: [
-    KBS::Condition.new(:sensor, { type: "temperature" }),
-    KBS::Condition.new(:reading, { value: ->(v) { v > 100 } })
-  ],
-  action: lambda do |facts, bindings|
-    reading = facts.find { |f| f.type == :reading }
-    puts "🚨 HIGH TEMPERATURE: #{reading[:value]}°C"
+    perform do |facts, bindings|
+      reading = facts.find { |f| f.type == :reading }
+      puts "🚨 HIGH TEMPERATURE: #{reading[:value]}°C"
+    end
   end
-)
 
-engine.add_rule(rule)
+  # Add facts
+  fact :sensor, type: "temperature", location: "reactor"
+  fact :reading, value: 105, unit: "celsius"
 
-# Add facts
-engine.add_fact(:sensor, { type: "temperature", location: "reactor" })
-engine.add_fact(:reading, { value: 105, unit: "celsius" })
-
-# Run inference
-engine.run
+  # Run inference
+  run
+end
 # => 🚨 HIGH TEMPERATURE: 105°C
 ```
 
@@ -102,7 +97,6 @@ engine.run
 
 ```ruby
 require 'kbs'
-require 'kbs/dsl'
 
 kb = KBS.knowledge_base do
   rule "momentum_breakout" do
@@ -130,18 +124,29 @@ kb.run
 ```ruby
 require 'kbs/blackboard'
 
-# Create persistent blackboard
-engine = KBS::Blackboard::Engine.new(
-  store: KBS::Blackboard::Persistence::SQLiteStore.new(db_path: 'knowledge.db')
-)
+# Create persistent blackboard with DSL
+engine = KBS::Blackboard::Engine.new(db_path: 'knowledge.db')
 
-# Add persistent facts
-sensor = engine.add_fact(:sensor, { type: "temperature", location: "room1" })
-puts "Fact UUID: #{sensor.uuid}"
+kb = KBS.knowledge_base(engine: engine) do
+  rule "temperature_monitor" do
+    on :sensor, type: "temperature", value: greater_than(25)
+
+    perform do |facts|
+      sensor = facts.first
+      puts "⚠️  High temperature at #{sensor[:location]}: #{sensor[:value]}°C"
+    end
+  end
+
+  # Add persistent facts
+  fact :sensor, type: "temperature", location: "room1", value: 22
+  fact :sensor, type: "temperature", location: "room2", value: 28
+
+  run
+end
 
 # Query facts
 sensors = engine.blackboard.get_facts(:sensor)
-sensors.each { |s| puts "#{s[:type]} at #{s[:location]}" }
+sensors.each { |s| puts "#{s[:type]} at #{s[:location]}: #{s[:value]}°C" }
 
 # View audit history
 history = engine.blackboard.get_history(limit: 10)
@@ -155,51 +160,74 @@ end
 ```ruby
 require 'kbs/blackboard'
 
-# High-frequency trading with Redis
-engine = KBS::Blackboard::Engine.new(
-  store: KBS::Blackboard::Persistence::RedisStore.new(
-    url: 'redis://localhost:6379/0'
-  )
-)
+# High-frequency trading with Redis and DSL
+store = KBS::Blackboard::Persistence::RedisStore.new(url: 'redis://localhost:6379/0')
+engine = KBS::Blackboard::Engine.new(store: store)
 
-# Fast in-memory fact storage
-engine.add_fact(:market_price, { symbol: "AAPL", price: 150.25, volume: 1_000_000 })
+kb = KBS.knowledge_base(engine: engine) do
+  rule "price_alert" do
+    on :market_price, volume: greater_than(500_000)
 
-# Message queue for real-time coordination
-engine.post_message("MarketDataFeed", "prices",
-  { symbol: "AAPL", bid: 150.24, ask: 150.26 },
-  priority: 10
-)
+    perform do |facts|
+      price = facts.first
+      puts "📊 High volume: #{price[:symbol]} - #{price[:volume]} shares"
+      # Post message for other components
+      engine.post_message("PriceAlert", "high_volume",
+        { symbol: price[:symbol], volume: price[:volume] },
+        priority: 10
+      )
+    end
+  end
 
-message = engine.consume_message("prices", "TradingStrategy")
-puts "Received: #{message[:content]}"
+  # Fast in-memory fact storage
+  fact :market_price, symbol: "AAPL", price: 150.25, volume: 1_000_000
+
+  run
+end
+
+# Consume messages
+message = engine.consume_message("high_volume", "TradingStrategy")
+puts "Received: #{message[:content]}" if message
 ```
 
 ### AI-Enhanced Reasoning
 
 ```ruby
 require 'kbs'
-require 'kbs/examples/ai_enhanced_kbs'
+require 'ruby_llm'
 
 # Requires Ollama with a model installed
 # export OLLAMA_MODEL=gpt-oss:latest
 
-system = AIEnhancedKBS::AIKnowledgeSystem.new
+kb = KBS.knowledge_base do
+  rule "ai_sentiment_analysis" do
+    on :news_data, symbol: satisfies { |s| s && s.length > 0 }
 
-# Add news for AI sentiment analysis
-system.engine.add_fact(:news_data, {
-  symbol: "AAPL",
-  headline: "Apple Reports Record Q4 Earnings, Beats Expectations by 15%",
-  content: "Apple Inc. announced exceptional results..."
-})
+    perform do |facts|
+      news = facts.first
+      # AI-powered sentiment analysis
+      client = RubyLLM::Chat.new(provider: :ollama, model: 'gpt-oss:latest')
+      response = client.ask("Analyze sentiment: #{news[:headline]}")
 
-system.engine.run
+      puts "🤖 AI SENTIMENT ANALYSIS: #{news[:symbol]}"
+      puts "   Headline: #{news[:headline]}"
+      puts "   AI Analysis: #{response.content}"
+    end
+  end
+
+  # Add news for AI sentiment analysis
+  fact :news_data,
+    symbol: "AAPL",
+    headline: "Apple Reports Record Q4 Earnings, Beats Expectations by 15%",
+    content: "Apple Inc. announced exceptional results..."
+
+  run
+end
 
 # Output:
 # 🤖 AI SENTIMENT ANALYSIS: AAPL
-#    AI Sentiment: positive (92%)
-#    Key Themes: strong earnings growth, share buyback program
-#    Market Impact: bullish
+#    Headline: Apple Reports Record Q4 Earnings, Beats Expectations by 15%
+#    AI Analysis: positive (92%) - strong earnings growth, bullish outlook
 ```
 
 ## 📚 Examples

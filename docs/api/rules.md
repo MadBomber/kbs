@@ -38,7 +38,7 @@ Creates a new rule.
 
 **Returns**: `KBS::Rule` instance
 
-**Example - Direct Construction**:
+**Example - Low-level API (Direct Construction)**:
 ```ruby
 # Minimal rule
 rule = KBS::Rule.new(:high_temperature)
@@ -54,7 +54,7 @@ rule = KBS::Rule.new(
 )
 ```
 
-**Example - Block Configuration**:
+**Example - Low-level API (Block Configuration)**:
 ```ruby
 rule = KBS::Rule.new(:high_temperature) do |r|
   r.conditions << KBS::Condition.new(:temperature, value: ->(v) { v > 80 })
@@ -62,7 +62,7 @@ rule = KBS::Rule.new(:high_temperature) do |r|
 end
 ```
 
-**Example - Using DSL** (recommended):
+**Using DSL (Recommended)**:
 ```ruby
 kb = KBS.knowledge_base do
   rule "high_temperature", priority: 10 do
@@ -89,23 +89,35 @@ kb.rules.each { |r| engine.add_rule(r) }
 
 **Description**: Unique rule identifier
 
-**Example**:
+**Example - Low-level API**:
 ```ruby
 rule = KBS::Rule.new(:high_temperature, priority: 10)
 puts rule.name  # => :high_temperature
 ```
 
+**Using DSL (Recommended)**:
+```ruby
+kb = KBS.knowledge_base do
+  rule "high_temperature", priority: 10 do
+    on :temperature, value: greater_than(80)
+    perform { puts "Alert!" }
+  end
+end
+
+puts kb.rules.first.name  # => "high_temperature"
+```
+
 **Best Practice**: Use descriptive names that indicate the rule's purpose:
 ```ruby
 # Good
-:high_temperature_alert
-:low_inventory_reorder
-:fraud_detection_high_risk
+"high_temperature_alert"
+"low_inventory_reorder"
+"fraud_detection_high_risk"
 
 # Less clear
-:rule1
-:temp_rule
-:check
+"rule1"
+"temp_rule"
+"check"
 ```
 
 ---
@@ -122,10 +134,20 @@ puts rule.name  # => :high_temperature
 
 **Range**: Any integer (commonly 0-100)
 
-**Example**:
+**Example - Low-level API**:
 ```ruby
 rule = KBS::Rule.new(:critical_alert, priority: 100)
 puts rule.priority  # => 100
+```
+
+**Using DSL (Recommended)**:
+```ruby
+kb = KBS.knowledge_base do
+  rule "critical_alert", priority: 100 do
+    on :alert, level: "critical"
+    perform { puts "CRITICAL ALERT!" }
+  end
+end
 ```
 
 **Priority Semantics**:
@@ -190,7 +212,7 @@ engine.run
 
 **Description**: Array of conditions that must all match for rule to fire
 
-**Example**:
+**Example - Low-level API**:
 ```ruby
 rule = KBS::Rule.new(:temperature_alert)
 rule.conditions << KBS::Condition.new(:temperature, value: ->(v) { v > 80 })
@@ -199,7 +221,22 @@ rule.conditions << KBS::Condition.new(:sensor, status: "active")
 puts rule.conditions.size  # => 2
 ```
 
+**Using DSL (Recommended)**:
+```ruby
+kb = KBS.knowledge_base do
+  rule "temperature_alert" do
+    on :temperature, value: greater_than(80)
+    on :sensor, status: "active"
+    perform { puts "Alert!" }
+  end
+end
+
+puts kb.rules.first.conditions.size  # => 2
+```
+
 **Condition Order Matters** (for performance):
+
+**Low-level API**:
 ```ruby
 # Good - Most selective condition first
 rule.conditions = [
@@ -212,6 +249,23 @@ rule.conditions = [
   KBS::Condition.new(:temperature, value: :temp?),  # Matches many facts
   KBS::Condition.new(:sensor, id: 42)               # Could have filtered first
 ]
+```
+
+**Using DSL (Recommended)**:
+```ruby
+# Good - Most selective condition first
+rule "sensor_alert" do
+  on :sensor, id: 42                    # Filters to 1 fact
+  on :temperature, value: :temp?        # Then match temperature
+  perform { |facts, b| puts b[:temp?] }
+end
+
+# Less optimal - Less selective first
+rule "sensor_alert" do
+  on :temperature, value: :temp?        # Matches many facts
+  on :sensor, id: 42                    # Could have filtered first
+  perform { |facts, b| puts b[:temp?] }
+end
 ```
 
 See [Performance Guide](../advanced/performance.md) for condition ordering strategies.
@@ -232,7 +286,7 @@ See [Performance Guide](../advanced/performance.md) for condition ordering strat
 - `facts` (Array<KBS::Fact>) - Array of matched facts (parallel to conditions array)
 - `bindings` (Hash, optional) - Variable bindings extracted from facts
 
-**Example - Facts Parameter**:
+**Example - Low-level API (Facts Parameter)**:
 ```ruby
 rule.action = ->(facts) do
   temp_fact = facts[0]  # First condition's matched fact
@@ -242,7 +296,7 @@ rule.action = ->(facts) do
 end
 ```
 
-**Example - Bindings Parameter**:
+**Example - Low-level API (Bindings Parameter)**:
 ```ruby
 # Rule with variable bindings
 rule = KBS::Rule.new(:temperature_alert) do |r|
@@ -254,7 +308,7 @@ rule = KBS::Rule.new(:temperature_alert) do |r|
 end
 ```
 
-**Example - DSL Preferred**:
+**Using DSL (Recommended)**:
 ```ruby
 rule "temperature_alert" do
   on :temperature, value: :temp?, location: :loc?
@@ -289,7 +343,7 @@ Executes the rule's action with matched facts.
 - Executes action lambda
 - Action may modify external state, add/remove facts, etc.
 
-**Example**:
+**Example - Low-level API**:
 ```ruby
 rule = KBS::Rule.new(:log_temperature) do |r|
   r.conditions << KBS::Condition.new(:temperature, value: :temp?)
@@ -300,6 +354,22 @@ end
 
 fact = KBS::Fact.new(:temperature, value: 85)
 rule.fire([fact])
+# Output: Temperature: 85
+```
+
+**Using DSL (Recommended)**:
+```ruby
+kb = KBS.knowledge_base do
+  rule "log_temperature" do
+    on :temperature, value: :temp?
+    perform do |facts, bindings|
+      puts "Temperature: #{bindings[:temp?]}"
+    end
+  end
+
+  fact :temperature, value: 85
+  run  # Fires the rule automatically
+end
 # Output: Temperature: 85
 ```
 

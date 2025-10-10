@@ -29,32 +29,30 @@ KBS (Knowledge-Based Systems) is a powerful Ruby gem that brings production rule
 require 'kbs'
 
 # Create a rule-based trading system
-engine = KBS::Engine.new
-
-# Define a rule using the DSL
-engine.add_rule(Rule.new("buy_signal") do |r|
-  r.conditions = [
+kb = KBS.knowledge_base do
+  # Define a rule using the DSL
+  rule "buy_signal" do
     # Stock price is below threshold
-    Condition.new(:stock, { symbol: :symbol?, price: :price? }),
-    Condition.new(:threshold, { symbol: :symbol?, buy_below: :threshold? }),
+    on :stock, symbol: :symbol?, price: :price?
+    on :threshold, symbol: :symbol?, buy_below: :threshold?
 
     # No pending order exists (negation)
-    Condition.new(:order, { symbol: :symbol? }, negated: true)
-  ]
+    without :order, symbol: :symbol?
 
-  r.action = lambda do |facts, bindings|
-    if bindings[:price?] < bindings[:threshold?]
-      puts "BUY #{bindings[:symbol?]} at #{bindings[:price?]}"
+    perform do |facts, bindings|
+      if bindings[:price?] < bindings[:threshold?]
+        puts "BUY #{bindings[:symbol?]} at #{bindings[:price?]}"
+      end
     end
   end
-end)
 
-# Add facts to working memory
-engine.add_fact(:stock, symbol: "AAPL", price: 145.50)
-engine.add_fact(:threshold, symbol: "AAPL", buy_below: 150.0)
+  # Add facts to working memory
+  fact :stock, symbol: "AAPL", price: 145.50
+  fact :threshold, symbol: "AAPL", buy_below: 150.0
 
-# Fire matching rules
-engine.run  # => BUY AAPL at 145.5
+  # Fire matching rules
+  run  # => BUY AAPL at 145.5
+end
 ```
 
 ## Why RETE?

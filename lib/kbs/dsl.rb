@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
-require_relative '../kbs'
+unless defined?(KBS)
+  require_relative '../kbs'
+end
 
 # DSL components
 require_relative 'dsl/variable'

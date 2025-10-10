@@ -35,16 +35,12 @@ require 'minitest/autorun'
 require 'kbs'
 
 class Minitest::Test
-  def setup_engine
-    KBS::Engine.new
-  end
-
-  def assert_rule_fired(engine, rule_name)
+  def assert_rule_fired(kb, rule_name)
     # Check if rule action was executed
     # Implementation depends on tracking mechanism
   end
 
-  def refute_rule_fired(engine, rule_name)
+  def refute_rule_fired(kb, rule_name)
     # Check that rule did not fire
   end
 end
@@ -58,58 +54,84 @@ end
 require 'test_helper'
 
 class TestTemperatureRule < Minitest::Test
-  def setup
-    @engine = setup_engine
-    @fired = false
+  def test_fires_when_temperature_high
+    fired = false
 
-    # Create test rule
-    @rule = KBS::Rule.new("high_temp_alert", priority: 100) do |r|
-      r.conditions = [
-        KBS::Condition.new(:sensor, {
+    kb = KBS.knowledge_base do
+      rule "high_temp_alert", priority: 100 do
+        on :sensor,
           type: "temperature",
-          value: :temp?
-        }, predicate: lambda { |f| f[:value] > 30 })
-      ]
+          value: :temp?,
+          predicate: greater_than(30)
 
-      r.action = lambda do |facts, bindings|
-        @fired = true
-        @engine.add_fact(:alert, {
-          type: "high_temperature",
-          temperature: bindings[:temp?]
-        })
+        perform do |facts, bindings|
+          fired = true
+          fact :alert,
+            type: "high_temperature",
+            temperature: bindings[:temp?]
+        end
       end
+
+      fact :sensor, type: "temperature", value: 35
+      run
     end
 
-    @engine.add_rule(@rule)
-  end
+    assert fired, "Rule should fire for high temperature"
 
-  def test_fires_when_temperature_high
-    @engine.add_fact(:sensor, { type: "temperature", value: 35 })
-    @engine.run
-
-    assert @fired, "Rule should fire for high temperature"
-
-    alerts = @engine.facts.select { |f| f.type == :alert }
+    alerts = kb.engine.facts.select { |f| f.type == :alert }
     assert_equal 1, alerts.size
     assert_equal 35, alerts.first[:temperature]
   end
 
   def test_does_not_fire_when_temperature_normal
-    @engine.add_fact(:sensor, { type: "temperature", value: 25 })
-    @engine.run
+    fired = false
 
-    refute @fired, "Rule should not fire for normal temperature"
+    kb = KBS.knowledge_base do
+      rule "high_temp_alert", priority: 100 do
+        on :sensor,
+          type: "temperature",
+          value: :temp?,
+          predicate: greater_than(30)
 
-    alerts = @engine.facts.select { |f| f.type == :alert }
+        perform do |facts, bindings|
+          fired = true
+          fact :alert,
+            type: "high_temperature",
+            temperature: bindings[:temp?]
+        end
+      end
+
+      fact :sensor, type: "temperature", value: 25
+      run
+    end
+
+    refute fired, "Rule should not fire for normal temperature"
+
+    alerts = kb.engine.facts.select { |f| f.type == :alert }
     assert_empty alerts
   end
 
   def test_threshold_boundary
-    # Test at exact threshold
-    @engine.add_fact(:sensor, { type: "temperature", value: 30 })
-    @engine.run
+    fired = false
 
-    refute @fired, "Rule should not fire at exact threshold (>= not >)"
+    kb = KBS.knowledge_base do
+      rule "high_temp_alert" do
+        on :sensor,
+          type: "temperature",
+          value: :temp?,
+          predicate: greater_than(30)
+
+        perform do |facts, bindings|
+          fired = true
+        end
+      end
+
+      # Test at exact threshold
+      fact :sensor, type: "temperature", value: 30
+      run
+    end
+
+    refute fired, "Rule should not fire at exact threshold (> not >=)"
   end
 end
 ```
@@ -118,61 +140,116 @@ end
 
 ```ruby
 class TestMultiConditionRule < Minitest::Test
-  def setup
-    @engine = setup_engine
-    @fired = false
+  def test_fires_when_both_conditions_met
+    fired = false
 
-    @rule = KBS::Rule.new("high_temp_and_low_humidity") do |r|
-      r.conditions = [
-        KBS::Condition.new(:temperature, {
+    kb = KBS.knowledge_base do
+      rule "high_temp_and_low_humidity" do
+        on :temperature,
           location: :loc?,
-          value: :temp?
-        }, predicate: lambda { |f| f[:value] > 30 }),
+          value: :temp?,
+          predicate: greater_than(30)
 
-        KBS::Condition.new(:humidity, {
+        on :humidity,
           location: :loc?,
-          value: :hum?
-        }, predicate: lambda { |f| f[:value] < 40 })
-      ]
+          value: :hum?,
+          predicate: less_than(40)
 
-      r.action = lambda do |facts, bindings|
-        @fired = true
+        perform do |facts, bindings|
+          fired = true
+        end
       end
+
+      fact :temperature, location: "room1", value: 35
+      fact :humidity, location: "room1", value: 30
+      run
     end
 
-    @engine.add_rule(@rule)
-  end
-
-  def test_fires_when_both_conditions_met
-    @engine.add_fact(:temperature, { location: "room1", value: 35 })
-    @engine.add_fact(:humidity, { location: "room1", value: 30 })
-    @engine.run
-
-    assert @fired, "Rule should fire when both conditions met"
+    assert fired, "Rule should fire when both conditions met"
   end
 
   def test_does_not_fire_with_mismatched_locations
-    @engine.add_fact(:temperature, { location: "room1", value: 35 })
-    @engine.add_fact(:humidity, { location: "room2", value: 30 })
-    @engine.run
+    fired = false
 
-    refute @fired, "Rule should not fire with different locations"
+    kb = KBS.knowledge_base do
+      rule "high_temp_and_low_humidity" do
+        on :temperature,
+          location: :loc?,
+          value: :temp?,
+          predicate: greater_than(30)
+
+        on :humidity,
+          location: :loc?,
+          value: :hum?,
+          predicate: less_than(40)
+
+        perform do |facts, bindings|
+          fired = true
+        end
+      end
+
+      fact :temperature, location: "room1", value: 35
+      fact :humidity, location: "room2", value: 30
+      run
+    end
+
+    refute fired, "Rule should not fire with different locations"
   end
 
   def test_does_not_fire_when_only_temperature_high
-    @engine.add_fact(:temperature, { location: "room1", value: 35 })
-    # No humidity fact
-    @engine.run
+    fired = false
 
-    refute @fired, "Rule should not fire without humidity fact"
+    kb = KBS.knowledge_base do
+      rule "high_temp_and_low_humidity" do
+        on :temperature,
+          location: :loc?,
+          value: :temp?,
+          predicate: greater_than(30)
+
+        on :humidity,
+          location: :loc?,
+          value: :hum?,
+          predicate: less_than(40)
+
+        perform do |facts, bindings|
+          fired = true
+        end
+      end
+
+      fact :temperature, location: "room1", value: 35
+      # No humidity fact
+      run
+    end
+
+    refute fired, "Rule should not fire without humidity fact"
   end
 
   def test_does_not_fire_when_temperature_normal
-    @engine.add_fact(:temperature, { location: "room1", value: 25 })
-    @engine.add_fact(:humidity, { location: "room1", value: 30 })
-    @engine.run
+    fired = false
 
-    refute @fired, "Rule should not fire with normal temperature"
+    kb = KBS.knowledge_base do
+      rule "high_temp_and_low_humidity" do
+        on :temperature,
+          location: :loc?,
+          value: :temp?,
+          predicate: greater_than(30)
+
+        on :humidity,
+          location: :loc?,
+          value: :hum?,
+          predicate: less_than(40)
+
+        perform do |facts, bindings|
+          fired = true
+        end
+      end
+
+      fact :temperature, location: "room1", value: 25
+      fact :humidity, location: "room1", value: 30
+      run
+    end
+
+    refute fired, "Rule should not fire with normal temperature"
   end
 end
 ```
@@ -181,37 +258,45 @@ end
 
 ```ruby
 class TestNegationRule < Minitest::Test
-  def setup
-    @engine = setup_engine
-    @fired = false
+  def test_fires_when_error_not_acknowledged
+    fired = false
 
-    @rule = KBS::Rule.new("alert_if_no_acknowledgment") do |r|
-      r.conditions = [
-        KBS::Condition.new(:error, { id: :id? }),
-        KBS::Condition.new(:acknowledged, { error_id: :id? }, negated: true)
-      ]
+    kb = KBS.knowledge_base do
+      rule "alert_if_no_acknowledgment" do
+        on :error, id: :id?
+        without :acknowledged, error_id: :id?
 
-      r.action = lambda do |facts, bindings|
-        @fired = true
+        perform do |facts, bindings|
+          fired = true
+        end
       end
+
+      fact :error, id: 1
+      run
     end
 
-    @engine.add_rule(@rule)
-  end
-
-  def test_fires_when_error_not_acknowledged
-    @engine.add_fact(:error, { id: 1 })
-    @engine.run
-
-    assert @fired, "Rule should fire when error not acknowledged"
+    assert fired, "Rule should fire when error not acknowledged"
   end
 
   def test_does_not_fire_when_error_acknowledged
-    @engine.add_fact(:error, { id: 1 })
-    @engine.add_fact(:acknowledged, { error_id: 1 })
-    @engine.run
+    fired = false
 
-    refute @fired, "Rule should not fire when error acknowledged"
+    kb = KBS.knowledge_base do
+      rule "alert_if_no_acknowledgment" do
+        on :error, id: :id?
+        without :acknowledged, error_id: :id?
+
+        perform do |facts, bindings|
+          fired = true
+        end
+      end
+
+      fact :error, id: 1
+      fact :acknowledged, error_id: 1
+      run
+    end
+
+    refute fired, "Rule should not fire when error acknowledged"
   end
 end
 ```
@@ -222,54 +307,67 @@ end
 
 ```ruby
 class TestRuleInteractions < Minitest::Test
-  def setup
-    @engine = setup_engine
-    @alerts = []
-
-    # Rule 1: Detect high temperature
-    @engine.add_rule(KBS::Rule.new("detect_high_temp") do |r|
-      r.conditions = [
-        KBS::Condition.new(:sensor, { value: :temp? }, predicate: lambda { |f| f[:value] > 30 })
-      ]
-
-      r.action = lambda do |facts, bindings|
-        @engine.add_fact(:temp_alert, { severity: "high" })
-      end
-    end)
-
-    # Rule 2: Escalate to critical
-    @engine.add_rule(KBS::Rule.new("escalate_critical") do |r|
-      r.conditions = [
-        KBS::Condition.new(:temp_alert, { severity: "high" }),
-        KBS::Condition.new(:sensor, { value: :temp? }, predicate: lambda { |f| f[:value] > 40 })
-      ]
-
-      r.action = lambda do |facts, bindings|
-        @engine.add_fact(:critical_alert, { type: "temperature" })
-        @alerts << :critical
-      end
-    end)
-  end
-
   def test_cascading_rules
-    # Add high temperature
-    @engine.add_fact(:sensor, { value: 45 })
-    @engine.run
+    alerts = []
+
+    kb = KBS.knowledge_base do
+      # Rule 1: Detect high temperature
+      rule "detect_high_temp" do
+        on :sensor, value: :temp?, predicate: greater_than(30)
+
+        perform do |facts, bindings|
+          fact :temp_alert, severity: "high"
+        end
+      end
+
+      # Rule 2: Escalate to critical
+      rule "escalate_critical" do
+        on :temp_alert, severity: "high"
+        on :sensor, value: :temp?, predicate: greater_than(40)
+
+        perform do |facts, bindings|
+          fact :critical_alert, type: "temperature"
+          alerts << :critical
+        end
+      end
+
+      # Add high temperature
+      fact :sensor, value: 45
+      run
+    end
 
     # Both rules should fire
-    assert @engine.facts.any? { |f| f.type == :temp_alert }
-    assert @engine.facts.any? { |f| f.type == :critical_alert }
-    assert_includes @alerts, :critical
+    assert kb.engine.facts.any? { |f| f.type == :temp_alert }
+    assert kb.engine.facts.any? { |f| f.type == :critical_alert }
+    assert_includes alerts, :critical
   end
 
   def test_partial_cascade
-    # Add moderately high temperature
-    @engine.add_fact(:sensor, { value: 35 })
-    @engine.run
+    alerts = []
+
+    kb = KBS.knowledge_base do
+      rule "detect_high_temp" do
+        on :sensor, value: :temp?, predicate: greater_than(30)
+        perform { fact :temp_alert, severity: "high" }
+      end
+
+      rule "escalate_critical" do
+        on :temp_alert, severity: "high"
+        on :sensor, value: :temp?, predicate: greater_than(40)
+        perform do |facts, bindings|
+          fact :critical_alert, type: "temperature"
+          alerts << :critical
+        end
+      end
+
+      # Add moderately high temperature
+      fact :sensor, value: 35
+      run
+    end
 
     # Only first rule fires
-    assert @engine.facts.any? { |f| f.type == :temp_alert }
-    refute @engine.facts.any? { |f| f.type == :critical_alert }
+    assert kb.engine.facts.any? { |f| f.type == :temp_alert }
+    refute kb.engine.facts.any? { |f| f.type == :critical_alert }
   end
 end
 ```
@@ -278,32 +376,27 @@ end
 
 ```ruby
 class TestRulePriority < Minitest::Test
-  def setup
-    @engine = setup_engine
-    @execution_order = []
-
-    # High priority rule
-    @engine.add_rule(KBS::Rule.new("high_priority", priority: 100) do |r|
-      r.conditions = [KBS::Condition.new(:trigger, {})]
-      r.action = lambda do |facts, bindings|
-        @execution_order << :high
-      end
-    end)
-
-    # Low priority rule
-    @engine.add_rule(KBS::Rule.new("low_priority", priority: 10) do |r|
-      r.conditions = [KBS::Condition.new(:trigger, {})]
-      r.action = lambda do |facts, bindings|
-        @execution_order << :low
-      end
-    end)
-  end
-
   def test_executes_in_priority_order
-    @engine.add_fact(:trigger, {})
-    @engine.run
+    execution_order = []
 
-    assert_equal [:high, :low], @execution_order
+    kb = KBS.knowledge_base do
+      # High priority rule
+      rule "high_priority", priority: 100 do
+        on :trigger, {}
+        perform { execution_order << :high }
+      end
+
+      # Low priority rule
+      rule "low_priority", priority: 10 do
+        on :trigger, {}
+        perform { execution_order << :low }
+      end
+
+      fact :trigger, {}
+      run
+    end
+
+    assert_equal [:high, :low], execution_order
   end
 end
 ```
@@ -336,9 +429,9 @@ module FactFixtures
     ]
   end
 
-  def load_facts(engine, facts)
+  def load_facts_into_kb(kb, facts)
     facts.each do |fact_data|
-      engine.add_fact(fact_data[:type], fact_data[:attributes])
+      kb.fact fact_data[:type], fact_data[:attributes]
     end
   end
 end
@@ -347,11 +440,15 @@ class TestWithFixtures < Minitest::Test
   include FactFixtures
 
   def test_with_high_temp_scenario
-    engine = setup_engine
-    # Add rules...
+    kb = KBS.knowledge_base do
+      rule "check_threshold" do
+        on :sensor, value: :v?, predicate: greater_than(30)
+        perform { }
+      end
+    end
 
-    load_facts(engine, high_temp_scenario)
-    engine.run
+    load_facts_into_kb(kb, high_temp_scenario)
+    kb.run
 
     # Assertions...
   end
@@ -362,26 +459,21 @@ end
 
 ```ruby
 module RuleFixtures
-  def temperature_monitoring_rules
-    [
-      KBS::Rule.new("detect_high") do |r|
-        r.conditions = [
-          KBS::Condition.new(:sensor, { value: :v? }, predicate: lambda { |f| f[:value] > 30 })
-        ]
-        r.action = lambda { |facts, bindings| facts[0][:alerted] = true }
-      end,
+  # Note: Since DSL rules are defined in blocks,
+  # we provide factory methods instead of rule objects
 
-      KBS::Rule.new("detect_low") do |r|
-        r.conditions = [
-          KBS::Condition.new(:sensor, { value: :v? }, predicate: lambda { |f| f[:value] < 15 })
-        ]
-        r.action = lambda { |facts, bindings| facts[0][:alerted] = true }
+  def add_temperature_monitoring_rules(kb)
+    kb.instance_eval do
+      rule "detect_high" do
+        on :sensor, value: :v?, predicate: greater_than(30)
+        perform { |facts, bindings| facts[0][:alerted] = true }
       end
-    ]
-  end
 
-  def load_rules(engine, rules)
-    rules.each { |rule| engine.add_rule(rule) }
+      rule "detect_low" do
+        on :sensor, value: :v?, predicate: less_than(15)
+        perform { |facts, bindings| facts[0][:alerted] = true }
+      end
+    end
   end
 end
 ```
@@ -392,14 +484,13 @@ end
 
 ```ruby
 class CoverageTracker
-  def initialize(engine)
-    @engine = engine
+  def initialize(kb)
+    @kb = kb
     @rule_firings = Hash.new(0)
-    @condition_matches = Hash.new(0)
   end
 
   def wrap_rules
-    @engine.instance_variable_get(:@rules).each do |rule|
+    @kb.engine.instance_variable_get(:@rules).each do |rule|
       original_action = rule.action
 
       rule.action = lambda do |facts, bindings|
@@ -412,7 +503,7 @@ class CoverageTracker
   def report
     puts "\n=== Coverage Report ==="
 
-    total_rules = @engine.instance_variable_get(:@rules).size
+    total_rules = @kb.engine.instance_variable_get(:@rules).size
     fired_rules = @rule_firings.keys.size
     coverage = (fired_rules.to_f / total_rules * 100).round(2)
 
@@ -423,32 +514,42 @@ class CoverageTracker
       puts "  #{name}: #{count}"
     end
 
-    untested = @engine.instance_variable_get(:@rules).map(&:name) - @rule_firings.keys
+    untested = @kb.engine.instance_variable_get(:@rules).map(&:name) - @rule_firings.keys
     if untested.any?
       puts "\nUntested Rules:"
       untested.each { |name| puts "  - #{name}" }
     end
   end
 
-  attr_reader :rule_firings, :condition_matches
+  attr_reader :rule_firings
 end
 
 # Usage
 class TestWithCoverage < Minitest::Test
   def test_coverage
-    engine = setup_engine
-    # Add rules...
+    kb = KBS.knowledge_base do
+      rule "rule1" do
+        on :fact, {}
+        perform { }
+      end
 
-    tracker = CoverageTracker.new(engine)
+      rule "rule2" do
+        on :other, {}
+        perform { }
+      end
+    end
+
+    tracker = CoverageTracker.new(kb)
     tracker.wrap_rules
 
     # Add facts and run
-    engine.run
+    kb.fact :fact, {}
+    kb.run
 
     tracker.report
 
     # Assert all rules fired
-    assert_equal @engine.instance_variable_get(:@rules).size, tracker.rule_firings.size
+    # (or check specific coverage requirements)
   end
 end
 ```
@@ -457,41 +558,51 @@ end
 
 ```ruby
 def test_all_condition_paths
-  engine = setup_engine
-
-  rule = KBS::Rule.new("multi_path") do |r|
-    r.conditions = [
-      KBS::Condition.new(:a, {}),
-      KBS::Condition.new(:b, {}),
-      KBS::Condition.new(:c, {}, negated: true)
-    ]
-    r.action = lambda { |facts, bindings| }
-  end
-
-  engine.add_rule(rule)
-
   # Test path 1: All conditions pass
-  engine.add_fact(:a, {})
-  engine.add_fact(:b, {})
-  # c absent
-  engine.run
+  kb1 = KBS.knowledge_base do
+    rule "multi_path" do
+      on :a, {}
+      on :b, {}
+      without :c, {}
+      perform { }
+    end
+
+    fact :a, {}
+    fact :b, {}
+    # c absent
+    run
+  end
   # Assert...
 
   # Test path 2: Negation fails
-  engine = setup_engine
-  engine.add_rule(rule)
-  engine.add_fact(:a, {})
-  engine.add_fact(:b, {})
-  engine.add_fact(:c, {})  # Blocks negation
-  engine.run
+  kb2 = KBS.knowledge_base do
+    rule "multi_path" do
+      on :a, {}
+      on :b, {}
+      without :c, {}
+      perform { }
+    end
+
+    fact :a, {}
+    fact :b, {}
+    fact :c, {}  # Blocks negation
+    run
+  end
   # Assert...
 
   # Test path 3: Positive condition missing
-  engine = setup_engine
-  engine.add_rule(rule)
-  engine.add_fact(:a, {})
-  # b missing
-  engine.run
+  kb3 = KBS.knowledge_base do
+    rule "multi_path" do
+      on :a, {}
+      on :b, {}
+      without :c, {}
+      perform { }
+    end
+
+    fact :a, {}
+    # b missing
+    run
+  end
   # Assert...
 end
 ```
@@ -505,30 +616,27 @@ require 'benchmark'
 
 class PerformanceTest < Minitest::Test
   def test_rule_performance
-    engine = setup_engine
+    time = Benchmark.measure do
+      kb = KBS.knowledge_base do
+        rule "perf_test" do
+          on :data, value: :v?
+          perform { }
+        end
 
-    # Add rule
-    engine.add_rule(KBS::Rule.new("perf_test") do |r|
-      r.conditions = [
-        KBS::Condition.new(:data, { value: :v? })
-      ]
-      r.action = lambda { |facts, bindings| }
-    end)
-
-    # Add many facts
-    1000.times { |i| engine.add_fact(:data, { value: i }) }
-
-    # Benchmark
-    time = Benchmark.measure { engine.run }
+        # Add many facts
+        1000.times { |i| fact :data, value: i }
+        run
+      end
+    end
 
     assert time.real < 1.0, "Engine should complete in under 1 second"
   end
 
   def test_fact_addition_performance
-    engine = setup_engine
+    kb = KBS.knowledge_base
 
     time = Benchmark.measure do
-      10_000.times { |i| engine.add_fact(:data, { value: i }) }
+      10_000.times { |i| kb.fact :data, value: i }
     end
 
     rate = 10_000 / time.real
@@ -546,8 +654,10 @@ class TestBlackboardPersistence < Minitest::Test
   def test_facts_persist_across_sessions
     # Session 1: Add facts
     engine1 = KBS::Blackboard::Engine.new(db_path: 'test.db')
-    engine1.add_fact(:sensor, { id: 1, value: 25 })
-    engine1.close
+    kb1 = KBS.knowledge_base(engine: engine1) do
+      fact :sensor, id: 1, value: 25
+    end
+    kb1.close
 
     # Session 2: Load facts
     engine2 = KBS::Blackboard::Engine.new(db_path: 'test.db')
@@ -561,8 +671,8 @@ class TestBlackboardPersistence < Minitest::Test
   def test_audit_trail
     engine = KBS::Blackboard::Engine.new(db_path: ':memory:')
 
-    fact = engine.add_fact(:data, { value: 1 })
-    engine.update_fact(fact.id, { value: 2 })
+    fact = engine.add_fact(:data, value: 1)
+    engine.update_fact(fact.id, value: 2)
     engine.delete_fact(fact.id)
 
     history = engine.fact_history(fact.id)
@@ -581,13 +691,17 @@ end
 
 ```ruby
 def test_single_rule_only
-  engine = setup_engine
+  kb = KBS.knowledge_base do
+    # Add ONLY the rule being tested
+    rule "my_test_rule" do
+      on :trigger, {}
+      perform { }
+    end
 
-  # Add ONLY the rule being tested
-  engine.add_rule(my_test_rule)
-
-  # No other rules to interfere
-  engine.run
+    # No other rules to interfere
+    fact :trigger, {}
+    run
+  end
 end
 ```
 
@@ -596,20 +710,44 @@ end
 ```ruby
 def test_edge_cases
   # Empty facts
-  engine.run
-  assert_empty engine.facts.select { |f| f.type == :alert }
+  kb = KBS.knowledge_base do
+    rule "check" do
+      on :sensor, value: :v?
+      perform { }
+    end
+    run
+  end
+  assert_empty kb.engine.facts.select { |f| f.type == :alert }
 
   # Exact threshold
-  engine.add_fact(:sensor, { value: 30 })
-  engine.run
+  kb = KBS.knowledge_base do
+    rule "check" do
+      on :sensor, value: :v?, predicate: greater_than(30)
+      perform { }
+    end
+    fact :sensor, value: 30
+    run
+  end
 
   # Just below threshold
-  engine.add_fact(:sensor, { value: 29.99 })
-  engine.run
+  kb = KBS.knowledge_base do
+    rule "check" do
+      on :sensor, value: :v?, predicate: greater_than(30)
+      perform { }
+    end
+    fact :sensor, value: 29.99
+    run
+  end
 
   # Just above threshold
-  engine.add_fact(:sensor, { value: 30.01 })
-  engine.run
+  kb = KBS.knowledge_base do
+    rule "check" do
+      on :sensor, value: :v?, predicate: greater_than(30)
+      perform { }
+    end
+    fact :sensor, value: 30.01
+    run
+  end
 end
 ```
 
@@ -617,20 +755,20 @@ end
 
 ```ruby
 def test_action_side_effects
-  engine = setup_engine
   added_facts = []
 
-  rule = KBS::Rule.new("test") do |r|
-    r.conditions = [KBS::Condition.new(:trigger, {})]
-    r.action = lambda do |facts, bindings|
-      new_fact = engine.add_fact(:result, { value: 42 })
-      added_facts << new_fact
+  kb = KBS.knowledge_base do
+    rule "test" do
+      on :trigger, {}
+      perform do |facts, bindings|
+        new_fact = fact :result, value: 42
+        added_facts << new_fact
+      end
     end
-  end
 
-  engine.add_rule(rule)
-  engine.add_fact(:trigger, {})
-  engine.run
+    fact :trigger, {}
+    run
+  end
 
   assert_equal 1, added_facts.size
   assert_equal 42, added_facts.first[:value]
@@ -654,12 +792,10 @@ end
 ```ruby
 class TestWithSetup < Minitest::Test
   def setup
-    @engine = setup_engine
     @test_db = "test_#{SecureRandom.hex(8)}.db"
   end
 
   def teardown
-    @engine.close if @engine.respond_to?(:close)
     File.delete(@test_db) if File.exist?(@test_db)
   end
 end

@@ -2,7 +2,7 @@
 
 require 'ruby_llm'
 require 'ruby_llm/mcp'
-require_relative '../lib/kbs/dsl'
+require_relative '../lib/kbs'
 require 'json'
 require 'date'
 

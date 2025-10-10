@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require_relative '../lib/kbs/dsl'
+require_relative '../lib/kbs'
 
 puts "Creating a simple expert system for diagnosing car problems..."
 puts "-" * 60

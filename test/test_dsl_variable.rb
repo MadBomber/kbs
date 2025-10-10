@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'test_helper'
-require_relative '../lib/kbs/dsl'
+require_relative '../lib/kbs'
 
 class TestDSLVariable < Minitest::Test
   def test_variable_creation

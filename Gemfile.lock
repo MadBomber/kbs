@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    kbs (0.1.0)
+    kbs (0.2.0)
       sqlite3 (~> 1.6)
 
 GEM
@@ -17,7 +17,7 @@ GEM
       rdoc (>= 4.0.0)
       reline (>= 0.4.2)
     mini_portile2 (2.8.9)
-    minitest (5.25.5)
+    minitest (5.26.0)
     pp (0.6.3)
       prettyprint
     prettyprint (0.2.0)

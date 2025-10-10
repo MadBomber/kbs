@@ -24,27 +24,34 @@ require 'kbs'
 # With SQLite (default)
 engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
 
-# Facts persist across restarts
-engine.add_fact(:sensor, { id: "bedroom", temp: 28 })
-engine.close
+kb = KBS.knowledge_base(engine: engine) do
+  # Facts persist across restarts
+  fact :sensor, id: "bedroom", temp: 28
+end
+
+kb.close
 
 # Next run
 engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
-puts engine.facts.size  # => 1
+kb = KBS.knowledge_base(engine: engine)
+puts kb.engine.facts.size  # => 1
 ```
 
 ### Blackboard vs Regular Engine
 
 ```ruby
 # Regular engine (transient)
-regular = KBS::Engine.new
-regular.add_fact(:foo, { bar: 1 })
+kb_regular = KBS.knowledge_base do
+  fact :foo, bar: 1
+end
 # Lost on exit
 
 # Blackboard engine (persistent)
-blackboard = KBS::Blackboard::Engine.new(db_path: 'kb.db')
-blackboard.add_fact(:foo, { bar: 1 })
-blackboard.close
+engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
+kb_blackboard = KBS.knowledge_base(engine: engine) do
+  fact :foo, bar: 1
+end
+kb_blackboard.close
 # Persisted to database
 ```
 
@@ -53,14 +60,16 @@ blackboard.close
 ### Fact Lifecycle
 
 ```ruby
+engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
+
 # Create fact
-fact = engine.add_fact(:sensor, { id: "bedroom", temp: 28 })
+fact = engine.add_fact(:sensor, id: "bedroom", temp: 28)
 
 # Fact has UUID
 puts fact.id  # => "550e8400-e29b-41d4-a716-446655440000"
 
 # Update fact
-engine.update_fact(fact.id, { temp: 30 })
+engine.update_fact(fact.id, temp: 30)
 
 # Query fact history
 history = engine.fact_history(fact.id)
@@ -77,7 +86,8 @@ engine.delete_fact(fact.id)
 Blackboard facts support the same interface as regular facts:
 
 ```ruby
-fact = engine.add_fact(:stock, { symbol: "AAPL", price: 150 })
+engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
+fact = engine.add_fact(:stock, symbol: "AAPL", price: 150)
 
 # Access
 fact.type           # => :stock
@@ -97,6 +107,8 @@ The blackboard includes a priority-based message queue for agent communication:
 ### Sending Messages
 
 ```ruby
+engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
+
 # Add message to queue
 engine.send_message(:alerts, "High temperature detected", priority: 10)
 engine.send_message(:alerts, "Critical failure", priority: 100)  # Higher priority
@@ -139,11 +151,13 @@ Blackboard automatically logs all changes:
 ### Fact Audit Log
 
 ```ruby
+engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
+
 # Add fact
-fact = engine.add_fact(:order, { id: 1, status: "pending" })
+fact = engine.add_fact(:order, id: 1, status: "pending")
 
 # Update fact
-engine.update_fact(fact.id, { status: "processing" })
+engine.update_fact(fact.id, status: "processing")
 
 # Delete fact
 engine.delete_fact(fact.id)
@@ -173,9 +187,15 @@ engine = KBS::Blackboard::Engine.new(
   audit_rules: true
 )
 
-# Add and run rules
-engine.add_rule(my_rule)
-engine.run
+kb = KBS.knowledge_base(engine: engine) do
+  rule "my_rule" do
+    on :trigger, {}
+    perform { }
+  end
+
+  fact :trigger, {}
+  run
+end
 
 # Query rule firings
 firings = engine.rule_firings(rule_name: "my_rule")
@@ -202,12 +222,12 @@ class Agent
     @engine.facts.select { |f| relevant?(f) }
   end
 
-  def decide
+  def decide(observations)
     # Apply agent's expertise
     # Return action or nil
   end
 
-  def act
+  def act(action)
     # Write facts to blackboard
     # Send messages to other agents
   end
@@ -277,7 +297,7 @@ class ExecutionAgent < Agent
         execute_order(order)
 
         # Update fact
-        @engine.update_fact(order.id, { executed: true })
+        @engine.update_fact(order.id, executed: true)
 
         # Notify
         @engine.send_message(:notifications, "Order executed", priority: 10)
@@ -306,19 +326,21 @@ end
 Blackboard supports ACID transactions (SQLite backend):
 
 ```ruby
+engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
+
 # Transaction succeeds
 engine.transaction do
-  engine.add_fact(:account, { id: 1, balance: 1000 })
-  engine.add_fact(:account, { id: 2, balance: 500 })
+  engine.add_fact(:account, id: 1, balance: 1000)
+  engine.add_fact(:account, id: 2, balance: 500)
 end
 # Both facts committed
 
 # Transaction fails
 begin
   engine.transaction do
-    engine.add_fact(:account, { id: 3, balance: 100 })
+    engine.add_fact(:account, id: 3, balance: 100)
     raise "Error!"
-    engine.add_fact(:account, { id: 4, balance: 200 })  # Never reached
+    engine.add_fact(:account, id: 4, balance: 200)  # Never reached
   end
 rescue => e
   puts "Transaction rolled back"
@@ -344,10 +366,11 @@ class FactObserver
   end
 end
 
+engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
 observer = FactObserver.new
 engine.memory.add_observer(observer)
 
-engine.add_fact(:sensor, { temp: 28 })
+engine.add_fact(:sensor, temp: 28)
 # Output: Fact added: sensor - {:temp=>28}
 ```
 
@@ -402,11 +425,11 @@ engine = KBS::Blackboard::Engine.new(store: store)
 ```ruby
 # Good: Store fact UUID
 order_id = engine.add_fact(:order, { ... }).id
-engine.add_fact(:payment, { order_id: order_id })
+engine.add_fact(:payment, order_id: order_id)
 
 # Bad: Use attribute as reference
-engine.add_fact(:order, { id: 1 })
-engine.add_fact(:payment, { order_id: 1 })  # Fragile
+engine.add_fact(:order, id: 1)
+engine.add_fact(:payment, order_id: 1)  # Fragile
 ```
 
 ### 2. Namespace Facts by Agent
@@ -438,17 +461,19 @@ end
 
 ```ruby
 # Remove stale data
-KBS::Rule.new("cleanup_old_facts", priority: 1) do |r|
-  r.conditions = [
-    KBS::Condition.new(:market_data, {
-      timestamp: :time?
-    }, predicate: lambda { |f|
-      (Time.now - f[:timestamp]) > 3600  # 1 hour old
-    })
-  ]
+engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
 
-  r.action = lambda do |facts, bindings|
-    engine.remove_fact(facts[0])
+kb = KBS.knowledge_base(engine: engine) do
+  rule "cleanup_old_facts", priority: 1 do
+    on :market_data,
+      timestamp: :time?,
+      predicate: lambda { |f|
+        (Time.now - f[:timestamp]) > 3600  # 1 hour old
+      }
+
+    perform do |facts, bindings|
+      engine.remove_fact(facts[0])
+    end
   end
 end
 ```
@@ -456,15 +481,17 @@ end
 ### 5. Use Transactions for Multi-Fact Updates
 
 ```ruby
+engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
+
 # Good: Atomic updates
 engine.transaction do
-  engine.update_fact(account1_id, { balance: new_balance1 })
-  engine.update_fact(account2_id, { balance: new_balance2 })
+  engine.update_fact(account1_id, balance: new_balance1)
+  engine.update_fact(account2_id, balance: new_balance2)
 end
 
 # Bad: Separate updates (not atomic)
-engine.update_fact(account1_id, { balance: new_balance1 })
-engine.update_fact(account2_id, { balance: new_balance2 })
+engine.update_fact(account1_id, balance: new_balance1)
+engine.update_fact(account2_id, balance: new_balance2)
 ```
 
 ## Common Patterns
@@ -472,16 +499,18 @@ engine.update_fact(account2_id, { balance: new_balance2 })
 ### Leader Election
 
 ```ruby
-# Agent attempts to become leader
-KBS::Rule.new("become_leader") do |r|
-  r.conditions = [
-    KBS::Condition.new(:agent, { name: :name? }),
-    KBS::Condition.new(:leader, {}, negated: true)
-  ]
+engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
 
-  r.action = lambda do |facts, bindings|
-    engine.add_fact(:leader, { name: bindings[:name?] })
-    puts "#{bindings[:name?]} is now leader"
+kb = KBS.knowledge_base(engine: engine) do
+  # Agent attempts to become leader
+  rule "become_leader" do
+    on :agent, name: :name?
+    without :leader, {}
+
+    perform do |facts, bindings|
+      fact :leader, name: bindings[:name?]
+      puts "#{bindings[:name?]} is now leader"
+    end
   end
 end
 ```
@@ -490,7 +519,7 @@ end
 
 ```ruby
 # Acquire lock
-def acquire_lock(resource_id)
+def acquire_lock(engine, resource_id, agent_id)
   engine.transaction do
     lock = engine.facts.find { |f|
       f.type == :lock && f[:resource_id] == resource_id
@@ -499,7 +528,7 @@ def acquire_lock(resource_id)
     if lock.nil?
       engine.add_fact(:lock, {
         resource_id: resource_id,
-        owner: @agent_id,
+        owner: agent_id,
         acquired_at: Time.now
       })
       true
@@ -510,11 +539,11 @@ def acquire_lock(resource_id)
 end
 
 # Release lock
-def release_lock(resource_id)
+def release_lock(engine, resource_id, agent_id)
   lock = engine.facts.find { |f|
     f.type == :lock &&
     f[:resource_id] == resource_id &&
-    f[:owner] == @agent_id
+    f[:owner] == agent_id
   }
 
   engine.remove_fact(lock) if lock
@@ -524,6 +553,8 @@ end
 ### Event Sourcing
 
 ```ruby
+engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
+
 # Store events as facts
 engine.add_fact(:event, {
   type: "order_created",
@@ -533,7 +564,7 @@ engine.add_fact(:event, {
 })
 
 # Reconstruct state from events
-def rebuild_order(order_id)
+def rebuild_order(engine, order_id)
   events = engine.facts
     .select { |f| f.type == :event && f[:aggregate_id] == order_id }
     .sort_by { |f| f[:timestamp] }

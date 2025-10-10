@@ -20,25 +20,19 @@ KBS performance depends on:
 require 'benchmark'
 require 'kbs'
 
-engine = KBS::Engine.new
-
-# Add rules
-rule = KBS::Rule.new("simple_rule") do |r|
-  r.conditions = [
-    KBS::Condition.new(:fact, { value: :v? })
-  ]
-
-  r.action = lambda do |facts, bindings|
-    # Simple action
+kb = KBS.knowledge_base do
+  rule "simple_rule" do
+    on :fact, value: :v?
+    perform do |facts, bindings|
+      # Simple action
+    end
   end
 end
-
-engine.add_rule(rule)
 
 # Benchmark fact addition
 time = Benchmark.measure do
   10_000.times do |i|
-    engine.add_fact(:fact, { value: i })
+    kb.fact :fact, value: i
   end
 end
 
@@ -47,7 +41,7 @@ puts "#{(10_000 / time.real).round(2)} facts/second"
 
 # Benchmark engine run
 time = Benchmark.measure do
-  engine.run
+  kb.run
 end
 
 puts "Ran engine in #{time.real} seconds"
@@ -67,24 +61,39 @@ class KBSBenchmark
   def setup_engine
     case @engine_type
     when :memory
-      KBS::Engine.new
+      # Return a new knowledge base context
+      @kb_context = :memory
     when :blackboard_sqlite
-      KBS::Blackboard::Engine.new(db_path: ':memory:')
+      @kb_context = :blackboard_sqlite
+      @db_path = ':memory:'
     when :blackboard_redis
       require 'kbs/blackboard/persistence/redis_store'
-      store = KBS::Blackboard::Persistence::RedisStore.new(
+      @kb_context = :blackboard_redis
+      @store = KBS::Blackboard::Persistence::RedisStore.new(
         url: 'redis://localhost:6379/15'  # Test database
       )
-      KBS::Blackboard::Engine.new(store: store)
     end
   end
 
   def benchmark_fact_addition(count: 10_000)
-    engine = setup_engine
+    setup_engine
+
+    kb = case @kb_context
+    when :memory
+      KBS.knowledge_base do
+        # Add facts in benchmark block
+      end
+    when :blackboard_sqlite
+      engine = KBS::Blackboard::Engine.new(db_path: @db_path)
+      KBS.knowledge_base(engine: engine)
+    when :blackboard_redis
+      engine = KBS::Blackboard::Engine.new(store: @store)
+      KBS.knowledge_base(engine: engine)
+    end
 
     time = Benchmark.measure do
       count.times do |i|
-        engine.add_fact(:fact, { id: i, value: rand(1000) })
+        kb.fact :fact, id: i, value: rand(1000)
       end
     end
 
@@ -96,30 +105,57 @@ class KBSBenchmark
   end
 
   def benchmark_simple_rules(fact_count: 1000, rule_count: 10)
-    engine = setup_engine
+    setup_engine
 
-    # Add rules
-    rule_count.times do |i|
-      rule = KBS::Rule.new("rule_#{i}") do |r|
-        r.conditions = [
-          KBS::Condition.new(:fact, { value: :v? })
-        ]
+    kb = case @kb_context
+    when :memory
+      KBS.knowledge_base do
+        # Add rules
+        rule_count.times do |i|
+          rule "rule_#{i}" do
+            on :fact, value: :v?
+            perform do |facts, bindings|
+              # Minimal action
+            end
+          end
+        end
 
-        r.action = lambda do |facts, bindings|
-          # Minimal action
+        # Add facts
+        fact_count.times do |i|
+          fact :fact, value: i
         end
       end
-      engine.add_rule(rule)
-    end
-
-    # Add facts
-    fact_count.times do |i|
-      engine.add_fact(:fact, { value: i })
+    when :blackboard_sqlite
+      engine = KBS::Blackboard::Engine.new(db_path: @db_path)
+      kb = KBS.knowledge_base(engine: engine) do
+        rule_count.times do |i|
+          rule "rule_#{i}" do
+            on :fact, value: :v?
+            perform { }
+          end
+        end
+        fact_count.times do |i|
+          fact :fact, value: i
+        end
+      end
+    when :blackboard_redis
+      engine = KBS::Blackboard::Engine.new(store: @store)
+      kb = KBS.knowledge_base(engine: engine) do
+        rule_count.times do |i|
+          rule "rule_#{i}" do
+            on :fact, value: :v?
+            perform { }
+          end
+        end
+        fact_count.times do |i|
+          fact :fact, value: i
+        end
+      end
     end
 
     # Benchmark engine run
     time = Benchmark.measure do
-      engine.run
+      kb.run
     end
 
     @results[:simple_rules] = {
@@ -130,33 +166,33 @@ class KBSBenchmark
   end
 
   def benchmark_complex_joins(fact_count: 500)
-    engine = setup_engine
+    setup_engine
 
-    # Rule with 3-way join
-    rule = KBS::Rule.new("complex_join") do |r|
-      r.conditions = [
-        KBS::Condition.new(:a, { id: :id?, value: :v? }),
-        KBS::Condition.new(:b, { a_id: :id?, score: :s? }),
-        KBS::Condition.new(:c, { b_score: :s? })
-      ]
+    kb = case @kb_context
+    when :memory
+      KBS.knowledge_base do
+        # Rule with 3-way join
+        rule "complex_join" do
+          on :a, id: :id?, value: :v?
+          on :b, a_id: :id?, score: :s?
+          on :c, b_score: :s?
+          perform do |facts, bindings|
+            # Action
+          end
+        end
 
-      r.action = lambda do |facts, bindings|
-        # Action
+        # Add facts
+        fact_count.times do |i|
+          fact :a, id: i, value: rand(100)
+          fact :b, a_id: i, score: rand(100)
+          fact :c, b_score: i
+        end
       end
-    end
-
-    engine.add_rule(rule)
-
-    # Add facts
-    fact_count.times do |i|
-      engine.add_fact(:a, { id: i, value: rand(100) })
-      engine.add_fact(:b, { a_id: i, score: rand(100) })
-      engine.add_fact(:c, { b_score: i })
     end
 
     # Benchmark
     time = Benchmark.measure do
-      engine.run
+      kb.run
     end
 
     @results[:complex_joins] = {
@@ -166,31 +202,28 @@ class KBSBenchmark
   end
 
   def benchmark_negation(fact_count: 1000)
-    engine = setup_engine
+    setup_engine
 
-    # Rule with negation
-    rule = KBS::Rule.new("negation_rule") do |r|
-      r.conditions = [
-        KBS::Condition.new(:positive, { id: :id? }),
-        KBS::Condition.new(:negative, { id: :id? }, negated: true)
-      ]
-
-      r.action = lambda do |facts, bindings|
-        # Action
+    kb = KBS.knowledge_base do
+      # Rule with negation
+      rule "negation_rule" do
+        on :positive, id: :id?
+        without :negative, id: :id?
+        perform do |facts, bindings|
+          # Action
+        end
       end
-    end
 
-    engine.add_rule(rule)
-
-    # Add facts (50% will match)
-    fact_count.times do |i|
-      engine.add_fact(:positive, { id: i })
-      engine.add_fact(:negative, { id: i }) if i.even?
+      # Add facts (50% will match)
+      fact_count.times do |i|
+        fact :positive, id: i
+        fact :negative, id: i if i.even?
+      end
     end
 
     # Benchmark
     time = Benchmark.measure do
-      engine.run
+      kb.run
     end
 
     @results[:negation] = {
