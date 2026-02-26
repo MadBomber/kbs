@@ -53,6 +53,47 @@ module KBS
       end
     end
 
+    # Clear all transient RETE state while preserving the compiled rule network.
+    #
+    # The RETE network has four levels of transient state:
+    #   1. WorkingMemory — holds all asserted facts
+    #   2. AlphaMemory   — holds facts matching each pattern
+    #   3. BetaMemory    — holds tokens from condition joins
+    #   4. ProductionNode — holds tokens ready to fire
+    #
+    # Simply clearing working memory facts doesn't cascade reliably
+    # through intermediate beta memories. Stale tokens in beta memories
+    # cause false matches when new facts are asserted on the next cycle.
+    #
+    # This method clears all four levels directly while preserving the
+    # root beta memory's dummy token (needed for first-condition joins).
+    def reset
+      # 1. Clear working memory directly (bypass observer — we clear everything)
+      @working_memory.facts.clear
+
+      # 2. Clear alpha memories and their downstream beta memories
+      @alpha_memories.each_value do |alpha_mem|
+        alpha_mem.items.clear
+
+        # Each alpha memory successor is a JoinNode or NegationNode.
+        # Their successors are intermediate BetaMemory nodes.
+        # The root beta memory is never a join node successor, so
+        # its dummy token is preserved.
+        alpha_mem.successors.each do |join_node|
+          next unless join_node.respond_to?(:successors)
+          join_node.successors.each do |beta_or_prod|
+            beta_or_prod.tokens.clear if beta_or_prod.respond_to?(:tokens)
+          end
+        end
+      end
+
+      # 3. Clear production node tokens
+      @production_nodes.each_value { |node| node.tokens.clear }
+
+      # 4. Clear stale child references from the root dummy token
+      @root_beta_memory.tokens.each { |t| t.children.clear }
+    end
+
     private
 
     def build_network_for_rule(rule)

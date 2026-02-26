@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-unless defined?(KBS)
+unless defined?(KBS::Engine)
   require_relative '../kbs'
 end
 

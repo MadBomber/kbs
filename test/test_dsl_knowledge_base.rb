@@ -96,4 +96,52 @@ class TestDSLKnowledgeBase < Minitest::Test
     assert_equal 1, red_cars.size
     assert_equal :red, red_cars.first[:color]
   end
+
+  def test_reset_clears_facts_and_state
+    result = []
+
+    kb = KBS::DSL::KnowledgeBase.new
+    kb.rule 'test_rule' do
+      on :car, color: :red
+      perform { |facts| result << :fired }
+    end
+
+    kb.fact(:car, color: :red)
+    kb.run
+    assert_equal [:fired], result
+
+    kb.reset
+    assert_empty kb.facts, "Facts should be cleared after reset"
+
+    # Rules should still work after reset
+    result.clear
+    kb.fact(:car, color: :red)
+    kb.run
+    assert_equal [:fired], result
+  end
+
+  def test_reset_prevents_stale_cross_cycle_matches
+    result = []
+
+    kb = KBS::DSL::KnowledgeBase.new
+    kb.rule 'two_cond' do
+      on :domain, name: "code"
+      on :tool, name: "eval_tool"
+      perform { |facts| result << facts[1][:name] }
+    end
+
+    # Cycle 1: both facts present
+    kb.assert(:domain, name: "code")
+    kb.assert(:tool, name: "eval_tool")
+    kb.run
+    assert_equal ["eval_tool"], result
+
+    # Cycle 2: reset, assert only tool — should NOT match
+    kb.reset
+    result.clear
+
+    kb.assert(:tool, name: "eval_tool")
+    kb.run
+    assert_empty result, "Rule should not fire without domain fact after reset"
+  end
 end

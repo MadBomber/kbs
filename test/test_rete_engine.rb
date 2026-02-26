@@ -283,4 +283,169 @@ class TestEngine < Minitest::Test
 
     assert_empty result, "Rule should not fire with only partial match"
   end
+
+  # =========================================================================
+  # Engine#reset — full RETE state cleanup
+  # =========================================================================
+
+  def test_reset_clears_working_memory
+    @engine.add_fact(:car, { color: :red })
+    assert_equal 1, @engine.working_memory.facts.size
+
+    @engine.reset
+    assert_empty @engine.working_memory.facts
+  end
+
+  def test_reset_clears_alpha_memory_items
+    rule = KBS::Rule.new('test_rule') do |r|
+      r.conditions << KBS::Condition.new(:car, { color: :red })
+      r.action = ->(facts) { }
+    end
+
+    @engine.add_rule(rule)
+    @engine.add_fact(:car, { color: :red })
+
+    @engine.alpha_memories.each_value do |am|
+      refute_empty am.items, "Alpha memory should have items before reset"
+    end
+
+    @engine.reset
+
+    @engine.alpha_memories.each_value do |am|
+      assert_empty am.items, "Alpha memory items should be cleared after reset"
+    end
+  end
+
+  def test_reset_clears_production_node_tokens
+    rule = KBS::Rule.new('test_rule') do |r|
+      r.conditions << KBS::Condition.new(:car, { color: :red })
+      r.action = ->(facts) { }
+    end
+
+    @engine.add_rule(rule)
+    @engine.add_fact(:car, { color: :red })
+
+    node = @engine.production_nodes['test_rule']
+    refute_empty node.tokens, "Production node should have tokens before reset"
+
+    @engine.reset
+    assert_empty node.tokens, "Production node tokens should be cleared after reset"
+  end
+
+  def test_reset_preserves_rule_network
+    result = []
+
+    rule = KBS::Rule.new('test_rule') do |r|
+      r.conditions << KBS::Condition.new(:car, { color: :red })
+      r.action = ->(facts) { result << :fired }
+    end
+
+    @engine.add_rule(rule)
+    @engine.add_fact(:car, { color: :red })
+    @engine.run
+    assert_equal [:fired], result
+
+    # Reset and re-assert — the compiled rule network should still work
+    @engine.reset
+    result.clear
+
+    @engine.add_fact(:car, { color: :red })
+    @engine.run
+    assert_equal [:fired], result
+  end
+
+  def test_reset_prevents_stale_matches_single_condition
+    result = []
+
+    rule = KBS::Rule.new('color_rule') do |r|
+      r.conditions << KBS::Condition.new(:car, { color: :red })
+      r.action = ->(facts) { result << :fired }
+    end
+
+    @engine.add_rule(rule)
+
+    # Cycle 1: assert red car, should fire
+    @engine.add_fact(:car, { color: :red })
+    @engine.run
+    assert_equal 1, result.size
+
+    # Cycle 2: reset, assert blue car only — should NOT fire
+    @engine.reset
+    result.clear
+
+    @engine.add_fact(:car, { color: :blue })
+    @engine.run
+    assert_empty result, "Rule should not fire for blue car after reset"
+  end
+
+  def test_reset_prevents_stale_matches_multi_condition
+    result = []
+
+    rule = KBS::Rule.new('driver_car_rule') do |r|
+      r.conditions << KBS::Condition.new(:driver, { name: "John" })
+      r.conditions << KBS::Condition.new(:car, { color: :red })
+      r.action = ->(facts) { result << facts.map(&:type) }
+    end
+
+    @engine.add_rule(rule)
+
+    # Cycle 1: both conditions met
+    @engine.add_fact(:driver, { name: "John" })
+    @engine.add_fact(:car, { color: :red })
+    @engine.run
+    assert_equal 1, result.size
+
+    # Cycle 2: reset, assert only driver — should NOT fire
+    @engine.reset
+    result.clear
+
+    @engine.add_fact(:driver, { name: "John" })
+    @engine.run
+    assert_empty result, "Rule should not fire with only driver after reset (no stale car token)"
+  end
+
+  def test_reset_no_cross_cycle_accumulation
+    result = []
+
+    rule = KBS::Rule.new('car_rule') do |r|
+      r.conditions << KBS::Condition.new(:car, {})
+      r.action = ->(facts) { result << facts.first[:color] }
+    end
+
+    @engine.add_rule(rule)
+
+    # Cycle 1
+    @engine.add_fact(:car, { color: :red })
+    @engine.run
+    assert_equal [:red], result
+
+    # Cycle 2: reset, new fact only
+    @engine.reset
+    result.clear
+
+    @engine.add_fact(:car, { color: :blue })
+    @engine.run
+    assert_equal [:blue], result, "Only the blue car from this cycle should fire"
+  end
+
+  def test_reset_works_across_many_cycles
+    result = []
+
+    rule = KBS::Rule.new('counter_rule') do |r|
+      r.conditions << KBS::Condition.new(:signal, {})
+      r.action = ->(facts) { result << facts.first[:value] }
+    end
+
+    @engine.add_rule(rule)
+
+    5.times do |i|
+      @engine.reset
+      result.clear
+
+      @engine.add_fact(:signal, { value: i })
+      @engine.run
+
+      assert_equal [i], result, "Cycle #{i}: only current value should fire"
+    end
+  end
 end

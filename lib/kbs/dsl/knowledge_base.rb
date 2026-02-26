@@ -42,7 +42,7 @@ module KBS
       end
 
       def reset
-        @engine.working_memory.facts.clear
+        @engine.reset
       end
 
       def facts
