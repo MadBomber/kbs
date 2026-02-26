@@ -9,9 +9,11 @@ module KBS
         @engine = Engine.new
         @rules = {}
         @rule_builders = {}
+        @rule_source_locations = {}
       end
 
       def rule(name, &block)
+        @rule_source_locations[name] = block.source_location if block
         builder = RuleBuilder.new(name)
         builder.instance_eval(&block) if block_given?
         @rule_builders[name] = builder
@@ -65,6 +67,26 @@ module KBS
         puts "-" * 40
       end
 
+      def rule_source(name)
+        location = @rule_source_locations[name]
+        return nil unless location
+
+        file, line = location
+        return nil unless file && File.exist?(file)
+
+        extract_rule_source(file, line)
+      end
+
+      def print_rule_source(name)
+        source = rule_source(name)
+        unless source
+          puts "No source available for rule '#{name}'"
+          return
+        end
+
+        puts source
+      end
+
       def print_rules
         puts "Knowledge Base Rules:"
         puts "-" * 40
@@ -80,6 +102,32 @@ module KBS
           puts ""
         end
         puts "-" * 40
+      end
+
+      private
+
+      def extract_rule_source(file, start_line)
+        lines = File.readlines(file)
+        start_idx = start_line - 1
+        return nil if start_idx < 0 || start_idx >= lines.length
+
+        # source_location points to the block's `do` line, which is
+        # normally the same line as the `rule` call.  Walk back up to
+        # 2 lines in case they are on separate lines.
+        rule_idx = start_idx.downto([start_idx - 2, 0].max).find do |i|
+          lines[i].match?(/\b(?:rule|defrule)\b/)
+        end || start_idx
+
+        base_indent = lines[rule_idx][/^\s*/].length
+        end_pattern = /^\s{#{base_indent}}end\b/
+
+        result = []
+        (rule_idx...lines.length).each do |i|
+          result << lines[i]
+          break if i > rule_idx && lines[i].match?(end_pattern)
+        end
+
+        result.join.chomp
       end
     end
   end

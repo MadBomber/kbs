@@ -144,4 +144,85 @@ class TestDSLKnowledgeBase < Minitest::Test
     kb.run
     assert_empty result, "Rule should not fire without domain fact after reset"
   end
+
+  # =========================================================================
+  # rule_source / print_rule_source
+  # =========================================================================
+
+  def test_rule_source_returns_source_string
+    kb = KBS::DSL::KnowledgeBase.new
+    kb.rule 'simple' do
+      on :car, color: :red
+      perform { |facts| }
+    end
+
+    source = kb.rule_source('simple')
+    assert_includes source, "rule"
+    assert_includes source, "simple"
+    assert_includes source, "on :car"
+    assert_includes source, "perform"
+  end
+
+  def test_rule_source_returns_nil_for_unknown_rule
+    kb = KBS::DSL::KnowledgeBase.new
+    assert_nil kb.rule_source('nonexistent')
+  end
+
+  def test_rule_source_captures_negation
+    kb = KBS::DSL::KnowledgeBase.new
+    kb.rule 'with_negation' do
+      on :car, color: :red
+      without :alert, type: :warning
+      perform { |facts| }
+    end
+
+    source = kb.rule_source('with_negation')
+    assert_includes source, "without :alert"
+  end
+
+  def test_rule_source_captures_nested_blocks
+    kb = KBS::DSL::KnowledgeBase.new
+    kb.rule 'nested' do
+      on :car, color: :red
+      perform do |facts|
+        puts "fired"
+      end
+    end
+
+    source = kb.rule_source('nested')
+    assert_includes source, "perform do"
+    assert_includes source, "puts"
+  end
+
+  def test_rule_source_works_via_knowledge_base_block
+    kb = KBS.knowledge_base do
+      rule 'kb_rule' do
+        on :sensor, temp: :high?
+        perform { |facts| }
+      end
+    end
+
+    source = kb.rule_source('kb_rule')
+    assert_includes source, "rule"
+    assert_includes source, "kb_rule"
+    assert_includes source, "on :sensor"
+  end
+
+  def test_print_rule_source_outputs_to_stdout
+    kb = KBS::DSL::KnowledgeBase.new
+    kb.rule 'printable' do
+      on :car, color: :red
+      perform { |facts| }
+    end
+
+    output = capture_io { kb.print_rule_source('printable') }.first
+    assert_includes output, "on :car"
+  end
+
+  def test_print_rule_source_shows_message_for_unknown_rule
+    kb = KBS::DSL::KnowledgeBase.new
+
+    output = capture_io { kb.print_rule_source('missing') }.first
+    assert_includes output, "No source available for rule 'missing'"
+  end
 end
