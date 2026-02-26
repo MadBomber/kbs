@@ -14,6 +14,7 @@ require_relative 'kbs/production_node'
 require_relative 'kbs/condition'
 require_relative 'kbs/rule'
 require_relative 'kbs/engine'
+require_relative 'kbs/decompiler'
 require_relative 'kbs/dsl'
 
 module KBS

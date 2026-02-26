@@ -225,4 +225,82 @@ class TestDSLKnowledgeBase < Minitest::Test
     output = capture_io { kb.print_rule_source('missing') }.first
     assert_includes output, "No source available for rule 'missing'"
   end
+
+  # =========================================================================
+  # Dynamic rule reconstruction (no source file)
+  # =========================================================================
+
+  def test_dynamic_rule_reconstruction
+    kb = KBS::DSL::KnowledgeBase.new
+
+    # Build a rule programmatically (simulating dynamic creation)
+    builder = KBS::DSL::RuleBuilder.new("dynamic_rule")
+    builder.on :sensor, temp: :high
+    builder.perform { |facts| puts "alert" }
+    rule = builder.build
+    kb.instance_variable_get(:@rule_builders)["dynamic_rule"] = builder
+    kb.instance_variable_get(:@rules)["dynamic_rule"] = rule
+    kb.engine.add_rule(rule)
+
+    # No source_location stored — forces reconstruction
+    source = kb.rule_source("dynamic_rule")
+    assert_includes source, 'rule "dynamic_rule" do'
+    assert_includes source, "on :sensor"
+    assert_includes source, "temp: :high"
+    assert_includes source, "perform"
+  end
+
+  def test_dynamic_rule_with_proc_condition
+    kb = KBS::DSL::KnowledgeBase.new
+
+    builder = KBS::DSL::RuleBuilder.new("threshold")
+    builder.on :reading, value: ->(v) { v > 100 }
+    builder.perform { |facts| }
+    rule = builder.build
+    kb.instance_variable_get(:@rule_builders)["threshold"] = builder
+    kb.instance_variable_get(:@rules)["threshold"] = rule
+    kb.engine.add_rule(rule)
+
+    source = kb.rule_source("threshold")
+    assert_includes source, "rule"
+    assert_includes source, "value:"
+    # The decompiler should reconstruct the lambda
+    assert_includes source, "v > 100"
+  end
+
+  def test_dynamic_rule_with_negation
+    kb = KBS::DSL::KnowledgeBase.new
+
+    builder = KBS::DSL::RuleBuilder.new("safe_check")
+    builder.on :system, status: :running
+    builder.without :alert, level: :critical
+    builder.perform { |facts| }
+    rule = builder.build
+    kb.instance_variable_get(:@rule_builders)["safe_check"] = builder
+    kb.instance_variable_get(:@rules)["safe_check"] = rule
+    kb.engine.add_rule(rule)
+
+    source = kb.rule_source("safe_check")
+    assert_includes source, "on :system"
+    assert_includes source, "without :alert"
+    assert_includes source, "level: :critical"
+  end
+
+  def test_dynamic_rule_with_description_and_priority
+    kb = KBS::DSL::KnowledgeBase.new
+
+    builder = KBS::DSL::RuleBuilder.new("important")
+    builder.desc "A high-priority rule"
+    builder.priority 10
+    builder.on :event, kind: :urgent
+    builder.perform { |facts| }
+    rule = builder.build
+    kb.instance_variable_get(:@rule_builders)["important"] = builder
+    kb.instance_variable_get(:@rules)["important"] = rule
+    kb.engine.add_rule(rule)
+
+    source = kb.rule_source("important")
+    assert_includes source, 'desc "A high-priority rule"'
+    assert_includes source, "priority 10"
+  end
 end

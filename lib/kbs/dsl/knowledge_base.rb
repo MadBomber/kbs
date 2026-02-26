@@ -68,13 +68,17 @@ module KBS
       end
 
       def rule_source(name)
-        location = @rule_source_locations[name]
-        return nil unless location
+        # Try file-based source first
+        if (location = @rule_source_locations[name])
+          file, line = location
+          if file && File.exist?(file)
+            source = extract_rule_source(file, line)
+            return source if source
+          end
+        end
 
-        file, line = location
-        return nil unless file && File.exist?(file)
-
-        extract_rule_source(file, line)
+        # Fall back to reconstruction from internal state
+        reconstruct_rule_source(name)
       end
 
       def print_rule_source(name)
@@ -105,6 +109,53 @@ module KBS
       end
 
       private
+
+      def reconstruct_rule_source(name)
+        builder = @rule_builders[name]
+        return nil unless builder
+
+        lines = []
+        lines << "rule #{name.inspect} do"
+        lines << "  desc #{builder.description.inspect}" if builder.description
+        lines << "  priority #{builder.priority}" if builder.priority != 0
+
+        builder.conditions.each do |cond|
+          keyword = cond.negated ? "without" : "on"
+          pattern_str = reconstruct_pattern(cond.pattern)
+          if pattern_str.empty?
+            lines << "  #{keyword} #{cond.type.inspect}"
+          else
+            lines << "  #{keyword} #{cond.type.inspect}, #{pattern_str}"
+          end
+        end
+
+        if builder.action_block
+          block_str = decompile_proc_block(builder.action_block)
+          lines << "  perform #{block_str}"
+        end
+
+        lines << "end"
+        lines.join("\n")
+      end
+
+      def reconstruct_pattern(pattern)
+        return "" if pattern.empty?
+
+        pattern.map do |key, value|
+          val_str = if value.is_a?(Proc)
+                      Decompiler.new(value).decompile
+                    else
+                      value.inspect
+                    end
+          "#{key}: #{val_str}"
+        end.join(", ")
+      end
+
+      def decompile_proc_block(proc_obj)
+        Decompiler.new(proc_obj).decompile_block
+      rescue => e
+        "{ <decompilation failed: #{e.message}> }"
+      end
 
       def extract_rule_source(file, start_line)
         lines = File.readlines(file)
