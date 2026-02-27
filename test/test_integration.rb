@@ -2,7 +2,6 @@
 
 require_relative 'test_helper'
 require_relative '../lib/kbs'
-require_relative '../lib/kbs/dsl'
 require_relative '../lib/kbs/blackboard'
 
 class TestIntegration < Minitest::Test

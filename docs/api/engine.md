@@ -25,12 +25,25 @@ Creates a new in-memory RETE engine.
 
 **Returns**: `KBS::Engine` instance
 
-**Example**:
+**Example - Low-level API**:
 ```ruby
 require 'kbs'
 
 engine = KBS::Engine.new
 # Engine ready with empty working memory
+```
+
+**Using DSL (Recommended)**:
+```ruby
+require 'kbs'
+
+kb = KBS.knowledge_base do
+  # Engine automatically created
+  # Define rules and facts here
+end
+
+# Access engine if needed
+engine = kb.engine
 ```
 
 **Internal State Initialized**:
@@ -112,7 +125,7 @@ Adds a fact to working memory and activates matching alpha memories.
 - Propagates through join nodes
 - May create new tokens in beta memories
 
-**Example**:
+**Example - Low-level API**:
 ```ruby
 fact = engine.add_fact(:temperature, location: "server_room", value: 85)
 # => #<KBS::Fact:0x00... @type=:temperature @attributes={...}>
@@ -120,6 +133,14 @@ fact = engine.add_fact(:temperature, location: "server_room", value: 85)
 # Facts without attributes
 marker = engine.add_fact(:system_ready)
 # => #<KBS::Fact:0x00... @type=:system_ready @attributes={}>
+```
+
+**Using DSL (Recommended)**:
+```ruby
+kb = KBS.knowledge_base do
+  fact :temperature, location: "server_room", value: 85
+  fact :system_ready
+end
 ```
 
 **Thread Safety**: Not thread-safe. Wrap in mutex if adding facts from multiple threads.
@@ -181,7 +202,7 @@ Executes all activated rules by firing production nodes.
 - Rule actions may add/remove facts
 - Rule actions may modify external state
 
-**Example**:
+**Example - Low-level API**:
 ```ruby
 engine.add_fact(:temperature, value: 85)
 engine.add_fact(:sensor, status: "active")
@@ -190,6 +211,21 @@ engine.add_fact(:sensor, status: "active")
 engine.run  # Execute all matching rules
 
 # Rules fire based on priority (highest first within each production)
+```
+
+**Using DSL (Recommended)**:
+```ruby
+kb = KBS.knowledge_base do
+  rule "my_rule" do
+    on :temperature, value: greater_than(80)
+    perform { puts "High temperature!" }
+  end
+
+  fact :temperature, value: 85
+  fact :sensor, status: "active"
+
+  run  # Execute all matching rules
+end
 ```
 
 **Execution Order**:
@@ -392,6 +428,24 @@ engine = KBS::Blackboard::Engine.new(db_path: 'knowledge_base.db')
 # Facts persisted to knowledge_base.db
 ```
 
+**Using DSL with Blackboard (Recommended)**:
+```ruby
+engine = KBS::Blackboard::Engine.new(db_path: 'knowledge_base.db')
+
+kb = KBS.knowledge_base(engine: engine) do
+  rule "persistent_rule" do
+    on :temperature, value: greater_than(80)
+    perform { puts "High temp alert!" }
+  end
+
+  fact :temperature, value: 85
+  run
+end
+
+# Facts persist across restarts
+kb.close
+```
+
 **Example - Redis Persistence**:
 ```ruby
 require 'kbs/blackboard/persistence/redis_store'
@@ -434,7 +488,7 @@ Adds a persistent fact to the blackboard.
 - Activates alpha memories
 - Notifies observers
 
-**Example**:
+**Example - Low-level API**:
 ```ruby
 fact = engine.add_fact(:temperature, location: "server_room", value: 85)
 puts fact.uuid  # => "550e8400-e29b-41d4-a716-446655440000"
@@ -443,6 +497,21 @@ puts fact.uuid  # => "550e8400-e29b-41d4-a716-446655440000"
 engine2 = KBS::Blackboard::Engine.new(db_path: 'knowledge_base.db')
 reloaded_facts = engine2.blackboard.get_facts_by_type(:temperature)
 puts reloaded_facts.first[:value]  # => 85
+```
+
+**Using DSL (Recommended)**:
+```ruby
+# Session 1
+engine = KBS::Blackboard::Engine.new(db_path: 'knowledge_base.db')
+kb = KBS.knowledge_base(engine: engine) do
+  fact :temperature, location: "server_room", value: 85
+end
+kb.close
+
+# Session 2 - facts still available
+engine2 = KBS::Blackboard::Engine.new(db_path: 'knowledge_base.db')
+temps = engine2.blackboard.get_facts_by_type(:temperature)
+puts temps.first[:value]  # => 85
 ```
 
 **Difference from KBS::Engine**: Returns `KBS::Blackboard::Fact` (has `.uuid`) instead of `KBS::Fact`.

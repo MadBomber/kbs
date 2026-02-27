@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require_relative '../lib/kbs/dsl'
+require_relative '../lib/kbs'
 
 class AdvancedStockTradingSystem
   include KBS::DSL::ConditionHelpers

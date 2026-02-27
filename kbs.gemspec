@@ -44,7 +44,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   # Runtime dependencies
-  spec.add_dependency "sqlite3", "~> 1.6"
+  spec.add_dependency "sqlite3", ">= 1.6"
 
   # Development dependencies
   spec.add_development_dependency "minitest", "~> 5.16"

@@ -1,7 +1,6 @@
 #!/usr/bin/env ruby
 
 require_relative '../lib/kbs'
-require_relative '../lib/kbs/dsl'
 require 'thread'
 
 # =============================================================================

@@ -15,7 +15,6 @@ end
 
 $LOAD_PATH.unshift File.expand_path("../lib", __dir__)
 require "kbs"
-require "kbs/dsl"
 require "kbs/blackboard"
 
 require "minitest/autorun"

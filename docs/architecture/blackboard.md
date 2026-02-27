@@ -62,30 +62,29 @@ RETE engine with persistent blackboard memory:
 # Create engine with blackboard
 engine = KBS::Blackboard::Engine.new(db_path: 'trading.db')
 
-# Define rules (persisted in the database)
-engine.add_rule(Rule.new("buy_signal") do |r|
-  r.conditions = [
-    Condition.new(:stock, { symbol: :sym?, price: :price? }),
-    Condition.new(:threshold, { symbol: :sym?, max: :max? })
-  ]
+# Define rules using DSL (persisted in the database)
+kb = KBS.knowledge_base(engine: engine) do
+  rule "buy_signal" do
+    on :stock, symbol: :sym?, price: :price?
+    on :threshold, symbol: :sym?, max: :max?
 
-  r.action = lambda do |facts, bindings|
-    if bindings[:price?] < bindings[:max?]
-      # Write new fact to blackboard
-      engine.add_fact(:order, {
-        symbol: bindings[:sym?],
-        action: "BUY",
-        price: bindings[:price?]
-      })
+    perform do |facts, bindings|
+      if bindings[:price?] < bindings[:max?]
+        # Write new fact to blackboard
+        fact :order,
+          symbol: bindings[:sym?],
+          action: "BUY",
+          price: bindings[:price?]
+      end
     end
   end
-end)
 
-# Facts trigger rules, which create new facts
-engine.add_fact(:stock, symbol: "AAPL", price: 145.0)
-engine.add_fact(:threshold, symbol: "AAPL", max: 150.0)
-engine.run
-# => Creates :order fact in blackboard
+  # Facts trigger rules, which create new facts
+  fact :stock, symbol: "AAPL", price: 145.0
+  fact :threshold, symbol: "AAPL", max: 150.0
+  run
+  # => Creates :order fact in blackboard
+end
 ```
 
 **Implementation**: `lib/kbs/blackboard/engine.rb`
@@ -278,93 +277,77 @@ Trading system with four specialized agents:
 
 ```ruby
 # Shared blackboard
-blackboard = KBS::Blackboard::Engine.new(db_path: 'trading.db')
+engine = KBS::Blackboard::Engine.new(db_path: 'trading.db')
 
-# Agent 1: Market Data Collector
-data_agent = KBS::Rule.new("collect_data", priority: 5) do |r|
-  r.conditions = [
-    Condition.new(:market_open, { status: true }),
-    Condition.new(:stock_data, { symbol: :sym? }, negated: true)
-  ]
+kb = KBS.knowledge_base(engine: engine) do
+  # Agent 1: Market Data Collector
+  rule "collect_data", priority: 5 do
+    on :market_open, status: true
+    without :stock_data, symbol: :sym?
 
-  r.action = lambda do |facts, bindings|
-    price = fetch_current_price(bindings[:sym?])
-    blackboard.add_fact(:stock_data, {
-      symbol: bindings[:sym?],
-      price: price,
-      timestamp: Time.now
-    })
-  end
-end
-
-# Agent 2: Signal Generator
-signal_agent = KBS::Rule.new("generate_signals", priority: 10) do |r|
-  r.conditions = [
-    Condition.new(:stock_data, { symbol: :sym?, price: :price? }),
-    Condition.new(:sma_data, { symbol: :sym?, sma: :sma? })
-  ]
-
-  r.action = lambda do |facts, bindings|
-    if bindings[:price?] > bindings[:sma?]
-      blackboard.add_fact(:signal, {
+    perform do |facts, bindings|
+      price = fetch_current_price(bindings[:sym?])
+      fact :stock_data,
         symbol: bindings[:sym?],
-        direction: "BUY",
-        strength: (bindings[:price?] / bindings[:sma?]) - 1.0
-      })
+        price: price,
+        timestamp: Time.now
     end
   end
-end
 
-# Agent 3: Risk Manager
-risk_agent = KBS::Rule.new("check_risk", priority: 20) do |r|
-  r.conditions = [
-    Condition.new(:signal, { symbol: :sym?, direction: :dir? }),
-    Condition.new(:portfolio, { symbol: :sym?, position: :pos? })
-  ]
+  # Agent 2: Signal Generator
+  rule "generate_signals", priority: 10 do
+    on :stock_data, symbol: :sym?, price: :price?
+    on :sma_data, symbol: :sym?, sma: :sma?
 
-  r.action = lambda do |facts, bindings|
-    if bindings[:pos?] > 1000 && bindings[:dir?] == "BUY"
-      blackboard.add_fact(:risk_alert, {
-        symbol: bindings[:sym?],
-        reason: "Position limit exceeded"
-      })
-    else
-      blackboard.add_fact(:approved_signal, {
-        symbol: bindings[:sym?],
-        direction: bindings[:dir?]
-      })
+    perform do |facts, bindings|
+      if bindings[:price?] > bindings[:sma?]
+        fact :signal,
+          symbol: bindings[:sym?],
+          direction: "BUY",
+          strength: (bindings[:price?] / bindings[:sma?]) - 1.0
+      end
     end
   end
-end
 
-# Agent 4: Order Executor
-exec_agent = KBS::Rule.new("execute_orders", priority: 30) do |r|
-  r.conditions = [
-    Condition.new(:approved_signal, { symbol: :sym?, direction: :dir? }),
-    Condition.new(:risk_alert, { symbol: :sym? }, negated: true)
-  ]
+  # Agent 3: Risk Manager
+  rule "check_risk", priority: 20 do
+    on :signal, symbol: :sym?, direction: :dir?
+    on :portfolio, symbol: :sym?, position: :pos?
 
-  r.action = lambda do |facts, bindings|
-    execute_trade(bindings[:sym?], bindings[:dir?])
-    blackboard.add_fact(:execution, {
-      symbol: bindings[:sym?],
-      direction: bindings[:dir?],
-      timestamp: Time.now
-    })
+    perform do |facts, bindings|
+      if bindings[:pos?] > 1000 && bindings[:dir?] == "BUY"
+        fact :risk_alert,
+          symbol: bindings[:sym?],
+          reason: "Position limit exceeded"
+      else
+        fact :approved_signal,
+          symbol: bindings[:sym?],
+          direction: bindings[:dir?]
+      end
+    end
   end
+
+  # Agent 4: Order Executor
+  rule "execute_orders", priority: 30 do
+    on :approved_signal, symbol: :sym?, direction: :dir?
+    without :risk_alert, symbol: :sym?
+
+    perform do |facts, bindings|
+      execute_trade(bindings[:sym?], bindings[:dir?])
+      fact :execution,
+        symbol: bindings[:sym?],
+        direction: bindings[:dir?],
+        timestamp: Time.now
+    end
+  end
+
+  # Trigger the system
+  fact :market_open, status: true
+  fact :portfolio, symbol: "AAPL", position: 500
+
+  # Agents collaborate through blackboard
+  run
 end
-
-# Register all agents
-[data_agent, signal_agent, risk_agent, exec_agent].each do |agent|
-  blackboard.add_rule(agent)
-end
-
-# Trigger the system
-blackboard.add_fact(:market_open, status: true)
-blackboard.add_fact(:portfolio, symbol: "AAPL", position: 500)
-
-# Agents collaborate through blackboard
-blackboard.run
 ```
 
 ## Transactions
@@ -499,13 +482,13 @@ Agents activate when their preconditions are met:
 
 ```ruby
 # Trigger fires only when specific fact exists
-trigger_rule = Rule.new("on_critical_alert") do |r|
-  r.conditions = [
-    Condition.new(:alert, { severity: "critical" })
-  ]
+kb = KBS.knowledge_base(engine: engine) do
+  rule "on_critical_alert" do
+    on :alert, severity: "critical"
 
-  r.action = lambda { |facts|
-    notify_team(facts[0])
+    perform do |facts, bindings|
+      notify_team(facts[0])
+    end
   end
 end
 ```
@@ -516,17 +499,17 @@ Limit agent attention to relevant facts:
 
 ```ruby
 # Agent only sees recent stock data
-recent_data_rule = Rule.new("analyze_recent") do |r|
-  r.conditions = [
-    Condition.new(:stock_data, {
+kb = KBS.knowledge_base(engine: engine) do
+  rule "analyze_recent" do
+    on :stock_data,
       symbol: :sym?,
-      timestamp: ->(ts) { Time.now - ts < 300 }  # Last 5 minutes
-    })
-  ]
+      timestamp: :ts?,
+      predicate: lambda { |f| Time.now - f[:timestamp] < 300 }  # Last 5 minutes
 
-  r.action = lambda { |facts, bindings|
-    # Process recent data only
-  }
+    perform do |facts, bindings|
+      # Process recent data only
+    end
+  end
 end
 ```
 
@@ -535,14 +518,22 @@ end
 When multiple agents could act, use priorities:
 
 ```ruby
-# High priority: Stop-loss overrides everything
-stop_loss = Rule.new("stop_loss", priority: 100)
+kb = KBS.knowledge_base(engine: engine) do
+  # High priority: Stop-loss overrides everything
+  rule "stop_loss", priority: 100 do
+    # ...
+  end
 
-# Medium priority: Risk management
-risk_check = Rule.new("risk_check", priority: 50)
+  # Medium priority: Risk management
+  rule "risk_check", priority: 50 do
+    # ...
+  end
 
-# Low priority: Normal trading signals
-buy_signal = Rule.new("buy", priority: 10)
+  # Low priority: Normal trading signals
+  rule "buy", priority: 10 do
+    # ...
+  end
+end
 ```
 
 ## Next Steps
