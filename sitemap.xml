@@ -2,126 +2,126 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://madbomber.github.io/kbs/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/installation/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/quick-start/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/what-is-a-fact/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/what-is-a-knowledge-base/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/what-is-a-rule/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/advanced/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/advanced/custom-persistence/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/advanced/debugging/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/advanced/performance/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/advanced/testing/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/api/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/api/blackboard/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/api/engine/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/api/facts/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/api/rules/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/architecture/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/architecture/blackboard/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/architecture/network-structure/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/architecture/rete-algorithm/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/examples/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/guides/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/guides/blackboard-memory/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/guides/dsl/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/guides/facts/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/guides/getting-started/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/guides/negation/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/guides/pattern-matching/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/guides/persistence/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/guides/variable-binding/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
     <url>
          <loc>https://madbomber.github.io/kbs/guides/writing-rules/</loc>
-         <lastmod>2025-10-10</lastmod>
+         <lastmod>2026-02-27</lastmod>
     </url>
 </urlset>
