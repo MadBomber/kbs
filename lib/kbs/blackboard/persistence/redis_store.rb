@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'redis'
 require 'json'
 require 'securerandom'
 require_relative 'store'
@@ -13,7 +12,7 @@ module KBS
 
         def initialize(url: 'redis://localhost:6379/0', session_id: nil, redis: nil)
           @session_id = session_id || SecureRandom.uuid
-          @redis = redis || Redis.new(url: url)
+          @redis = redis || connect(url)
           @transaction_depth = 0
         end
 
@@ -202,6 +201,12 @@ module KBS
         end
 
         private
+
+        # redis is optional, so it loads only when a store needs a connection.
+        def connect(url)
+          require 'redis'
+          Redis.new(url: url)
+        end
 
         def matches_pattern?(attributes, pattern)
           pattern.all? do |key, value|
