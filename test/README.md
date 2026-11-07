@@ -36,8 +36,8 @@ These tests flush the Redis database they use, so they are skipped unless
 not the Redis you use day to day:
 
 ```bash
-redis-server --port 6399 --save '' --appendonly no --daemonize yes
-KBS_TEST_REDIS_URL=redis://localhost:6399/15 bundle exec rake test
+redis-server --port 6399 --bind 127.0.0.1 --save '' --appendonly no --daemonize yes
+KBS_TEST_REDIS_URL=redis://127.0.0.1:6399/15 bundle exec rake test
 redis-cli -p 6399 shutdown nosave
 ```
 
