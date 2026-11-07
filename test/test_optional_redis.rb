@@ -2,7 +2,6 @@
 
 require_relative 'test_helper'
 require 'open3'
-require 'rbconfig'
 
 # redis is a development dependency only, so the SQLite blackboard must work
 # for users who never installed it.
