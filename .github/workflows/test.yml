@@ -10,9 +10,9 @@ permissions:
   contents: read
 
 # A newer push to a PR cancels its older run; each push to main/develop has
-# its own group (head_ref is empty there), so every commit gets a result.
+# its own group (no PR number there), so every commit gets a result.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
 
 jobs:
@@ -39,7 +39,7 @@ jobs:
           --health-retries 10
 
     env:
-      KBS_TEST_REDIS_URL: redis://localhost:6379/15
+      KBS_TEST_REDIS_URL: redis://127.0.0.1:6379/15
 
     steps:
       - name: Checkout code
