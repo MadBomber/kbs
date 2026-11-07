@@ -1,7 +1,7 @@
 ## [Unreleased]
 
 ### Fixed
-- `rake test` (the default task) now runs the test suite. SimpleCov's exit hook used to fire first and abort before any test ran.
+- `rake` and `rake test` now run the test suite. SimpleCov's exit hook used to fire first and abort before any test ran. The existing 35% minimum-coverage gate now applies to rake runs, so a filtered run (`N=`, `X=`) or `rake test:deps` can fail on coverage alone.
 
 ## [0.2.1] - 2026-02-26
 

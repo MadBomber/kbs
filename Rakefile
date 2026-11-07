@@ -3,10 +3,10 @@
 require "bundler/gem_tasks"
 require "minitest/test_task"
 
-# test_helper starts SimpleCov, then loads minitest/autorun. Loading autorun
-# first lets SimpleCov's at_exit hook run first and exit before any test runs.
+# Load test_helper (which starts SimpleCov) before minitest/autorun.
+# Otherwise SimpleCov's at_exit hook runs first and exits before any test runs.
 Minitest::TestTask.create do |t|
-  t.framework = %(require "test_helper")
+  t.test_prelude = %(require "test_helper")
 end
 
 task default: :test
