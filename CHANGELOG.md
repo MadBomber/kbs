@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+### Fixed
+- `rake test` (the default task) now runs the test suite. SimpleCov's exit hook used to fire first and abort before any test ran.
+
 ## [0.2.1] - 2026-02-26
 
 ### Added
