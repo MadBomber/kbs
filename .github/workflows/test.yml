@@ -1,0 +1,57 @@
+name: Test
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+
+permissions:
+  contents: read
+
+# A newer push to a PR cancels its older run; each push to main/develop has
+# its own group (no PR number there), so every commit gets a result.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        # The gemspec floor is 3.2.
+        ruby: ["3.2", "3.3", "3.4", "4.0"]
+
+    # A disposable Redis for the Redis store tests, which flush the database
+    # named by KBS_TEST_REDIS_URL and are skipped when it is unset.
+    services:
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      KBS_TEST_REDIS_URL: redis://127.0.0.1:6379/15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+
+      - name: Run tests
+        run: bundle exec rake test
