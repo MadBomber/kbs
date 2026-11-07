@@ -88,21 +88,21 @@ end
 
 ### No Mocking Policy
 All tests use **real production code** with no mocks or stubs. This ensures tests verify actual behavior.
+The one exception is `test_redis_test_support.rb`, which stubs `Redis.new` to prove the Redis tests never connect unless opted in.
 
 ### In-Memory Databases
 - SQLite tests use `:memory:` databases
-- Redis tests use DB 15 (cleared before each test)
+- Redis tests use the database named by `KBS_TEST_REDIS_URL` (cleared before each test)
 - Teardown methods ensure proper cleanup
 
-### Redis Availability
-Redis tests automatically skip if Redis is not available:
+### Redis Opt-In
+Redis tests skip unless `KBS_TEST_REDIS_URL` is set:
 ```ruby
-def redis_available?
-  # Attempts connection, returns true/false
-end
+include RedisTestSupport
 
 def setup
-  skip "Redis not available" unless redis_available?
+  @redis = redis_test_connection # skips when KBS_TEST_REDIS_URL is unset
+  @redis.flushdb
   # ... test setup
 end
 ```

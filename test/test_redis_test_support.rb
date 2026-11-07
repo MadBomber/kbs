@@ -11,25 +11,23 @@ require 'redis'
 class TestRedisTestSupport < Minitest::Test
   def test_url_reads_the_env_var
     assert_equal 'redis://localhost:6399/15',
-                 RedisTestSupport.url('KBS_TEST_REDIS_URL' => 'redis://localhost:6399/15')
+                 RedisTestSupport.url(RedisTestSupport::ENV_VAR => 'redis://localhost:6399/15')
   end
 
   def test_url_is_nil_when_the_env_var_is_unset_or_empty
     assert_nil RedisTestSupport.url({})
-    assert_nil RedisTestSupport.url('KBS_TEST_REDIS_URL' => '')
+    assert_nil RedisTestSupport.url(RedisTestSupport::ENV_VAR => '')
   end
 
   def test_redis_tests_skip_without_connecting_when_not_opted_in
     saved = ENV.delete('KBS_TEST_REDIS_URL')
 
     [TestRedisStore, TestHybridStore].each do |test_class|
-      connected = false
-      fake_new = ->(*) { connected = true; raise Redis::CannotConnectError }
+      fake_new = ->(*) { flunk "#{test_class} built a Redis client without KBS_TEST_REDIS_URL" }
 
       Redis.stub(:new, fake_new) do
         assert_raises(Minitest::Skip) { test_class.new(:test_initialization).setup }
       end
-      refute connected, "#{test_class} connected to Redis without KBS_TEST_REDIS_URL"
     end
   ensure
     ENV['KBS_TEST_REDIS_URL'] = saved if saved
