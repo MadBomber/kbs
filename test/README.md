@@ -28,8 +28,18 @@ Comprehensive test suite for the KBS (Knowledge-Based System) Ruby gem using Min
 - `test_blackboard_engine.rb` - RETE + Blackboard integration, rule logging
 
 ### Redis Persistence Tests
-- `test_redis_store.rb` - RedisStore implementation (skipped if Redis unavailable)
+- `test_redis_store.rb` - RedisStore implementation
 - `test_hybrid_store.rb` - HybridStore (Redis + SQLite) integration
+
+These tests flush the Redis database they use, so they are skipped unless
+`KBS_TEST_REDIS_URL` names a disposable one. Point it at a throwaway server,
+not the Redis you use day to day:
+
+```bash
+redis-server --port 6399 --bind 127.0.0.1 --save '' --appendonly no --daemonize yes
+KBS_TEST_REDIS_URL=redis://127.0.0.1:6399/15 bundle exec rake test
+redis-cli -p 6399 shutdown nosave
+```
 
 ### Integration Tests
 - `test_integration.rb` - End-to-end scenarios:
@@ -81,21 +91,21 @@ end
 
 ### No Mocking Policy
 All tests use **real production code** with no mocks or stubs. This ensures tests verify actual behavior.
+The one exception is `test_redis_test_support.rb`, which stubs `Redis.new` to prove the Redis tests never connect unless opted in.
 
 ### In-Memory Databases
 - SQLite tests use `:memory:` databases
-- Redis tests use DB 15 (cleared before each test)
+- Redis tests use the database named by `KBS_TEST_REDIS_URL` (cleared before each test)
 - Teardown methods ensure proper cleanup
 
-### Redis Availability
-Redis tests automatically skip if Redis is not available:
+### Redis Opt-In
+Redis tests skip unless `KBS_TEST_REDIS_URL` is set:
 ```ruby
-def redis_available?
-  # Attempts connection, returns true/false
-end
+include RedisTestSupport
 
 def setup
-  skip "Redis not available" unless redis_available?
+  @redis = redis_test_connection # skips when KBS_TEST_REDIS_URL is unset
+  @redis.flushdb
   # ... test setup
 end
 ```
@@ -232,7 +242,7 @@ require_relative 'test_helper'
 
 - Tests use `frozen_string_literal: true` for performance
 - All database tests use transactions or cleanup in teardown
-- Redis tests gracefully skip if Redis unavailable
+- Redis tests skip unless `KBS_TEST_REDIS_URL` is set
 - Integration tests demonstrate real-world usage patterns
 - No deprecated features tested (backward compat aliases not tested)
 
