@@ -26,7 +26,7 @@ Comprehensive test suite for the KBS (Knowledge-Based System) Ruby gem using Min
 ### Blackboard Pattern Tests
 - `test_blackboard_memory.rb` - Persistent facts, messages, audit trail
 - `test_blackboard_engine.rb` - RETE + Blackboard integration, rule logging
-- `test_optional_redis.rb` - the SQLite blackboard loads without the redis gem
+- `test_optional_redis.rb` - the SQLite blackboard loads without the redis gem, and `RedisStore` still needs it
 
 ### Redis Persistence Tests
 - `test_redis_store.rb` - RedisStore implementation
