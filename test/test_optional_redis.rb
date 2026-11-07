@@ -20,28 +20,30 @@ class TestOptionalRedis < Minitest::Test
   RUBY
 
   def run_without_redis(code)
-    Open3.capture2e(RbConfig.ruby, '-I', LIB, '-e', HIDE_REDIS + code)
+    Open3.capture3(RbConfig.ruby, '-I', LIB, '-e', HIDE_REDIS + code)
   end
 
   def test_sqlite_blackboard_works_without_the_redis_gem
-    output, status = run_without_redis(<<~RUBY)
+    out, err, status = run_without_redis(<<~RUBY)
       require 'kbs/blackboard'
       memory = KBS::Blackboard::Memory.new
       memory.add_fact(:sensor, temp: 22)
       print memory.get_facts(:sensor).size
     RUBY
 
-    assert status.success?, output
-    assert_equal '1', output
+    assert status.success?, err
+    assert_equal '1', out
   end
 
   def test_redis_store_still_needs_the_redis_gem
-    output, status = run_without_redis(<<~RUBY)
+    out, err, status = run_without_redis(<<~RUBY)
       require 'kbs/blackboard'
+      print 'loaded'
       KBS::Blackboard::Persistence::RedisStore.new
     RUBY
 
+    assert_equal 'loaded', out, err
     refute status.success?
-    assert_match(/cannot load such file -- redis/, output)
+    assert_match(/cannot load such file -- redis/, err)
   end
 end

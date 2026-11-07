@@ -3,7 +3,7 @@
 ### Fixed
 - `rake` and `rake test` now run the test suite. SimpleCov's exit hook used to fire first and abort before any test ran. One side effect: the existing 35% minimum-coverage gate now applies to rake runs, so a narrowly filtered run or `rake test:deps` can fail on coverage alone.
 - The Redis store tests no longer connect to `localhost:6379` and flush database 15 there. They are skipped unless `KBS_TEST_REDIS_URL` names a disposable Redis database, such as a throwaway server; see `test/README.md`.
-- `require 'kbs/blackboard'` no longer needs the `redis` gem. It is loaded only when a `RedisStore` or `HybridStore` opens its own connection, so the SQLite blackboard works without it.
+- `require 'kbs/blackboard'` no longer fails when the `redis` gem is not installed, so the SQLite blackboard works without it. `RedisStore` and `HybridStore` still need redis, and raise `LoadError` when they open a connection without it.
 
 ## [0.2.1] - 2026-02-26
 

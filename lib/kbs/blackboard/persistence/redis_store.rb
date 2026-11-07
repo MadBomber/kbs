@@ -1,5 +1,12 @@
 # frozen_string_literal: true
 
+# redis is optional. Load it when present so callers can still use Redis
+# after requiring kbs; #connect raises LoadError when a store needs it.
+begin
+  require 'redis'
+rescue LoadError
+  nil
+end
 require 'json'
 require 'securerandom'
 require_relative 'store'
@@ -202,7 +209,7 @@ module KBS
 
         private
 
-        # redis is optional, so it loads only when a store needs a connection.
+        # Raises LoadError here, not at require time, when redis is missing.
         def connect(url)
           require 'redis'
           Redis.new(url: url)
