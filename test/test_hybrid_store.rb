@@ -4,23 +4,10 @@ require_relative 'test_helper'
 require_relative '../lib/kbs/blackboard'
 
 class TestHybridStore < Minitest::Test
-  def redis_available?
-    begin
-      require 'redis'
-      redis = Redis.new(url: 'redis://localhost:6379/15', timeout: 1)
-      redis.ping
-      redis.close
-      true
-    rescue LoadError, Redis::CannotConnectError, Redis::TimeoutError
-      false
-    end
-  end
+  include RedisTestSupport
 
   def setup
-    skip "Redis not available" unless redis_available?
-
-    require 'redis'
-    @redis = Redis.new(url: 'redis://localhost:6379/15')
+    @redis = redis_test_connection
     @redis.flushdb
 
     @store = KBS::Blackboard::Persistence::HybridStore.new(
@@ -31,11 +18,9 @@ class TestHybridStore < Minitest::Test
   end
 
   def teardown
-    if redis_available?
-      @store.close if @store
-      @redis.flushdb if @redis
-      @redis.close if @redis
-    end
+    @store&.close
+    @redis&.flushdb
+    @redis&.close
   end
 
   def test_initialization

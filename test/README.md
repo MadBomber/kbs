@@ -28,8 +28,15 @@ Comprehensive test suite for the KBS (Knowledge-Based System) Ruby gem using Min
 - `test_blackboard_engine.rb` - RETE + Blackboard integration, rule logging
 
 ### Redis Persistence Tests
-- `test_redis_store.rb` - RedisStore implementation (skipped if Redis unavailable)
+- `test_redis_store.rb` - RedisStore implementation
 - `test_hybrid_store.rb` - HybridStore (Redis + SQLite) integration
+
+These tests flush the Redis database they use, so they are skipped unless
+`KBS_TEST_REDIS_URL` names a disposable one:
+
+```bash
+KBS_TEST_REDIS_URL=redis://localhost:6379/15 bundle exec rake test
+```
 
 ### Integration Tests
 - `test_integration.rb` - End-to-end scenarios:

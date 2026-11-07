@@ -4,23 +4,10 @@ require_relative 'test_helper'
 require_relative '../lib/kbs/blackboard'
 
 class TestRedisStore < Minitest::Test
-  def redis_available?
-    begin
-      require 'redis'
-      redis = Redis.new(url: 'redis://localhost:6379/15', timeout: 1)
-      redis.ping
-      redis.close
-      true
-    rescue LoadError, Redis::CannotConnectError, Redis::TimeoutError
-      false
-    end
-  end
+  include RedisTestSupport
 
   def setup
-    skip "Redis not available" unless redis_available?
-
-    require 'redis'
-    @redis = Redis.new(url: 'redis://localhost:6379/15') # Use DB 15 for tests
+    @redis = redis_test_connection
     @redis.flushdb # Clear test database
     @store = KBS::Blackboard::Persistence::RedisStore.new(
       redis: @redis,
@@ -29,10 +16,8 @@ class TestRedisStore < Minitest::Test
   end
 
   def teardown
-    if redis_available?
-      @redis.flushdb if @redis
-      @redis.close if @redis
-    end
+    @redis&.flushdb
+    @redis&.close
   end
 
   def test_initialization
