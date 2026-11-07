@@ -21,8 +21,8 @@ require "minitest/autorun"
 require "minitest/pride"
 
 # The Redis store tests flush the database they connect to, so they run only
-# when KBS_TEST_REDIS_URL names a disposable one, e.g.
-#   KBS_TEST_REDIS_URL=redis://localhost:6379/15 bundle exec rake test
+# when KBS_TEST_REDIS_URL names a disposable one, such as a throwaway server:
+#   KBS_TEST_REDIS_URL=redis://localhost:6399/15 bundle exec rake test
 module RedisTestSupport
   ENV_VAR = 'KBS_TEST_REDIS_URL'
 
@@ -32,8 +32,8 @@ module RedisTestSupport
   end
 
   # Skips the calling test unless the Redis tests were opted in.
-  def redis_test_connection
-    url = RedisTestSupport.url
+  def redis_test_connection(env = ENV)
+    url = RedisTestSupport.url(env)
     skip "set #{ENV_VAR} to a disposable Redis database to run the Redis tests" unless url
 
     require 'redis'

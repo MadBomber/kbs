@@ -2,7 +2,7 @@
 
 ### Fixed
 - `rake` and `rake test` now run the test suite. SimpleCov's exit hook used to fire first and abort before any test ran. One side effect: the existing 35% minimum-coverage gate now applies to rake runs, so a narrowly filtered run or `rake test:deps` can fail on coverage alone.
-- The Redis store tests no longer connect to `localhost:6379` and flush database 15 there. They are skipped unless `KBS_TEST_REDIS_URL` names a disposable Redis database, for example `KBS_TEST_REDIS_URL=redis://localhost:6379/15 bundle exec rake test`.
+- The Redis store tests no longer connect to `localhost:6379` and flush database 15 there. They are skipped unless `KBS_TEST_REDIS_URL` names a disposable Redis database, such as a throwaway server: `redis-server --port 6399 --save '' --appendonly no` then `KBS_TEST_REDIS_URL=redis://localhost:6399/15 bundle exec rake test`.
 
 ## [0.2.1] - 2026-02-26
 

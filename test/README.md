@@ -32,10 +32,13 @@ Comprehensive test suite for the KBS (Knowledge-Based System) Ruby gem using Min
 - `test_hybrid_store.rb` - HybridStore (Redis + SQLite) integration
 
 These tests flush the Redis database they use, so they are skipped unless
-`KBS_TEST_REDIS_URL` names a disposable one:
+`KBS_TEST_REDIS_URL` names a disposable one. Point it at a throwaway server,
+not the Redis you use day to day:
 
 ```bash
-KBS_TEST_REDIS_URL=redis://localhost:6379/15 bundle exec rake test
+redis-server --port 6399 --save '' --appendonly no --daemonize yes
+KBS_TEST_REDIS_URL=redis://localhost:6399/15 bundle exec rake test
+redis-cli -p 6399 shutdown nosave
 ```
 
 ### Integration Tests
