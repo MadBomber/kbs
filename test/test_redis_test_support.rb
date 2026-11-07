@@ -12,8 +12,8 @@ class TestRedisTestSupport < Minitest::Test
   include RedisTestSupport
 
   def test_url_reads_the_env_var
-    assert_equal 'redis://localhost:6399/15',
-                 RedisTestSupport.url(RedisTestSupport::ENV_VAR => 'redis://localhost:6399/15')
+    assert_equal 'redis://127.0.0.1:6399/15',
+                 RedisTestSupport.url(RedisTestSupport::ENV_VAR => 'redis://127.0.0.1:6399/15')
   end
 
   def test_url_is_nil_when_the_env_var_is_unset_or_empty

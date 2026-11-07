@@ -242,7 +242,7 @@ require_relative 'test_helper'
 
 - Tests use `frozen_string_literal: true` for performance
 - All database tests use transactions or cleanup in teardown
-- Redis tests gracefully skip if Redis unavailable
+- Redis tests skip unless `KBS_TEST_REDIS_URL` is set
 - Integration tests demonstrate real-world usage patterns
 - No deprecated features tested (backward compat aliases not tested)
 
