@@ -12,8 +12,8 @@ require_relative 'dsl/rule_builder'
 require_relative 'dsl/knowledge_base'
 
 module KBS
-  def self.knowledge_base(&block)
-    kb = DSL::KnowledgeBase.new
+  def self.knowledge_base(engine: nil, &block)
+    kb = DSL::KnowledgeBase.new(engine: engine)
     kb.instance_eval(&block) if block_given?
     kb
   end

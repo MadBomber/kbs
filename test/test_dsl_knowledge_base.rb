@@ -11,6 +11,32 @@ class TestDSLKnowledgeBase < Minitest::Test
     assert_instance_of KBS::Engine, kb.engine
   end
 
+  def test_initialization_with_engine
+    engine = KBS::Engine.new
+    kb = KBS::DSL::KnowledgeBase.new(engine: engine)
+
+    assert_same engine, kb.engine
+  end
+
+  def test_nil_engine_uses_default
+    assert_instance_of KBS::Engine, KBS::DSL::KnowledgeBase.new(engine: nil).engine
+    assert_instance_of KBS::Engine, KBS.knowledge_base(engine: nil).engine
+  end
+
+  def test_dsl_entry_point_without_block
+    kb = KBS.knowledge_base
+
+    assert_instance_of KBS::DSL::KnowledgeBase, kb
+    assert_instance_of KBS::Engine, kb.engine
+  end
+
+  def test_dsl_entry_point_with_engine_without_block
+    engine = KBS::Engine.new
+    kb = KBS.knowledge_base(engine: engine)
+
+    assert_same engine, kb.engine
+  end
+
   def test_add_fact
     kb = KBS::DSL::KnowledgeBase.new
     kb.fact(:car, color: :red, speed: 100)
