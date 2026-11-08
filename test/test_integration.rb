@@ -99,7 +99,7 @@ class TestIntegration < Minitest::Test
   end
 
   def test_dsl_bindings_after_negation
-    bindings = nil
+    fired = nil
 
     KBS.knowledge_base do
       rule 'negation_in_middle' do
@@ -107,7 +107,7 @@ class TestIntegration < Minitest::Test
         without :blocker
         on :b, v: :y?
         on :c, v: :z?
-        perform { |_facts, b| bindings = b }
+        perform { |facts, bindings| fired = [facts.map(&:type), bindings] }
       end
 
       fact :a, v: 'A'
@@ -116,7 +116,7 @@ class TestIntegration < Minitest::Test
       run
     end
 
-    assert_equal({ x?: 'A', y?: 'B', z?: 'C' }, bindings)
+    assert_equal [%i[a b c], { x?: 'A', y?: 'B', z?: 'C' }], fired
   end
 
   def test_multi_condition_join

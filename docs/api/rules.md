@@ -283,7 +283,7 @@ See [Performance Guide](../advanced/performance.md) for condition ordering strat
 **Signature**: `action.call(facts)` or `action.call(facts, bindings)` (both supported)
 
 **Parameters**:
-- `facts` (Array<KBS::Fact>) - Array of matched facts (parallel to conditions array)
+- `facts` (Array<KBS::Fact>) - Array of matched facts, one per non-negated condition, in condition order (negated conditions have no entry)
 - `bindings` (Hash, optional) - Variable bindings extracted from facts
 
 **Example - Low-level API (Facts Parameter)**:
@@ -377,7 +377,7 @@ end
 
 #### `bindings_for(facts)`
 
-Returns the variable bindings for a set of matched facts. `fire` passes these to a two-parameter action, and `KBS::Blackboard::Engine` records them in its audit log.
+Returns the variable bindings for a set of matched facts. `fire` passes these to any action that is not a one-parameter lambda, and `KBS::Blackboard::Engine` records them in its audit log.
 
 **Parameters**:
 - `facts` (Array<KBS::Fact>) - Matched facts in the same shape `fire` takes: one per non-negated condition, in condition order
