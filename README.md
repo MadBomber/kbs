@@ -336,24 +336,24 @@ Facts → Alpha Network → Beta Network → Production Nodes
 Run the comprehensive test suite:
 
 ```bash
-rake test
+bundle exec rake test
 ```
 
 Individual test files:
 
 ```bash
-ruby test/kbs_test.rb
-ruby test/blackboard_test.rb
-ruby test/dsl_test.rb
+bundle exec ruby -Ilib:test test/test_rule.rb
+bundle exec ruby -Ilib:test test/test_blackboard_engine.rb
+bundle exec ruby -Ilib:test test/test_dsl_condition_helpers.rb
 ```
 
-**Test Coverage**: 100% with 199 tests, 447 assertions, 0 failures
+Test runs generate a SimpleCov coverage report in `coverage/`.
 
 ## 📖 Documentation
 
 ### Core Classes
 
-- **KBS::ReteEngine** - Main inference engine
+- **KBS::Engine** - Main inference engine
 - **KBS::Rule** - Rule definition
 - **KBS::Condition** - Pattern matching conditions
 - **KBS::Fact** - Working memory facts
@@ -366,9 +366,14 @@ ruby test/dsl_test.rb
 
 - `greater_than(n)` - Match values > n
 - `less_than(n)` - Match values < n
-- `range(min, max)` - Match values between min and max
+- `equals(value)` - Match values equal to value
+- `not_equal(value)` - Match values not equal to value
+- `range(min, max)` or `range(ruby_range)` - Match values in the inclusive bounds or Ruby range
+- `between(min, max)` - Alias for `range(min, max)`
 - `one_of(*values)` - Match any of the values
+- `any(*values)` - Match any of the values, or anything when called without arguments
 - `matches(regex)` - Match regex pattern
+- `satisfies { |value| ... }` - Match values using a custom predicate
 
 ## 🔧 Requirements
 
