@@ -51,9 +51,12 @@ end
 
 ### Creating a Knowledge Base
 
-#### `KBS.knowledge_base(&block)`
+#### `KBS.knowledge_base(engine: nil, &block)`
 
 Creates a new knowledge base and evaluates the block in its context.
+
+**Parameters**:
+- `engine` - Engine to run on, such as `KBS::Blackboard::Engine.new(db_path: "knowledge.db")` for persistence (optional; a new `KBS::Engine` when omitted)
 
 **Returns**: `KBS::DSL::KnowledgeBase` instance
 

@@ -11,6 +11,39 @@ class TestDSLKnowledgeBase < Minitest::Test
     assert_instance_of KBS::Engine, kb.engine
   end
 
+  def test_knowledge_base_uses_passed_engine
+    engine = KBS::Engine.new
+    kb = KBS.knowledge_base(engine: engine)
+
+    assert_same engine, kb.engine
+  end
+
+  def test_knowledge_base_defaults_to_plain_engine
+    kb = KBS.knowledge_base
+
+    assert_instance_of KBS::Engine, kb.engine
+  end
+
+  def test_knowledge_base_with_blackboard_engine_fires_rules
+    engine = KBS::Blackboard::Engine.new
+    fired = []
+    hot_sensor_knowledge_base(engine, fired).run
+
+    assert_equal [28], fired
+    assert_equal 2, engine.blackboard.get_facts(:sensor).size
+  end
+
+  def hot_sensor_knowledge_base(engine, fired)
+    KBS.knowledge_base(engine: engine) do
+      rule 'hot' do
+        on :sensor, value: greater_than(25)
+        perform { |facts| fired << facts.first[:value] }
+      end
+      fact :sensor, value: 22
+      fact :sensor, value: 28
+    end
+  end
+
   def test_add_fact
     kb = KBS::DSL::KnowledgeBase.new
     kb.fact(:car, color: :red, speed: 100)
