@@ -339,26 +339,26 @@ Run the comprehensive test suite:
 rake test
 ```
 
-Individual test files:
+Run a single test file:
 
 ```bash
-ruby test/kbs_test.rb
-ruby test/blackboard_test.rb
-ruby test/dsl_test.rb
+bundle exec ruby -Ilib:test test/test_rule.rb
 ```
 
-**Test Coverage**: 100% with 199 tests, 447 assertions, 0 failures
+The test files are `test/test_*.rb`. SimpleCov measures coverage on every run and fails the run below 35% line coverage.
+
+The Redis store tests are skipped unless `KBS_TEST_REDIS_URL` names a disposable Redis database. See [test/README.md](test/README.md) before setting it, because those tests flush the database.
 
 ## 📖 Documentation
 
 ### Core Classes
 
-- **KBS::ReteEngine** - Main inference engine
+- **KBS::Engine** - Main inference engine
 - **KBS::Rule** - Rule definition
 - **KBS::Condition** - Pattern matching conditions
 - **KBS::Fact** - Working memory facts
 - **KBS::Blackboard::Engine** - Blackboard coordination
-- **KBS::Blackboard::Persistence::SQLiteStore** - SQLite backend
+- **KBS::Blackboard::Persistence::SqliteStore** - SQLite backend
 - **KBS::Blackboard::Persistence::RedisStore** - Redis backend
 - **KBS::Blackboard::Persistence::HybridStore** - Hybrid storage
 
@@ -366,9 +366,14 @@ ruby test/dsl_test.rb
 
 - `greater_than(n)` - Match values > n
 - `less_than(n)` - Match values < n
-- `range(min, max)` - Match values between min and max
+- `equals(value)` - Match values equal to value
+- `not_equal(value)` - Match values not equal to value
+- `range(min, max)` or `range(a_range)` - Match values from min to max inclusive, or values in the Range
+- `between(min, max)` - Same as `range(min, max)`
 - `one_of(*values)` - Match any of the values
+- `any(*values)` - Same as `one_of`; with no arguments, match anything
 - `matches(regex)` - Match regex pattern
+- `satisfies { |v| ... }` - Match values for which the block returns true
 
 ## 🔧 Requirements
 
