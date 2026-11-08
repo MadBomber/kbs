@@ -55,6 +55,12 @@ module KBS
       end
     end
 
+    # Forget which tokens were blocked; Engine#reset clears the facts
+    # that blocked them.
+    def clear_matches
+      @tokens_with_matches.clear
+    end
+
     private
 
     def perform_join_tests(token, fact)

@@ -77,6 +77,24 @@ class TestBlackboardEngine < Minitest::Test
     assert_equal([{ x?: 'A', y?: 'B', z?: 'C' }], @engine.blackboard.get_rule_firings.map { |f| f[:bindings] })
   end
 
+  def test_rule_starting_with_negation
+    result = []
+
+    rule = KBS::Rule.new('no_alert') do |r|
+      r.conditions << KBS::Condition.new(:alert, {}, negated: true)
+      r.action = ->(_facts) { result << :fired }
+    end
+
+    @engine.add_rule(rule)
+    @engine.run
+    assert_equal [:fired], result
+
+    @engine.reset
+    @engine.add_fact(:alert, { level: 'critical' })
+    @engine.run
+    assert_equal [:fired], result, 'a matching fact should block the rule'
+  end
+
   def test_post_message
     @engine.post_message("Sensor1", "readings", { temp: 22 }, priority: 5)
 

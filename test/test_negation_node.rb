@@ -174,4 +174,25 @@ class TestNegationNode < Minitest::Test
     # Should not create token (multiple blocking facts)
     assert_equal 0, tokens.length
   end
+
+  def test_clear_matches_lets_a_new_fact_block_again
+    deactivations = []
+    successor = Object.new
+    def successor.activate(token); end
+    successor.define_singleton_method(:deactivate) { |token| deactivations << token }
+    @negation_node.successors << successor
+
+    token = KBS::Token.new(nil, KBS::Fact.new(:sensor, temp: 100), nil)
+    @beta_memory.add_token(token)
+    @negation_node.left_activate(token)
+    @negation_node.right_activate(KBS::Fact.new(:alarm, active: true))
+    assert_equal 1, deactivations.length
+
+    # Simulate Engine#reset: the blocking fact is gone, the token is re-fed
+    @negation_node.clear_matches
+    @negation_node.left_activate(token)
+    @negation_node.right_activate(KBS::Fact.new(:alarm, active: true))
+
+    assert_equal 2, deactivations.length
+  end
 end

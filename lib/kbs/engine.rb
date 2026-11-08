@@ -80,6 +80,7 @@ module KBS
         # The root beta memory is never a join node successor, so
         # its dummy token is preserved.
         alpha_mem.successors.each do |join_node|
+          join_node.clear_matches if join_node.is_a?(NegationNode)
           next unless join_node.respond_to?(:successors)
           join_node.successors.each do |beta_or_prod|
             beta_or_prod.tokens.clear if beta_or_prod.respond_to?(:tokens)
@@ -92,12 +93,16 @@ module KBS
 
       # 4. Clear stale child references from the root dummy token
       @root_beta_memory.tokens.each { |t| t.children.clear }
+
+      # 5. Re-seed rules whose first condition is a negation
+      @root_beta_memory.successors.grep(NegationNode).each { |node| activate_from_root(node) }
     end
 
     private
 
     def build_network_for_rule(rule)
       current_beta = @root_beta_memory
+      leading_negation = nil
 
       rule.conditions.each_with_index do |condition, index|
         # Build alpha memory pattern - merge condition type
@@ -120,6 +125,7 @@ module KBS
 
         if condition.negated
           negation_node = NegationNode.new(alpha_memory, current_beta, tests)
+          leading_negation = negation_node if index.zero?
           new_beta = BetaMemory.new
           negation_node.successors << new_beta
           current_beta = new_beta
@@ -134,12 +140,20 @@ module KBS
       production_node = ProductionNode.new(rule)
       current_beta.successors << production_node
       @production_nodes[rule.name] = production_node
+      activate_from_root(leading_negation) if leading_negation
 
       @working_memory.facts.each do |fact|
         @alpha_memories.each do |pattern, memory|
           memory.activate(fact) if fact.matches?(pattern)
         end
       end
+    end
+
+    # A NegationNode only emits on left activation, and the root dummy
+    # token exists before any rule is built, so a rule that starts with
+    # a negation must be fed the root token explicitly.
+    def activate_from_root(node)
+      @root_beta_memory.tokens.each { |token| node.left_activate(token) }
     end
 
     def get_or_create_alpha_memory(pattern)

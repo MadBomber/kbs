@@ -752,6 +752,8 @@ missing :problem, severity: "high"
 lacks :maintenance_flag
 ```
 
+A rule can start with a negation, as `no_critical_alerts` does. It fires on the next `run` while no matching fact exists, and stops matching as soon as one is added.
+
 ---
 
 ### Chained Negation

@@ -448,4 +448,74 @@ class TestEngine < Minitest::Test
       assert_equal [i], result, "Cycle #{i}: only current value should fire"
     end
   end
+  # ----------------------------------------------------------------
+  # Rules whose first condition is a negation (issue #11)
+  # ----------------------------------------------------------------
+
+  def add_leading_negation_rule(result)
+    rule = KBS::Rule.new('no_critical') do |r|
+      r.conditions << KBS::Condition.new(:alert, { level: 'critical' }, negated: true)
+      r.action = ->(_facts) { result << :fired }
+    end
+    @engine.add_rule(rule)
+  end
+
+  def test_leading_negation_fires_on_empty_memory
+    result = []
+    add_leading_negation_rule(result)
+    @engine.run
+
+    assert_equal [:fired], result
+  end
+
+  def test_leading_negation_blocked_by_matching_fact
+    result = []
+    add_leading_negation_rule(result)
+    @engine.add_fact(:alert, { level: 'critical' })
+    @engine.run
+
+    assert_empty result
+  end
+
+  def test_leading_negation_does_not_fire_twice
+    result = []
+    add_leading_negation_rule(result)
+    @engine.run
+    @engine.run
+
+    assert_equal [:fired], result
+  end
+
+  def test_leading_negation_fires_after_blocker_retracted
+    result = []
+    add_leading_negation_rule(result)
+    alert = @engine.add_fact(:alert, { level: 'critical' })
+    @engine.run
+    @engine.remove_fact(alert)
+    @engine.run
+
+    assert_equal [:fired], result
+  end
+
+  def test_leading_negation_fires_after_reset
+    result = []
+    add_leading_negation_rule(result)
+    @engine.run
+    @engine.reset
+    @engine.run
+
+    assert_equal %i[fired fired], result
+  end
+
+  def test_leading_negation_blocked_again_after_reset
+    result = []
+    add_leading_negation_rule(result)
+    @engine.add_fact(:alert, { level: 'critical' })
+    @engine.run
+    @engine.reset
+    @engine.add_fact(:alert, { level: 'critical' })
+    @engine.run
+
+    assert_empty result
+  end
 end
