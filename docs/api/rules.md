@@ -334,7 +334,7 @@ end
 Executes the rule's action with matched facts.
 
 **Parameters**:
-- `facts` (Array<KBS::Fact>) - Matched facts (one per condition)
+- `facts` (Array<KBS::Fact>) - Matched facts, one per non-negated condition, in condition order. Negated (`without`) conditions match no fact and have no entry.
 
 **Returns**: Result of action lambda, or `nil` if no action
 
@@ -374,6 +374,27 @@ end
 ```
 
 **Note**: Typically called by the RETE engine, not user code. Users call `engine.run` which fires all activated rules.
+
+#### `bindings_for(facts)`
+
+Returns the variable bindings for a set of matched facts. `fire` passes these to a two-parameter action, and `KBS::Blackboard::Engine` records them in its audit log.
+
+**Parameters**:
+- `facts` (Array<KBS::Fact>) - Matched facts in the same shape `fire` takes: one per non-negated condition, in condition order
+
+**Returns**: `Hash` mapping each variable (such as `:temp?`) to its value in the matched facts
+
+**Example**:
+```ruby
+rule = KBS::Rule.new(:check, conditions: [
+  KBS::Condition.new(:sensor, { id: :id? }),
+  KBS::Condition.new(:alarm, {}, negated: true),
+  KBS::Condition.new(:reading, { value: :value? })
+])
+
+rule.bindings_for([KBS::Fact.new(:sensor, id: 7), KBS::Fact.new(:reading, value: 85)])
+# => {id?: 7, value?: 85}
+```
 
 ---
 
