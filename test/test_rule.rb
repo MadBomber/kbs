@@ -20,6 +20,31 @@ class TestRule < Minitest::Test
     assert_equal 0, rule.priority
   end
 
+  def test_to_s
+    condition = KBS::Condition.new(:person, { name: "Alice", age: ->(value) { value > 18 } })
+    action = ->(facts) { facts.first }
+    rule = KBS::Rule.new("greet", conditions: [condition], action: action, priority: 10)
+
+    assert_equal <<~DSL.chomp, rule.to_s
+      rule "greet" do
+        priority 10
+        on :person, name: "Alice", age: ->(value) { value > 18 }
+        perform { |facts| facts.first }
+      end
+    DSL
+  end
+
+  def test_to_s_with_negated_condition_and_no_action
+    condition = KBS::Condition.new(:alarm, { active: true }, negated: true)
+    rule = KBS::Rule.new("safe", conditions: [condition])
+
+    assert_equal <<~DSL.chomp, rule.to_s
+      rule "safe" do
+        without :alarm, active: true
+      end
+    DSL
+  end
+
   def test_fire_executes_action
     fired = false
     action = ->(facts, bindings) { fired = true }

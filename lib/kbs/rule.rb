@@ -29,6 +29,34 @@ module KBS
       end
     end
 
+    def to_s
+      lines = ["rule #{@name.inspect} do"]
+      lines << "  priority #{@priority}" unless @priority.zero?
+
+      @conditions.each do |condition|
+        keyword = condition.negated ? "without" : "on"
+        pattern = condition.pattern.map do |key, value|
+          value = value.is_a?(Proc) ? KBS::Decompiler.new(value).decompile : value.inspect
+          "#{key}: #{value}"
+        end.join(", ")
+        line = "  #{keyword} #{condition.type.inspect}"
+        line += ", #{pattern}" unless pattern.empty?
+        lines << line
+      end
+
+      if @action
+        action = begin
+          KBS::Decompiler.new(@action).decompile_block
+        rescue StandardError => e
+          "{ <decompilation failed: #{e.message}> }"
+        end
+        lines << "  perform #{action}"
+      end
+
+      lines << "end"
+      lines.join("\n")
+    end
+
     private
 
     def extract_bindings(facts)
