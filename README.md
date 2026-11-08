@@ -20,7 +20,7 @@ See the [full documentation website](https://madbomber.github.io/kbs/).
 
 ### Declarative DSL
 - **Readable Syntax**: Write rules in natural, expressive Ruby syntax
-- **Condition Helpers**: `greater_than`, `less_than`, `range`, `one_of`, `matches`, `satisfies` and more (see [DSL Helpers](#dsl-helpers))
+- **Condition Helpers**: `greater_than`, `less_than`, `range`, `one_of`, `satisfies` and more (see [DSL Helpers](#dsl-helpers))
 - **Rule Metadata**: Descriptions, priorities, and documentation built-in
 - **Negative Patterns**: `without` keyword for absence testing
 
@@ -364,7 +364,7 @@ The Redis store tests are skipped unless `KBS_TEST_REDIS_URL` names a disposable
 
 ### DSL Helpers
 
-Use these as attribute values in the hash form of `on`, for example `on :reading, value: greater_than(100)`. The block form of `on` has its own operators; see the DSL guide.
+Use these as attribute values in the hash form of `on`, for example `on :reading, value: greater_than(100)`. The block form of `on` has its own operators; see [Block-Style Patterns](docs/guides/dsl.md#block-style-patterns).
 
 - `greater_than(n)` - Match values > n
 - `less_than(n)` - Match values < n
@@ -373,8 +373,7 @@ Use these as attribute values in the hash form of `on`, for example `on :reading
 - `range(min, max)`, `between(min, max)` or `range(a_range)` - Match values from min to max inclusive, or values in the Range
 - `one_of(*values)` - Match any of the values
 - `any(*values)` - Same as `one_of`; with no arguments, match anything
-- `matches(regex)` - Match regex pattern
-- `satisfies { |v| ... }` - Match values for which the block returns true
+- `satisfies { |v| ... }` - Match values for which the block returns true. For a regex, use `satisfies { |v| v.match?(regex) }`; inside a rule, `matches` is another name for `on`.
 
 See the [DSL guide](docs/guides/dsl.md#pattern-helpers) for examples.
 

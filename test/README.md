@@ -72,10 +72,7 @@ ruby -Ilib:test -e "Dir['test/test_*.rb'].each { |f| require f.sub('test/', '') 
 
 ## Coverage Goals
 
-- **Minimum Overall Coverage**: 35% (temporarily lowered; see `test/test_helper.rb`)
-- **Minimum Per-File Coverage**: not enforced (disabled in `test/test_helper.rb`)
-
-Coverage is configured in `test/test_helper.rb`.
+The minimum overall coverage is set in `test/test_helper.rb`, and a run below it fails. The per-file minimum is currently disabled there.
 
 ## Test Patterns
 
@@ -194,18 +191,8 @@ To run in CI:
 - name: Install dependencies
   run: bundle install
 
-- name: Start Redis
-  run: redis-server --daemonize yes
-
 - name: Run tests with coverage
-  run: bundle exec ruby -Ilib:test -e "Dir['test/test_*.rb'].each { |f| require f.sub('test/', '') }"
-
-- name: Check coverage
-  run: |
-    if [ $(grep -oP 'covered at \K[\d.]+' coverage/index.html | head -1 | cut -d. -f1) -lt 80 ]; then
-      echo "Coverage below 80%"
-      exit 1
-    fi
+  run: bundle exec rake test
 ```
 
 ## Development Workflow
