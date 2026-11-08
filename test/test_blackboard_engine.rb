@@ -17,6 +17,26 @@ class TestBlackboardEngine < Minitest::Test
     assert_instance_of KBS::Blackboard::Memory, @engine.blackboard
   end
 
+  def test_dsl_with_blackboard_engine
+    readings = []
+
+    kb = KBS.knowledge_base(engine: @engine) do
+      rule 'temperature_monitor' do
+        on :sensor, value: greater_than(25)
+        perform { |facts| readings << facts.first[:value] }
+      end
+
+      fact :sensor, value: 22
+      fact :sensor, value: 28
+      run
+    end
+
+    assert_same @engine, kb.engine
+    assert_equal [28], readings
+    assert_equal [22, 28], @engine.blackboard.get_facts(:sensor).map { |fact| fact[:value] }
+    assert_equal 'temperature_monitor', @engine.blackboard.get_rule_firings.first[:rule_name]
+  end
+
   def test_add_fact
     fact = @engine.add_fact(:sensor, { temp: 22 })
 

@@ -5,8 +5,8 @@ module KBS
     class KnowledgeBase
       attr_reader :engine, :rules
 
-      def initialize
-        @engine = Engine.new
+      def initialize(engine: nil)
+        @engine = engine || Engine.new
         @rules = {}
         @rule_builders = {}
         @rule_source_locations = {}
