@@ -289,8 +289,8 @@ See [Performance Guide](../advanced/performance.md) for condition ordering strat
 **Example - Low-level API (Facts Parameter)**:
 ```ruby
 rule.action = ->(facts) do
-  temp_fact = facts[0]  # First condition's matched fact
-  sensor_fact = facts[1]  # Second condition's matched fact
+  temp_fact = facts[0]  # First positive condition's matched fact
+  sensor_fact = facts[1]  # Second positive condition's matched fact
 
   puts "Temperature: #{temp_fact[:value]} from sensor #{sensor_fact[:id]}"
 end
@@ -377,7 +377,7 @@ end
 
 #### `bindings_for(facts)`
 
-Returns the variable bindings for a set of matched facts. `fire` passes these to any action that is not a one-parameter lambda, and `KBS::Blackboard::Engine` records them in its audit log.
+Returns the variable bindings for a set of matched facts. `fire` passes these to any action whose arity is not 1 or -1, and `KBS::Blackboard::Engine` records them in its audit log.
 
 **Parameters**:
 - `facts` (Array<KBS::Fact>) - Matched facts in the same shape `fire` takes: one per non-negated condition, in condition order
