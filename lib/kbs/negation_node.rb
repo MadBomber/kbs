@@ -31,10 +31,13 @@ module KBS
       @beta_memory.tokens.each do |token|
         if perform_join_tests(token, fact)
           if @tokens_with_matches[token].empty?
-            token.children.each do |child|
+            # The root token is shared by every rule, so retract only
+            # the children this node created.
+            own_children = token.children.select { |child| child.node.equal?(self) }
+            own_children.each do |child|
               @successors.each { |s| s.deactivate(child) if s.respond_to?(:deactivate) }
             end
-            token.children.clear
+            token.children -= own_children
           end
           @tokens_with_matches[token] << fact
         end

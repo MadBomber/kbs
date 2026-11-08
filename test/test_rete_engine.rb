@@ -519,4 +519,33 @@ class TestEngine < Minitest::Test
 
     assert_empty result
   end
+  def test_leading_negation_does_not_unblock_another_leading_negation
+    result = []
+    [:a, :b].each do |type|
+      @engine.add_rule(KBS::Rule.new("no_#{type}") do |r|
+        r.conditions << KBS::Condition.new(type, {}, negated: true)
+        r.action = ->(_facts) { result << type }
+      end)
+    end
+    @engine.add_fact(:a, {})
+    @engine.add_fact(:b, {})
+    @engine.run
+
+    assert_empty result
+  end
+
+  def test_leading_negation_keeps_other_rules_retractable
+    result = []
+    add_leading_negation_rule(result)
+    @engine.add_rule(KBS::Rule.new('sensor') do |r|
+      r.conditions << KBS::Condition.new(:sensor, {})
+      r.action = ->(_facts) { result << :sensor }
+    end)
+    sensor = @engine.add_fact(:sensor, {})
+    @engine.add_fact(:alert, { level: 'critical' })
+    @engine.remove_fact(sensor)
+    @engine.run
+
+    assert_empty result
+  end
 end
