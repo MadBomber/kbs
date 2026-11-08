@@ -55,6 +55,14 @@ module KBS
       end
     end
 
+    # Left-activate with the tokens already in the beta memory. A rule
+    # that starts with a negation hangs off the root beta memory, whose
+    # dummy token exists before the rule is built, so nothing else
+    # would ever left-activate it.
+    def left_activate_existing
+      @beta_memory.tokens.each { |token| left_activate(token) }
+    end
+
     # Forget which tokens were blocked; Engine#reset clears the facts
     # that blocked them.
     def clear_matches

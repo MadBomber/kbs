@@ -448,6 +448,7 @@ class TestEngine < Minitest::Test
       assert_equal [i], result, "Cycle #{i}: only current value should fire"
     end
   end
+
   # ----------------------------------------------------------------
   # Rules whose first condition is a negation (issue #11)
   # ----------------------------------------------------------------

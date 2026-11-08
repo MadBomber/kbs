@@ -178,7 +178,7 @@ class TestNegationNode < Minitest::Test
   def test_clear_matches_lets_a_new_fact_block_again
     deactivations = []
     successor = Object.new
-    def successor.activate(token); end
+    successor.define_singleton_method(:activate) { |_token| }
     successor.define_singleton_method(:deactivate) { |token| deactivations << token }
     @negation_node.successors << successor
 
@@ -194,5 +194,18 @@ class TestNegationNode < Minitest::Test
     @negation_node.right_activate(KBS::Fact.new(:alarm, active: true))
 
     assert_equal 2, deactivations.length
+  end
+
+  def test_left_activate_existing_feeds_tokens_already_in_beta_memory
+    activated = []
+    successor = Object.new
+    successor.define_singleton_method(:activate) { |token| activated << token }
+    @negation_node.successors << successor
+
+    root = KBS::Token.new(nil, nil, nil)
+    @beta_memory.add_token(root)
+    @negation_node.left_activate_existing
+
+    assert_equal [root], activated.map(&:parent)
   end
 end

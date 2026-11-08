@@ -80,7 +80,7 @@ module KBS
         # The root beta memory is never a join node successor, so
         # its dummy token is preserved.
         alpha_mem.successors.each do |join_node|
-          join_node.clear_matches if join_node.is_a?(NegationNode)
+          join_node.clear_matches if join_node.respond_to?(:clear_matches)
           next unless join_node.respond_to?(:successors)
           join_node.successors.each do |beta_or_prod|
             beta_or_prod.tokens.clear if beta_or_prod.respond_to?(:tokens)
@@ -95,7 +95,7 @@ module KBS
       @root_beta_memory.tokens.each { |t| t.children.clear }
 
       # 5. Re-seed rules whose first condition is a negation
-      @root_beta_memory.successors.grep(NegationNode).each { |node| activate_from_root(node) }
+      @root_beta_memory.successors.grep(NegationNode).each(&:left_activate_existing)
     end
 
     private
@@ -140,20 +140,13 @@ module KBS
       production_node = ProductionNode.new(rule)
       current_beta.successors << production_node
       @production_nodes[rule.name] = production_node
-      activate_from_root(leading_negation) if leading_negation
+      leading_negation&.left_activate_existing
 
       @working_memory.facts.each do |fact|
         @alpha_memories.each do |pattern, memory|
           memory.activate(fact) if fact.matches?(pattern)
         end
       end
-    end
-
-    # A NegationNode only emits on left activation, and the root dummy
-    # token exists before any rule is built, so a rule that starts with
-    # a negation must be fed the root token explicitly.
-    def activate_from_root(node)
-      @root_beta_memory.tokens.each { |token| node.left_activate(token) }
     end
 
     def get_or_create_alpha_memory(pattern)
