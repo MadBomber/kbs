@@ -216,7 +216,7 @@ Code executed when all conditions match:
 
 ```ruby
 perform do |facts, bindings|
-  # facts - Array of matched facts (in condition order)
+  # facts - Array of matched facts (in condition order; `without` conditions have no entry)
   # bindings - Hash of variable captures {:pid? => 123, :qty? => 5}
 
   # Can access facts

@@ -19,7 +19,7 @@ module KBS
       @fired_count += 1
       return unless @action
 
-      bindings = extract_bindings(facts)
+      bindings = bindings_for(facts)
 
       # Support both 1-parameter and 2-parameter actions
       if @action.arity == 1 || @action.arity == -1
@@ -29,18 +29,15 @@ module KBS
       end
     end
 
-    private
+    # Maps each variable to its value in the matched facts. The facts
+    # line up with the positive conditions only; negated conditions
+    # match no fact.
+    def bindings_for(facts)
+      @conditions.reject(&:negated).zip(facts).each_with_object({}) do |(condition, fact), bindings|
+        next unless fact
 
-    def extract_bindings(facts)
-      bindings = {}
-      @conditions.each_with_index do |condition, index|
-        next if condition.negated
-        fact = facts[index]
-        condition.variable_bindings.each do |var, field|
-          bindings[var] = fact.attributes[field] if fact
-        end
+        condition.variable_bindings.each { |var, field| bindings[var] = fact.attributes[field] }
       end
-      bindings
     end
   end
 end

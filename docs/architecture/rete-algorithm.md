@@ -491,26 +491,23 @@ When a rule fires, bindings are extracted for the action:
 
 ```ruby
 def fire(facts)
-  bindings = extract_bindings(facts)
+  bindings = bindings_for(facts)
   # bindings = { :symbol? => "AAPL", :price? => 150.0 }
 
   @action.call(facts, bindings)
 end
 
-def extract_bindings(facts)
-  bindings = {}
-  @conditions.each_with_index do |condition, index|
-    next if condition.negated  # Negated conditions have no fact
-    fact = facts[index]
-    condition.variable_bindings.each do |var, field|
-      bindings[var] = fact.attributes[field]
-    end
+def bindings_for(facts)
+  # Facts line up with the positive conditions only; negated conditions match no fact
+  @conditions.reject(&:negated).zip(facts).each_with_object({}) do |(condition, fact), bindings|
+    next unless fact
+
+    condition.variable_bindings.each { |var, field| bindings[var] = fact.attributes[field] }
   end
-  bindings
 end
 ```
 
-**Implementation**: `lib/kbs/rule.rb:34`
+**Implementation**: `lib/kbs/rule.rb:35`
 
 ## Advanced Topics
 

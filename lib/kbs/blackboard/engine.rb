@@ -42,8 +42,9 @@ module KBS
             # Only fire if not already fired
             next if token.fired?
 
-            fact_uuids = token.facts.map { |f| f.respond_to?(:uuid) ? f.uuid : f.object_id.to_s }
-            bindings = extract_bindings_from_token(token, node.rule)
+            facts = token.facts
+            fact_uuids = facts.map { |f| f.respond_to?(:uuid) ? f.uuid : f.object_id.to_s }
+            bindings = node.rule.bindings_for(facts)
 
             @blackboard.log_rule_firing(node.rule.name, fact_uuids, bindings)
             node.fire_rule(token)
@@ -61,22 +62,6 @@ module KBS
 
       def stats
         @blackboard.stats
-      end
-
-      private
-
-      def extract_bindings_from_token(token, rule)
-        bindings = {}
-        rule.conditions.each_with_index do |condition, index|
-          next if condition.negated
-          fact = token.facts[index]
-          if fact && condition.respond_to?(:variable_bindings)
-            condition.variable_bindings.each do |var, field|
-              bindings[var] = fact.attributes[field] if fact.respond_to?(:attributes)
-            end
-          end
-        end
-        bindings
       end
     end
   end
