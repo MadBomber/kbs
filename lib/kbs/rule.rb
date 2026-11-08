@@ -21,8 +21,10 @@ module KBS
 
       bindings = extract_bindings(facts)
 
-      # Support both 1-parameter and 2-parameter actions
-      if @action.arity == 1 || @action.arity == -1
+      # Support 0-parameter, 1-parameter and 2-parameter actions
+      if @action.arity == 0
+        @action.call
+      elsif @action.arity == 1 || @action.arity == -1
         @action.call(facts)
       else
         @action.call(facts, bindings)
