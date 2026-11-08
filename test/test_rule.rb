@@ -80,6 +80,29 @@ class TestRule < Minitest::Test
     assert_equal 1, extracted_bindings.size
   end
 
+  def test_fire_with_negated_condition_between_positive_conditions
+    extracted_bindings = nil
+    action = ->(facts, bindings) { extracted_bindings = bindings }
+
+    conditions = [
+      KBS::Condition.new(:a, { v: :x? }),
+      KBS::Condition.new(:blocker, {}, negated: true),
+      KBS::Condition.new(:b, { v: :y? }),
+      KBS::Condition.new(:c, { v: :z? })
+    ]
+    rule = KBS::Rule.new("test", conditions: conditions, action: action)
+
+    # Matched facts hold only the positive conditions, in order
+    facts = [
+      KBS::Fact.new(:a, v: "A"),
+      KBS::Fact.new(:b, v: "B"),
+      KBS::Fact.new(:c, v: "C")
+    ]
+    rule.fire(facts)
+
+    assert_equal({ x?: "A", y?: "B", z?: "C" }, extracted_bindings)
+  end
+
   def test_fire_without_action
     rule = KBS::Rule.new("test", conditions: [], action: nil)
     fact = KBS::Fact.new(:person, name: "Alice")
