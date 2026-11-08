@@ -20,7 +20,7 @@ See the [full documentation website](https://madbomber.github.io/kbs/).
 
 ### Declarative DSL
 - **Readable Syntax**: Write rules in natural, expressive Ruby syntax
-- **Condition Helpers**: `greater_than`, `less_than`, `range`, `one_of`, `matches` for intuitive pattern matching
+- **Condition Helpers**: `greater_than`, `less_than`, `range`, `one_of`, `satisfies` and more (see [DSL Helpers](#dsl-helpers))
 - **Rule Metadata**: Descriptions, priorities, and documentation built-in
 - **Negative Patterns**: `without` keyword for absence testing
 
@@ -339,36 +339,45 @@ Run the comprehensive test suite:
 rake test
 ```
 
-Individual test files:
+Run a single test file (`test/test_*.rb`):
 
 ```bash
-ruby test/kbs_test.rb
-ruby test/blackboard_test.rb
-ruby test/dsl_test.rb
+bundle exec ruby test/test_rule.rb
 ```
 
-**Test Coverage**: 100% with 199 tests, 447 assertions, 0 failures
+SimpleCov measures coverage on every run and fails the run below the minimum set in `test/test_helper.rb` (currently 35% line coverage).
+
+The Redis store tests are skipped unless `KBS_TEST_REDIS_URL` names a disposable Redis database. See [test/README.md](test/README.md) before setting it, because those tests flush the database.
 
 ## 📖 Documentation
 
 ### Core Classes
 
-- **KBS::ReteEngine** - Main inference engine
+- **KBS::Engine** - Main inference engine
 - **KBS::Rule** - Rule definition
 - **KBS::Condition** - Pattern matching conditions
 - **KBS::Fact** - Working memory facts
 - **KBS::Blackboard::Engine** - Blackboard coordination
-- **KBS::Blackboard::Persistence::SQLiteStore** - SQLite backend
+- **KBS::Blackboard::Persistence::SqliteStore** - SQLite backend
 - **KBS::Blackboard::Persistence::RedisStore** - Redis backend
 - **KBS::Blackboard::Persistence::HybridStore** - Hybrid storage
 
 ### DSL Helpers
 
+Use these as attribute values in the hash form of `on`, for example `on :reading, value: greater_than(100)`. The block form of `on` has its own operators; see [Block-Style Patterns](docs/guides/dsl.md#block-style-patterns).
+
 - `greater_than(n)` - Match values > n
 - `less_than(n)` - Match values < n
-- `range(min, max)` - Match values between min and max
+- `equals(value)` - Match values equal to value
+- `not_equal(value)` - Match values not equal to value
+- `range(min, max)`, `between(min, max)` or `range(a_range)` - Match values from min to max inclusive, or values in the Range
 - `one_of(*values)` - Match any of the values
-- `matches(regex)` - Match regex pattern
+- `any(*values)` - Same as `one_of`; with no arguments, match anything
+- `satisfies { |v| ... }` - Match values for which the block returns true
+
+For a regex in the hash form, use `satisfies { |v| regex.match?(v.to_s) }`. In that position `matches` is another name for `on`, not a helper.
+
+See the [DSL guide](docs/guides/dsl.md#pattern-helpers) for examples.
 
 ## 🔧 Requirements
 

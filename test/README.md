@@ -72,21 +72,7 @@ ruby -Ilib:test -e "Dir['test/test_*.rb'].each { |f| require f.sub('test/', '') 
 
 ## Coverage Goals
 
-- **Minimum Overall Coverage**: 80%
-- **Minimum Per-File Coverage**: 70%
-
-Coverage configured in `test/test_helper.rb`:
-```ruby
-SimpleCov.start do
-  add_filter '/test/'
-  add_filter '/examples/'
-  add_group 'Core RETE', 'lib/kbs'
-  add_group 'DSL', 'lib/kbs/dsl'
-  add_group 'Blackboard', 'lib/kbs/blackboard'
-  minimum_coverage 80
-  minimum_coverage_by_file 70
-end
-```
+The minimum overall coverage is set in `test/test_helper.rb`, and a run below it fails. The per-file minimum is currently disabled there.
 
 ## Test Patterns
 
@@ -199,25 +185,7 @@ assert_equal 1, results.size
 
 ## Continuous Integration
 
-To run in CI:
-```yaml
-# .github/workflows/test.yml (example)
-- name: Install dependencies
-  run: bundle install
-
-- name: Start Redis
-  run: redis-server --daemonize yes
-
-- name: Run tests with coverage
-  run: bundle exec ruby -Ilib:test -e "Dir['test/test_*.rb'].each { |f| require f.sub('test/', '') }"
-
-- name: Check coverage
-  run: |
-    if [ $(grep -oP 'covered at \K[\d.]+' coverage/index.html | head -1 | cut -d. -f1) -lt 80 ]; then
-      echo "Coverage below 80%"
-      exit 1
-    fi
-```
+CI runs `bundle exec rake test` with a Redis service and `KBS_TEST_REDIS_URL` set; see `.github/workflows/test.yml`.
 
 ## Development Workflow
 
