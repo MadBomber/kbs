@@ -3099,10 +3099,11 @@
 <p>See <a href="../../advanced/performance/">Performance Guide</a> for condition ordering strategies.</p>
 <hr />
 <h4 id="action"><code>action</code><a class="headerlink" href="#action" title="Permanent link">&para;</a></h4>
-<p><strong>Type</strong>: <code>Proc</code> (lambda or proc)</p>
+<p><strong>Type</strong>: <code>Proc</code> (lambda or proc) or <code>Method</code></p>
 <p><strong>Read/Write</strong>: Yes (via <code>attr_accessor</code>)</p>
 <p><strong>Description</strong>: Lambda executed when all conditions match</p>
-<p><strong>Signature</strong>: <code>action.call(facts)</code> or <code>action.call(facts, bindings)</code> (both supported)</p>
+<p><strong>Signature</strong>: <code>action.call</code>, <code>action.call(facts)</code>, or <code>action.call(facts, bindings)</code> (all supported)</p>
+<p>Zero-argument actions are called without arguments.</p>
 <p><strong>Parameters</strong>:
 - <code>facts</code> (Array<KBS::Fact>) - Array of matched facts (parallel to conditions array)
 - <code>bindings</code> (Hash, optional) - Variable bindings extracted from facts</p>
