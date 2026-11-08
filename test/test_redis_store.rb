@@ -69,6 +69,12 @@ class TestRedisStore < Minitest::Test
     assert_equal 'room_1', room1_sensors.first[:attributes][:location]
   end
 
+  def test_query_facts_is_not_implemented
+    assert_raises(NotImplementedError) do
+      @store.query_facts('type = ?', ['sensor'])
+    end
+  end
+
   def test_remove_fact
     @store.add_fact('uuid-1', :sensor, { temp: 22 })
     result = @store.remove_fact('uuid-1')

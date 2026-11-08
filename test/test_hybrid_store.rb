@@ -66,6 +66,12 @@ class TestHybridStore < Minitest::Test
     assert_equal 2, facts.size
   end
 
+  def test_query_facts_is_not_implemented
+    assert_raises(NotImplementedError) do
+      @store.query_facts('type = ?', ['sensor'])
+    end
+  end
+
   def test_provides_both_connection_and_db
     assert @store.respond_to?(:connection)
     assert @store.respond_to?(:db)
