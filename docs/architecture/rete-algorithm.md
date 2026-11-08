@@ -498,19 +498,16 @@ def fire(facts)
 end
 
 def bindings_for(facts)
-  bindings = {}
   # Facts line up with the positive conditions only; negated conditions match no fact
-  @conditions.reject(&:negated).zip(facts) do |condition, fact|
+  @conditions.reject(&:negated).zip(facts).each_with_object({}) do |(condition, fact), bindings|
     next unless fact
-    condition.variable_bindings.each do |var, field|
-      bindings[var] = fact.attributes[field]
-    end
+
+    condition.variable_bindings.each { |var, field| bindings[var] = fact.attributes[field] }
   end
-  bindings
 end
 ```
 
-**Implementation**: `lib/kbs/rule.rb:34`
+**Implementation**: `lib/kbs/rule.rb:35`
 
 ## Advanced Topics
 

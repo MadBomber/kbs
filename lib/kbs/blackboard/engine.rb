@@ -42,8 +42,9 @@ module KBS
             # Only fire if not already fired
             next if token.fired?
 
-            fact_uuids = token.facts.map { |f| f.respond_to?(:uuid) ? f.uuid : f.object_id.to_s }
-            bindings = node.rule.bindings_for(token.facts)
+            facts = token.facts
+            fact_uuids = facts.map { |f| f.respond_to?(:uuid) ? f.uuid : f.object_id.to_s }
+            bindings = node.rule.bindings_for(facts)
 
             @blackboard.log_rule_firing(node.rule.name, fact_uuids, bindings)
             node.fire_rule(token)

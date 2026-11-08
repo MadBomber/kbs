@@ -64,23 +64,17 @@ class TestBlackboardEngine < Minitest::Test
   end
 
   def test_rule_firing_logs_bindings_after_negated_condition
-    rule = KBS::Rule.new('negation_in_middle') do |r|
-      r.conditions << KBS::Condition.new(:a, { v: :x? })
-      r.conditions << KBS::Condition.new(:blocker, {}, negated: true)
-      r.conditions << KBS::Condition.new(:b, { v: :y? })
-      r.conditions << KBS::Condition.new(:c, { v: :z? })
-      r.action = ->(facts) { }
-    end
-
-    @engine.add_rule(rule)
-    @engine.add_fact(:a, { v: "A" })
-    @engine.add_fact(:b, { v: "B" })
-    @engine.add_fact(:c, { v: "C" })
+    conditions = [
+      KBS::Condition.new(:a, { v: :x? }),
+      KBS::Condition.new(:blocker, {}, negated: true),
+      KBS::Condition.new(:b, { v: :y? }),
+      KBS::Condition.new(:c, { v: :z? })
+    ]
+    @engine.add_rule(KBS::Rule.new('negation_in_middle', conditions: conditions))
+    { a: 'A', b: 'B', c: 'C' }.each { |type, value| @engine.add_fact(type, { v: value }) }
     @engine.run
 
-    firings = @engine.blackboard.get_rule_firings
-    assert_equal 1, firings.size
-    assert_equal({ x?: "A", y?: "B", z?: "C" }, firings.first[:bindings])
+    assert_equal([{ x?: 'A', y?: 'B', z?: 'C' }], @engine.blackboard.get_rule_firings.map { |f| f[:bindings] })
   end
 
   def test_post_message
