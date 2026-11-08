@@ -519,6 +519,7 @@ class TestEngine < Minitest::Test
 
     assert_empty result
   end
+
   def test_leading_negation_does_not_unblock_another_leading_negation
     result = []
     [:a, :b].each do |type|
