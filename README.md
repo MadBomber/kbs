@@ -20,7 +20,7 @@ See the [full documentation website](https://madbomber.github.io/kbs/).
 
 ### Declarative DSL
 - **Readable Syntax**: Write rules in natural, expressive Ruby syntax
-- **Condition Helpers**: `greater_than`, `less_than`, `range`, `one_of`, `matches` for intuitive pattern matching
+- **Condition Helpers**: `greater_than`, `less_than`, `range`, `one_of`, `matches`, `satisfies` and more (see [DSL Helpers](#dsl-helpers))
 - **Rule Metadata**: Descriptions, priorities, and documentation built-in
 - **Negative Patterns**: `without` keyword for absence testing
 
@@ -345,7 +345,7 @@ Run a single test file (`test/test_*.rb`):
 bundle exec ruby test/test_rule.rb
 ```
 
-SimpleCov measures coverage on every run and fails the run below 35% line coverage.
+SimpleCov measures coverage on every run and fails the run below the minimum set in `test/test_helper.rb` (currently 35% line coverage).
 
 The Redis store tests are skipped unless `KBS_TEST_REDIS_URL` names a disposable Redis database. See [test/README.md](test/README.md) before setting it, because those tests flush the database.
 
@@ -363,6 +363,8 @@ The Redis store tests are skipped unless `KBS_TEST_REDIS_URL` names a disposable
 - **KBS::Blackboard::Persistence::HybridStore** - Hybrid storage
 
 ### DSL Helpers
+
+Use these as attribute values in the hash form of `on`, for example `on :reading, value: greater_than(100)`. The block form of `on` has its own operators; see the DSL guide.
 
 - `greater_than(n)` - Match values > n
 - `less_than(n)` - Match values < n

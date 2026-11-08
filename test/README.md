@@ -72,21 +72,10 @@ ruby -Ilib:test -e "Dir['test/test_*.rb'].each { |f| require f.sub('test/', '') 
 
 ## Coverage Goals
 
-- **Minimum Overall Coverage**: 80%
-- **Minimum Per-File Coverage**: 70%
+- **Minimum Overall Coverage**: 35% (temporarily lowered; see `test/test_helper.rb`)
+- **Minimum Per-File Coverage**: not enforced (disabled in `test/test_helper.rb`)
 
-Coverage configured in `test/test_helper.rb`:
-```ruby
-SimpleCov.start do
-  add_filter '/test/'
-  add_filter '/examples/'
-  add_group 'Core RETE', 'lib/kbs'
-  add_group 'DSL', 'lib/kbs/dsl'
-  add_group 'Blackboard', 'lib/kbs/blackboard'
-  minimum_coverage 80
-  minimum_coverage_by_file 70
-end
-```
+Coverage is configured in `test/test_helper.rb`.
 
 ## Test Patterns
 
