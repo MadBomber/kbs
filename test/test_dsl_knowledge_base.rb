@@ -58,6 +58,169 @@ class TestDSLKnowledgeBase < Minitest::Test
     assert_includes results, :rule2
   end
 
+  def test_leading_negation_fires_once_on_empty_memory
+    fired = 0
+    kb = KBS.knowledge_base do
+      rule 'no_critical' do
+        without :alert, level: "critical"
+        perform { fired += 1 }
+      end
+    end
+
+    2.times { kb.run }
+
+    assert_equal 1, fired
+  end
+
+  def test_leading_negation_is_blocked_by_matching_fact
+    [true, false].each do |fact_before_rule|
+      fired = 0
+      kb = KBS::DSL::KnowledgeBase.new
+      blocker = kb.fact(:alert, level: "critical") if fact_before_rule
+      kb.rule 'no_critical' do
+        without :alert, level: "critical"
+        perform { fired += 1 }
+      end
+      blocker = kb.fact(:alert, level: "critical") unless fact_before_rule
+      second_blocker = kb.fact(:alert, level: "critical")
+
+      kb.run
+
+      assert_equal 0, fired
+
+      kb.retract(blocker)
+      kb.run
+      assert_equal 0, fired
+
+      kb.retract(second_blocker)
+      kb.run
+      assert_equal 1, fired
+    end
+  end
+
+  def test_leading_negation_followed_by_positive_condition
+    result = []
+    kb = KBS.knowledge_base do
+      rule 'signal_without_critical' do
+        without :alert, level: "critical"
+        on :signal
+        perform { |facts| result << facts.map(&:type) }
+      end
+    end
+
+    kb.run
+    assert_empty result
+
+    kb.fact(:signal)
+    kb.run
+    assert_equal [[:signal]], result
+
+    kb.reset
+    kb.fact(:signal)
+    kb.fact(:alert, level: "critical")
+    kb.run
+    assert_equal [[:signal]], result
+  end
+
+  def test_leading_negation_ignores_nonmatching_facts
+    fired = 0
+    kb = KBS.knowledge_base do
+      fact :alert, level: "warning"
+      rule 'no_critical' do
+        without :alert, level: "critical"
+        perform { fired += 1 }
+      end
+    end
+
+    kb.run
+
+    assert_equal 1, fired
+  end
+
+  def test_leading_negation_fires_again_after_reset
+    fired = 0
+    kb = KBS.knowledge_base do
+      rule 'no_critical' do
+        without :alert, level: "critical"
+        perform { fired += 1 }
+      end
+    end
+
+    kb.run
+    assert_equal 1, fired
+
+    2.times do
+      kb.reset
+      kb.fact(:alert, level: "critical")
+      kb.run
+      assert_equal 1, fired
+    end
+
+    kb.reset
+    kb.run
+    kb.run
+    assert_equal 2, fired
+  end
+
+  def test_consecutive_leading_negations
+    fired = 0
+    kb = KBS.knowledge_base do
+      rule 'no_alerts' do
+        without :alert, level: "critical"
+        without :problem
+        perform { fired += 1 }
+      end
+    end
+
+    kb.run
+    assert_equal 1, fired
+
+    kb.reset
+    kb.fact(:alert, level: "critical")
+    kb.run
+    assert_equal 1, fired
+
+    kb.reset
+    kb.fact(:problem)
+    kb.run
+    assert_equal 1, fired
+
+    kb.reset
+    kb.run
+    assert_equal 2, fired
+  end
+
+  def test_leading_negation_preserves_other_rule_tokens
+    results = []
+    kb = KBS.knowledge_base do
+      rule 'has_signal' do
+        on :signal
+        perform { results << :signal }
+      end
+      rule 'no_critical' do
+        without :alert, level: "critical"
+        perform { results << :no_critical }
+      end
+      rule 'no_problem' do
+        without :problem
+        perform { results << :no_problem }
+      end
+      fact :signal
+      fact :alert, level: "critical"
+    end
+
+    kb.run
+    assert_equal [:signal, :no_problem], results
+
+    kb.retract(kb.query(:signal).first)
+    assert_empty kb.engine.production_nodes['has_signal'].tokens
+
+    results.clear
+    kb.reset
+    kb.run
+    assert_equal [:no_critical, :no_problem], results
+  end
+
   def test_dsl_entry_point
     kb = KBS.knowledge_base do
       fact :car, color: :red
