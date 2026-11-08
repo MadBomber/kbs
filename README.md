@@ -373,7 +373,9 @@ Use these as attribute values in the hash form of `on`, for example `on :reading
 - `range(min, max)`, `between(min, max)` or `range(a_range)` - Match values from min to max inclusive, or values in the Range
 - `one_of(*values)` - Match any of the values
 - `any(*values)` - Same as `one_of`; with no arguments, match anything
-- `satisfies { |v| ... }` - Match values for which the block returns true. For a regex, use `satisfies { |v| v.match?(regex) }`; inside a rule, `matches` is another name for `on`.
+- `satisfies { |v| ... }` - Match values for which the block returns true
+
+For a regex in the hash form, use `satisfies { |v| regex.match?(v.to_s) }`. In that position `matches` is another name for `on`, not a helper.
 
 See the [DSL guide](docs/guides/dsl.md#pattern-helpers) for examples.
 

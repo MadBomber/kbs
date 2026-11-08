@@ -185,15 +185,7 @@ assert_equal 1, results.size
 
 ## Continuous Integration
 
-To run in CI:
-```yaml
-# .github/workflows/test.yml (example)
-- name: Install dependencies
-  run: bundle install
-
-- name: Run tests with coverage
-  run: bundle exec rake test
-```
+CI runs `bundle exec rake test` with a Redis service and `KBS_TEST_REDIS_URL` set; see `.github/workflows/test.yml`.
 
 ## Development Workflow
 
