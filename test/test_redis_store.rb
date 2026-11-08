@@ -4,10 +4,14 @@ require_relative 'test_helper'
 require_relative '../lib/kbs/blackboard'
 
 class TestRedisStore < Minitest::Test
+  def redis_url
+    ENV.fetch('KBS_TEST_REDIS_URL', 'redis://localhost:6379/15')
+  end
+
   def redis_available?
     begin
       require 'redis'
-      redis = Redis.new(url: 'redis://localhost:6379/15', timeout: 1)
+      redis = Redis.new(url: redis_url, timeout: 1)
       redis.ping
       redis.close
       true
@@ -20,7 +24,7 @@ class TestRedisStore < Minitest::Test
     skip "Redis not available" unless redis_available?
 
     require 'redis'
-    @redis = Redis.new(url: 'redis://localhost:6379/15') # Use DB 15 for tests
+    @redis = Redis.new(url: redis_url)
     @redis.flushdb # Clear test database
     @store = KBS::Blackboard::Persistence::RedisStore.new(
       redis: @redis,
@@ -67,6 +71,12 @@ class TestRedisStore < Minitest::Test
     room1_sensors = @store.get_facts(:sensor, location: 'room_1')
     assert_equal 1, room1_sensors.size
     assert_equal 'room_1', room1_sensors.first[:attributes][:location]
+  end
+
+  def test_query_facts_is_not_implemented
+    assert_raises(NotImplementedError) do
+      @store.query_facts('type = ?', ['sensor'])
+    end
   end
 
   def test_remove_fact
