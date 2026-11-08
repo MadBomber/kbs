@@ -33,17 +33,6 @@ class TestDSLKnowledgeBase < Minitest::Test
     assert_equal 2, engine.blackboard.get_facts(:sensor).size
   end
 
-  def hot_sensor_knowledge_base(engine, fired)
-    KBS.knowledge_base(engine: engine) do
-      rule 'hot' do
-        on :sensor, value: greater_than(25)
-        perform { |facts| fired << facts.first[:value] }
-      end
-      fact :sensor, value: 22
-      fact :sensor, value: 28
-    end
-  end
-
   def test_add_fact
     kb = KBS::DSL::KnowledgeBase.new
     kb.fact(:car, color: :red, speed: 100)
@@ -335,5 +324,18 @@ class TestDSLKnowledgeBase < Minitest::Test
     source = kb.rule_source("important")
     assert_includes source, 'desc "A high-priority rule"'
     assert_includes source, "priority 10"
+  end
+
+  private
+
+  def hot_sensor_knowledge_base(engine, fired)
+    KBS.knowledge_base(engine: engine) do
+      rule 'hot' do
+        on :sensor, value: greater_than(25)
+        perform { |facts| fired << facts.first[:value] }
+      end
+      fact :sensor, value: 22
+      fact :sensor, value: 28
+    end
   end
 end
