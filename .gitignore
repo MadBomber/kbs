@@ -1,4 +1,5 @@
 *.gem
+examples/*.txt
 *.rbc
 Gemfile.lock
 /.config
