@@ -6,7 +6,7 @@
 - **Rule Source Introspection**: New `rule_source` and `print_rule_source` methods on `KnowledgeBase` to retrieve and display the DSL source code for any rule by name
 - **Rule Decompiler**: `KBS::Decompiler` can reconstruct source for dynamically-created rules from Proc and Lambda objects
 - **Working Memory Reset**: `KnowledgeBase#reset` now clears working memory while preserving the compiled rule network, enabling reuse with different initial facts
-- **Rule Source Introspection Demo**: New `examples/rule_source_introspection_demo.rb` showcasing both file-based and dynamic rule source retrieval
+- **Rule Source Introspection Demo**: New `examples/rule_source_demo.rb` showcasing both file-based and dynamic rule source retrieval
 
 ### Changed
 - **README rewritten to use DSL API**: Removed references to `KBS::ReteEngine` and `KBS::Rule`; all examples now use the DSL-based `KnowledgeBase` API
