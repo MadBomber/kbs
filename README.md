@@ -339,13 +339,13 @@ Run the comprehensive test suite:
 rake test
 ```
 
-Run a single test file:
+Run a single test file (`test/test_*.rb`):
 
 ```bash
-bundle exec ruby -Ilib:test test/test_rule.rb
+bundle exec ruby test/test_rule.rb
 ```
 
-The test files are `test/test_*.rb`. SimpleCov measures coverage on every run and fails the run below 35% line coverage.
+SimpleCov measures coverage on every run and fails the run below 35% line coverage.
 
 The Redis store tests are skipped unless `KBS_TEST_REDIS_URL` names a disposable Redis database. See [test/README.md](test/README.md) before setting it, because those tests flush the database.
 
@@ -368,12 +368,13 @@ The Redis store tests are skipped unless `KBS_TEST_REDIS_URL` names a disposable
 - `less_than(n)` - Match values < n
 - `equals(value)` - Match values equal to value
 - `not_equal(value)` - Match values not equal to value
-- `range(min, max)` or `range(a_range)` - Match values from min to max inclusive, or values in the Range
-- `between(min, max)` - Same as `range(min, max)`
+- `range(min, max)`, `between(min, max)` or `range(a_range)` - Match values from min to max inclusive, or values in the Range
 - `one_of(*values)` - Match any of the values
 - `any(*values)` - Same as `one_of`; with no arguments, match anything
 - `matches(regex)` - Match regex pattern
 - `satisfies { |v| ... }` - Match values for which the block returns true
+
+See the [DSL guide](docs/guides/dsl.md#pattern-helpers) for examples.
 
 ## 🔧 Requirements
 

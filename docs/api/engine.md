@@ -412,7 +412,7 @@ Creates a persistent RETE engine with blackboard memory.
 
 **Parameters**:
 - `db_path` (String, optional) - Path to SQLite database (default: `:memory:`)
-- `store` (Store, optional) - Custom persistence store (default: `nil`, uses SQLiteStore)
+- `store` (Store, optional) - Custom persistence store (default: `nil`, uses SqliteStore)
 
 **Returns**: `KBS::Blackboard::Engine` instance
 
