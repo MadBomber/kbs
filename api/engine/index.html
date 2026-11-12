@@ -3203,7 +3203,7 @@
 <p>Creates a persistent RETE engine with blackboard memory.</p>
 <p><strong>Parameters</strong>:
 - <code>db_path</code> (String, optional) - Path to SQLite database (default: <code>:memory:</code>)
-- <code>store</code> (Store, optional) - Custom persistence store (default: <code>nil</code>, uses SQLiteStore)</p>
+- <code>store</code> (Store, optional) - Custom persistence store (default: <code>nil</code>, uses SqliteStore)</p>
 <p><strong>Returns</strong>: <code>KBS::Blackboard::Engine</code> instance</p>
 <p><strong>Example - In-Memory</strong>:
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="n">engine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Engine</span><span class="o">.</span><span class="n">new</span>
