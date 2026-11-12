@@ -117,10 +117,7 @@ module KBS
         end
 
         def query_facts(conditions = nil, params = [])
-          # Redis doesn't support SQL queries
-          # For complex queries, use get_facts with pattern matching
-          # or implement custom Redis Lua scripts
-          get_facts
+          raise NotImplementedError, "#{self.class} does not support SQL queries"
         end
 
         def register_knowledge_source(name, description: nil, topics: [])

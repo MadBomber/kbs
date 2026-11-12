@@ -78,11 +78,8 @@ class TestFact < Minitest::Test
 
   def test_to_s
     fact = KBS::Fact.new(:person, name: "Alice", age: 30)
-    result = fact.to_s
 
-    assert_includes result, "person"
-    assert_includes result, "name"
-    assert_includes result, "Alice"
+    assert_equal 'fact :person, name: "Alice", age: 30', fact.to_s
   end
 
   def test_empty_attributes
@@ -90,5 +87,6 @@ class TestFact < Minitest::Test
 
     assert_equal({}, fact.attributes)
     assert fact.matches?(type: :event)
+    assert_equal "fact :event", fact.to_s
   end
 end

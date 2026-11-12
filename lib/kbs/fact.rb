@@ -37,7 +37,8 @@ module KBS
     end
 
     def to_s
-      "#{@type}(#{@attributes.map { |k, v| "#{k}: #{v}" }.join(', ')})"
+      attributes = @attributes.map { |key, value| "#{key}: #{value.inspect}" }.join(", ")
+      "fact #{@type.inspect}#{", #{attributes}" unless attributes.empty?}"
     end
   end
 end

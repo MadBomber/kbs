@@ -21,8 +21,10 @@ module KBS
 
       bindings = bindings_for(facts)
 
-      # Support both 1-parameter and 2-parameter actions
-      if @action.arity == 1 || @action.arity == -1
+      # Support 0-parameter, 1-parameter and 2-parameter actions
+      if @action.arity == 0
+        @action.call
+      elsif @action.arity == 1 || @action.arity == -1
         @action.call(facts)
       else
         @action.call(facts, bindings)
@@ -38,6 +40,34 @@ module KBS
 
         condition.variable_bindings.each { |var, field| bindings[var] = fact.attributes[field] }
       end
+    end
+
+    def to_s
+      lines = ["rule #{@name.inspect} do"]
+      lines << "  priority #{@priority}" unless @priority.zero?
+
+      @conditions.each do |condition|
+        keyword = condition.negated ? "without" : "on"
+        pattern = condition.pattern.map do |key, value|
+          value = value.is_a?(Proc) ? KBS::Decompiler.new(value).decompile : value.inspect
+          "#{key}: #{value}"
+        end.join(", ")
+        line = "  #{keyword} #{condition.type.inspect}"
+        line += ", #{pattern}" unless pattern.empty?
+        lines << line
+      end
+
+      if @action
+        action = begin
+          KBS::Decompiler.new(@action).decompile_block
+        rescue StandardError => e
+          "{ <decompilation failed: #{e.message}> }"
+        end
+        lines << "  perform #{action}"
+      end
+
+      lines << "end"
+      lines.join("\n")
     end
   end
 end

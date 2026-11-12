@@ -274,13 +274,15 @@ See [Performance Guide](../advanced/performance.md) for condition ordering strat
 
 #### `action`
 
-**Type**: `Proc` (lambda or proc)
+**Type**: `Proc` (lambda or proc) or `Method`
 
 **Read/Write**: Yes (via `attr_accessor`)
 
 **Description**: Lambda executed when all conditions match
 
-**Signature**: `action.call(facts)` or `action.call(facts, bindings)` (both supported)
+**Signature**: `action.call`, `action.call(facts)`, or `action.call(facts, bindings)` (all supported)
+
+Zero-argument actions are called without arguments.
 
 **Parameters**:
 - `facts` (Array<KBS::Fact>) - Array of matched facts, one per non-negated condition, in condition order (negated conditions have no entry)
