@@ -14,5 +14,5 @@ gem "simplecov", "~> 0.22", require: false
 gem 'aigcm'
 gem 'debug_me'
 
-# The examples require csv, a bundled (not default) gem since Ruby 3.4.
+# The CSV trading examples require csv, a bundled (not default) gem since Ruby 3.4.
 gem "csv"
