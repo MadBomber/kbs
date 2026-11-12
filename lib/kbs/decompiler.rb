@@ -12,6 +12,9 @@ module KBS
   #   KBS::Decompiler.new(some_proc).decompile_block   # => "{ |x| x + 1 }"
   #
   class Decompiler
+    # Classes whose #inspect is Ruby source for an equal value.
+    LITERAL_CLASSES = [Integer, Symbol, NilClass, TrueClass, FalseClass].freeze
+
     def initialize(proc_obj)
       @iseq  = RubyVM::InstructionSequence.of(proc_obj)
       @arr   = @iseq.to_a
@@ -21,13 +24,14 @@ module KBS
       @children = []
       @iseq.each_child { |c| @children << c }
       @child_index = 0
-      @lambda = proc_obj.lambda?
+      @proc = proc_obj
+      @outer_locals = []          # local tables of enclosing blocks
     end
 
     def decompile
       expr = decompile_body(@body)
       params = build_params
-      if @lambda
+      if @proc.lambda?
         "->(#{params}) { #{expr} }"
       else
         "proc { |#{params}| #{expr} }"
@@ -67,6 +71,14 @@ module KBS
           name = slot_to_name(idx)
           stack.push(name.to_s)
 
+        when :getlocal_WC_1
+          name = if @outer_locals.empty?
+                   captured_value(inst[1])
+                 else
+                   slot_to_name(inst[1], @outer_locals.last).to_s
+                 end
+          stack.push(name || '/* getlocal_WC_1 */')
+
         when :setlocal_WC_0
           idx = inst[1]
           name = slot_to_name(idx)
@@ -94,7 +106,7 @@ module KBS
         when :opt_plus, :opt_minus, :opt_mult, :opt_div, :opt_mod,
              :opt_eq, :opt_neq, :opt_lt, :opt_le, :opt_gt, :opt_ge,
              :opt_ltlt
-          op_sym = inst[1][:mid]
+          op_sym = inst.last[:mid] # opt_neq carries == then !=
           b = stack.pop
           a = stack.pop
           stack.push("#{a} #{op_sym} #{b}")
@@ -177,9 +189,11 @@ module KBS
       param_names = child_locals.first(count).join(", ")
 
       saved = [@locals, @params, @body]
+      @outer_locals.push(@locals)
       @locals, @params, @body = child_locals, child_params, child_body
       expr = decompile_body(child_body)
       @locals, @params, @body = saved
+      @outer_locals.pop
 
       if count > 0
         "|#{param_names}| #{expr}"
@@ -196,9 +210,60 @@ module KBS
       val[1].inspect if val
     end
 
-    def slot_to_name(slot_idx)
-      name_idx = @locals.size + 2 - slot_idx
-      @locals[name_idx] || "?local_#{slot_idx}"
+    # The value of a variable the proc captured from the method that
+    # created it, as Ruby source, or nil when it can't be resolved or has
+    # no literal form.
+    def captured_value(slot_idx)
+      table = creator_locals or return nil
+      value = @proc.binding.local_variable_get(slot_to_name(slot_idx, table))
+      value.inspect if literal?(value)
+    rescue NameError, TypeError
+      nil
+    end
+
+    def literal?(value)
+      case value
+      when Float then value.finite?
+      when String
+        value.instance_of?(String) && value.encoding == Encoding::UTF_8 && value.valid_encoding?
+      else LITERAL_CLASSES.include?(value.class)
+      end
+    end
+
+    # Local table of the method whose body created the proc, or nil when
+    # the proc was made anywhere else (a nested block, a class body, the
+    # top level), where the slot would index some other scope.
+    def creator_locals
+      return @creator_locals if defined?(@creator_locals)
+
+      @creator_locals = begin
+        scope = @proc.binding
+        name = scope.eval('__method__')
+        method = name && Kernel.instance_method(:method).bind_call(scope.receiver, name)
+        creating_iseq(method)&.to_a&.[](10)
+      rescue NameError, TypeError, ArgumentError
+        nil
+      end
+    end
+
+    # Walks the method's super chain for the definition whose body holds
+    # the proc as a direct child.
+    def creating_iseq(method)
+      while method
+        iseq = RubyVM::InstructionSequence.of(method)
+        return iseq if iseq && direct_child?(iseq)
+
+        method = method.super_method
+      end
+    end
+
+    def direct_child?(iseq)
+      iseq.each_child { |child| return true if child.to_a == @arr }
+      false
+    end
+
+    def slot_to_name(slot_idx, locals = @locals)
+      locals[locals.size + 2 - slot_idx] || "?local_#{slot_idx}"
     end
   end
 end
