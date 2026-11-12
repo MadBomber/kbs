@@ -31,10 +31,7 @@ module KBS
       @beta_memory.tokens.each do |token|
         if perform_join_tests(token, fact)
           if @tokens_with_matches[token].empty?
-            token.children.each do |child|
-              @successors.each { |s| s.deactivate(child) if s.respond_to?(:deactivate) }
-            end
-            token.children.clear
+            left_deactivate(token)
           end
           @tokens_with_matches[token] << fact
         end
@@ -53,6 +50,18 @@ module KBS
           end
         end
       end
+    end
+
+    def left_deactivate(token)
+      token.children.select { |child| child.node == self }.each do |child|
+        @successors.each { |s| s.deactivate(child) if s.respond_to?(:deactivate) }
+        token.children.delete(child)
+      end
+      @tokens_with_matches.delete(token)
+    end
+
+    def reset
+      @tokens_with_matches.clear
     end
 
     private

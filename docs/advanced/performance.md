@@ -14,6 +14,36 @@ KBS performance depends on:
 
 ## Benchmarking
 
+### RETE Regex Baseline
+
+The current regex path uses Ruby's built-in `Regexp#match?` inside a condition
+predicate, which `Fact#matches?` evaluates while facts are asserted. Run the
+reproducible benchmark from the repository root:
+
+```bash
+ruby -Ilib benchmarks/regex_baseline.rb
+```
+
+It compares regex matching with an equivalent `String#start_with?` predicate
+both directly and during RETE fact assertion. `ITERATIONS` and `REPEATS`
+environment variables can adjust the workload.
+
+Baseline recorded on Ruby 3.2.3, x86_64-linux-gnu (20,000 values per sample,
+five samples; median elapsed time; 50% matching values):
+
+| Measurement | Throughput |
+|-------------|-----------:|
+| Direct `Regexp#match?` | 7,448,440 comparisons/sec |
+| Direct `String#start_with?` | 14,964,594 comparisons/sec |
+| RETE regex predicate | 415,008 facts/sec |
+| RETE prefix predicate | 482,253 facts/sec |
+
+The direct measurements isolate predicate cost; RETE measurements also include
+fact creation and network propagation, so compare those rows only with each
+other. These are environment-specific baseline observations, not performance
+targets. Re-run the benchmark on the target Ruby/runtime before evaluating a
+regex engine change.
+
 ### Basic Benchmark
 
 ```ruby

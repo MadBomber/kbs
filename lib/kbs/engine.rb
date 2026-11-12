@@ -80,6 +80,7 @@ module KBS
         # The root beta memory is never a join node successor, so
         # its dummy token is preserved.
         alpha_mem.successors.each do |join_node|
+          join_node.reset if join_node.is_a?(NegationNode)
           next unless join_node.respond_to?(:successors)
           join_node.successors.each do |beta_or_prod|
             beta_or_prod.tokens.clear if beta_or_prod.respond_to?(:tokens)
@@ -92,6 +93,11 @@ module KBS
 
       # 4. Clear stale child references from the root dummy token
       @root_beta_memory.tokens.each { |t| t.children.clear }
+
+      # 5. Restore leading negation matches for the now-empty working memory
+      @root_beta_memory.successors.grep(NegationNode).each do |node|
+        @root_beta_memory.tokens.each { |token| node.left_activate(token) }
+      end
     end
 
     private
@@ -122,6 +128,7 @@ module KBS
           negation_node = NegationNode.new(alpha_memory, current_beta, tests)
           new_beta = BetaMemory.new
           negation_node.successors << new_beta
+          current_beta.tokens.each { |token| negation_node.left_activate(token) }
           current_beta = new_beta
         else
           join_node = JoinNode.new(alpha_memory, current_beta, tests)
@@ -134,6 +141,9 @@ module KBS
       production_node = ProductionNode.new(rule)
       current_beta.successors << production_node
       @production_nodes[rule.name] = production_node
+      unless rule.conditions.empty?
+        current_beta.tokens.each { |token| production_node.activate(token) }
+      end
 
       @working_memory.facts.each do |fact|
         @alpha_memories.each do |pattern, memory|

@@ -67,6 +67,14 @@ class TestDSLRuleBuilder < Minitest::Test
     assert_instance_of Proc, rule.action
   end
 
+  def test_perform_with_zero_argument_method
+    receiver = Object.new
+    builder = KBS::DSL::RuleBuilder.new('test_rule')
+    builder.perform(&receiver.method(:object_id))
+
+    assert_equal receiver.object_id, builder.build.fire([])
+  end
+
   def test_aliases
     builder = KBS::DSL::RuleBuilder.new('test_rule')
 

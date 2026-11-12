@@ -20,6 +20,31 @@ class TestRule < Minitest::Test
     assert_equal 0, rule.priority
   end
 
+  def test_to_s
+    condition = KBS::Condition.new(:person, { name: "Alice", age: ->(value) { value > 18 } })
+    action = ->(facts) { facts.first }
+    rule = KBS::Rule.new("greet", conditions: [condition], action: action, priority: 10)
+
+    assert_equal <<~DSL.chomp, rule.to_s
+      rule "greet" do
+        priority 10
+        on :person, name: "Alice", age: ->(value) { value > 18 }
+        perform { |facts| facts.first }
+      end
+    DSL
+  end
+
+  def test_to_s_with_negated_condition_and_no_action
+    condition = KBS::Condition.new(:alarm, { active: true }, negated: true)
+    rule = KBS::Rule.new("safe", conditions: [condition])
+
+    assert_equal <<~DSL.chomp, rule.to_s
+      rule "safe" do
+        without :alarm, active: true
+      end
+    DSL
+  end
+
   def test_fire_executes_action
     fired = false
     action = ->(facts, bindings) { fired = true }
@@ -43,6 +68,49 @@ class TestRule < Minitest::Test
 
     assert_equal "Alice", extracted_bindings[:name?]
     assert_equal 30, extracted_bindings[:age?]
+  end
+
+  def test_fire_with_zero_argument_lambda
+    counter = 0
+    rule = KBS::Rule.new("test", action: -> { counter += 1 })
+
+    3.times { rule.fire([]) }
+
+    assert_equal 3, counter
+  end
+
+  def test_fire_with_reassigned_zero_argument_lambda
+    rule = KBS::Rule.new("test", action: ->(facts, bindings) { :original })
+    rule.action = -> { :reassigned }
+
+    assert_equal :reassigned, rule.fire([])
+  end
+
+  def test_fire_with_zero_argument_method
+    receiver = Object.new
+    rule = KBS::Rule.new("test", action: receiver.method(:object_id))
+
+    assert_equal receiver.object_id, rule.fire([])
+  end
+
+  def test_fire_with_zero_argument_proc
+    rule = KBS::Rule.new("test", action: proc { :fired })
+
+    assert_equal :fired, rule.fire([])
+  end
+
+  def test_fire_with_one_argument_lambda
+    facts = [KBS::Fact.new(:person, name: "Alice")]
+    rule = KBS::Rule.new("test", action: ->(matched_facts) { matched_facts })
+
+    assert_same facts, rule.fire(facts)
+  end
+
+  def test_fire_with_variadic_lambda
+    facts = [KBS::Fact.new(:person, name: "Alice")]
+    rule = KBS::Rule.new("test", action: ->(*args) { args })
+
+    assert_equal [facts], rule.fire(facts)
   end
 
   def test_fire_with_multiple_facts
