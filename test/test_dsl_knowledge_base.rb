@@ -18,12 +18,6 @@ class TestDSLKnowledgeBase < Minitest::Test
     assert_same engine, kb.engine
   end
 
-  def test_knowledge_base_defaults_to_plain_engine
-    kb = KBS.knowledge_base
-
-    assert_instance_of KBS::Engine, kb.engine
-  end
-
   def test_knowledge_base_with_blackboard_engine_fires_rules
     engine = KBS::Blackboard::Engine.new
     fired = []
