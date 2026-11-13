@@ -13,9 +13,11 @@ module KBS
         @rule_source_locations = {}
       end
 
-      def rule(name, &block)
+      # @param priority [Integer, nil] rule priority; a `priority` call in the block wins
+      def rule(name, priority: nil, &block)
         @rule_source_locations[name] = block.source_location if block
         builder = RuleBuilder.new(name)
+        builder.priority(priority) unless priority.nil?
         builder.instance_eval(&block) if block_given?
         @rule_builders[name] = builder
         rule = builder.build
@@ -24,8 +26,8 @@ module KBS
         builder
       end
 
-      def defrule(name, &block)
-        rule(name, &block)
+      def defrule(name, priority: nil, &block)
+        rule(name, priority: priority, &block)
       end
 
       def fact(type, attributes = {})
