@@ -30,11 +30,32 @@ class TestDecompiler < Minitest::Test
 
 
   def test_renders_values_captured_by_between
-    source = decompile(between(1, 9))
+    assert_equal '->(v) { v >= 1 && v <= 9 }', decompile(between(1, 9))
+  end
 
-    assert_includes source, 'v >= 1'
-    assert_includes source, 'v <= 9'
-    refute_includes source, 'getlocal'
+
+  def test_renders_or
+    assert_equal '->(x) { x > 1 || x < 5 }', decompile(->(x) { x > 1 || x < 5 })
+  end
+
+
+  def test_renders_three_term_and_chain
+    assert_equal '->(x) { x > 1 && x < 5 && x != 3 }', decompile(->(x) { x > 1 && x < 5 && x != 3 })
+  end
+
+
+  def test_parenthesizes_or_on_the_left_of_and
+    assert_equal '->(x) { (x > 1 || x < 5) && x != 3 }', decompile(->(x) { (x > 1 || x < 5) && x != 3 })
+  end
+
+
+  def test_parenthesizes_or_on_the_right_of_and
+    assert_equal '->(x) { x != 3 && (x > 1 || x < 5) }', decompile(->(x) { x != 3 && (x > 1 || x < 5) })
+  end
+
+
+  def test_and_binds_tighter_than_or
+    assert_equal '->(x) { x < 1 || x > 5 && x != 7 }', decompile(->(x) { x < 1 || x > 5 && x != 7 })
   end
 
 
