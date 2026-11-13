@@ -2603,7 +2603,7 @@
 </span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="k">end</span>
 </span></code></pre></div>
 <h3 id="priority-control">Priority Control<a class="headerlink" href="#priority-control" title="Permanent link">&para;</a></h3>
-<p>Control rule firing order (Blackboard only):</p>
+<p>Control rule firing order (higher priority fires first):</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">rule</span><span class="w"> </span><span class="s2">"critical_alert"</span><span class="w"> </span><span class="k">do</span>
 </span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="n">priority</span><span class="w"> </span><span class="mi">100</span><span class="w">  </span><span class="c1"># High priority fires first</span>
 </span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">  </span><span class="n">on</span><span class="w"> </span><span class="ss">:alert</span><span class="p">,</span><span class="w"> </span><span class="ss">level</span><span class="p">:</span><span class="w"> </span><span class="s2">"critical"</span>

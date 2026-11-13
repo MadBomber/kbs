@@ -3876,7 +3876,7 @@
 <p><strong>Parameters</strong>:
 - <code>level</code> (Integer) - Priority level (default: 0)</p>
 <p><strong>Returns</strong>: <code>self</code> (chainable)</p>
-<p><strong>Note</strong>: Priority only affects execution order in <code>KBS::Blackboard::Engine</code>, not <code>KBS::Engine</code>.</p>
+<p><strong>Note</strong>: Both <code>KBS::Engine</code> and <code>KBS::Blackboard::Engine</code> honor priority. Rules with equal priority fire in definition order.</p>
 <p><strong>Example</strong>:
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">rule</span><span class="w"> </span><span class="s2">"critical_shutdown"</span><span class="w"> </span><span class="k">do</span>
 </span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="w">  </span><span class="n">priority</span><span class="w"> </span><span class="mi">1000</span><span class="w">  </span><span class="c1"># Highest priority</span>

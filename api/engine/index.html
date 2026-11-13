@@ -3055,7 +3055,7 @@
 </span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="c1"># Facts are in working memory but rules haven't fired</span>
 </span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="n">engine</span><span class="o">.</span><span class="n">run</span><span class="w">  </span><span class="c1"># Execute all matching rules</span>
 </span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>
-</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="c1"># Rules fire based on priority (highest first within each production)</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="c1"># Rules fire in priority order (highest first)</span>
 </span></code></pre></div></p>
 <p><strong>Using DSL (Recommended)</strong>:
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">kb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">.</span><span class="n">knowledge_base</span><span class="w"> </span><span class="k">do</span>
@@ -3071,9 +3071,8 @@
 </span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="k">end</span>
 </span></code></pre></div></p>
 <p><strong>Execution Order</strong>:
-- Production nodes fire in arbitrary order (dictionary order by rule name)
-- Within a production node, tokens fire in insertion order
-- For priority-based execution, use <code>KBS::Blackboard::Engine</code></p>
+- Production nodes fire in priority order, highest first; rules with equal priority fire in definition order
+- Within a production node, tokens fire in insertion order</p>
 <p><strong>Example - Multiple Rule Firings</strong>:
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">fired_rules</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[]</span>
 </span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>
@@ -3093,8 +3092,8 @@
 </span><span id="__span-10-16"><a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span><span class="p">)</span>
 </span><span id="__span-10-17"><a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a><span class="n">engine</span><span class="o">.</span><span class="n">run</span>
 </span><span id="__span-10-18"><a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a>
-</span><span id="__span-10-19"><a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a><span class="c1"># Both rules fire (priority doesn't affect KBS::Engine execution order)</span>
-</span><span id="__span-10-20"><a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a><span class="nb">puts</span><span class="w"> </span><span class="n">fired_rules</span><span class="w">  </span><span class="c1"># =&gt; ["rule_a", "rule_b"] or ["rule_b", "rule_a"]</span>
+</span><span id="__span-10-19"><a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a><span class="c1"># Both rules fire, higher priority first</span>
+</span><span id="__span-10-20"><a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a><span class="nb">puts</span><span class="w"> </span><span class="n">fired_rules</span><span class="w">  </span><span class="c1"># =&gt; ["rule_b", "rule_a"]</span>
 </span></code></pre></div></p>
 <p><strong>Best Practice</strong>: Call <code>run</code> after batch adding facts:
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># Good - batch facts then run once</span>

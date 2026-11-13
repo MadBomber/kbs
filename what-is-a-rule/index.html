@@ -1012,21 +1012,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#priority-in-kbsblackboardengine" class="md-nav__link">
+  <a href="#priority" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Priority in KBS::Blackboard::Engine
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#priority-in-kbsengine" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Priority in KBS::Engine
+        Priority
       
     </span>
   </a>
@@ -2687,21 +2676,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#priority-in-kbsblackboardengine" class="md-nav__link">
+  <a href="#priority" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Priority in KBS::Blackboard::Engine
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#priority-in-kbsengine" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Priority in KBS::Engine
+        Priority
       
     </span>
   </a>
@@ -3178,7 +3156,7 @@
 <p>Optional information about the rule:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">rule</span><span class="w"> </span><span class="s2">"fraud_detection"</span><span class="w"> </span><span class="k">do</span>
 </span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="n">desc</span><span class="w"> </span><span class="s2">"Flag transactions with suspicious patterns"</span>
-</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="n">priority</span><span class="w"> </span><span class="mi">100</span><span class="w">  </span><span class="c1"># Higher priority = fires first (blackboard only)</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="n">priority</span><span class="w"> </span><span class="mi">100</span><span class="w">  </span><span class="c1"># Higher priority = fires first</span>
 </span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">  </span><span class="c1"># ... conditions and action</span>
 </span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="k">end</span>
 </span></code></pre></div>
@@ -3405,7 +3383,7 @@
 </span><span id="__span-21-8"><a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a><span class="k">end</span>
 </span></code></pre></div>
 <h2 id="rule-ordering-and-priority">Rule Ordering and Priority<a class="headerlink" href="#rule-ordering-and-priority" title="Permanent link">&para;</a></h2>
-<h3 id="priority-in-kbsblackboardengine">Priority in KBS::Blackboard::Engine<a class="headerlink" href="#priority-in-kbsblackboardengine" title="Permanent link">&para;</a></h3>
+<h3 id="priority">Priority<a class="headerlink" href="#priority" title="Permanent link">&para;</a></h3>
 <p>Controls which rules fire first when multiple are activated:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="n">rule</span><span class="w"> </span><span class="s2">"critical_shutdown"</span><span class="p">,</span><span class="w"> </span><span class="ss">priority</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="w"> </span><span class="k">do</span>
 </span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="w">  </span><span class="n">on</span><span class="w"> </span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="n">greater_than</span><span class="p">(</span><span class="mi">120</span><span class="p">)</span>
@@ -3427,8 +3405,7 @@
 </span><span id="__span-22-18"><a id="__codelineno-22-18" name="__codelineno-22-18" href="#__codelineno-22-18"></a><span class="c1"># 2. send_warning (priority 50)</span>
 </span><span id="__span-22-19"><a id="__codelineno-22-19" name="__codelineno-22-19" href="#__codelineno-22-19"></a><span class="c1"># 3. log_reading (priority 10)</span>
 </span></code></pre></div>
-<h3 id="priority-in-kbsengine">Priority in KBS::Engine<a class="headerlink" href="#priority-in-kbsengine" title="Permanent link">&para;</a></h3>
-<p>Priority is stored but <strong>not used</strong> for ordering - rules fire in arbitrary order.</p>
+<p>Both <code>KBS::Engine</code> and <code>KBS::Blackboard::Engine</code> use priority. Rules with the same priority fire in the order they were defined.</p>
 <h3 id="when-priority-matters">When Priority Matters<a class="headerlink" href="#when-priority-matters" title="Permanent link">&para;</a></h3>
 <p><strong>Use priority for:</strong></p>
 <ul>
@@ -3723,7 +3700,7 @@
 <li>Composed of <strong>conditions</strong> (patterns to match) and <strong>action</strong> (code to execute)</li>
 <li><strong>Automatically activated</strong> by the RETE engine when facts satisfy conditions</li>
 <li>The "logic" that operates on facts (the "data") in a knowledge base</li>
-<li>Available with optional <strong>priority</strong> for execution ordering (blackboard only)</li>
+<li>Available with optional <strong>priority</strong> for execution ordering</li>
 </ul>
 <p>Think of rules as <strong>automated sentinels</strong> that continuously watch for specific patterns and react instantly when those patterns appear.</p>
 
