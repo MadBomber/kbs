@@ -18,6 +18,7 @@
 - Variable bindings are now correct when a `without` (negated) condition comes before other conditions in a rule. The action used to receive values from the wrong facts, or miss variables, and the blackboard audit log recorded the same wrong bindings. `KBS::Rule#bindings_for(facts)` is now public and is used by both.
 - A rule that starts with a `without` condition now fires when no matching fact exists, including right after the rule is added and after `reset` (#11).
 - Rule actions written as zero-argument lambdas, such as `perform -> { ... }`, no longer raise `ArgumentError` when the rule fires (#14).
+- `rule "name", priority: N do ... end` and `defrule` now accept a `priority:` keyword, as the README and docs show. It used to raise `ArgumentError`. A `priority` call inside the block still wins (#29).
 
 ## [0.2.1] - 2026-02-26
 

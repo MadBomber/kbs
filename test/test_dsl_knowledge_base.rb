@@ -46,6 +46,45 @@ class TestDSLKnowledgeBase < Minitest::Test
     assert_instance_of KBS::Engine, kb.engine
   end
 
+  def test_rule_priority_keyword_sets_rule_priority
+    kb = KBS::DSL::KnowledgeBase.new
+    kb.rule("urgent", priority: 100) { on :alarm }
+
+    assert_equal 100, kb.rules["urgent"].priority
+  end
+
+  def test_rule_priority_in_block_overrides_keyword
+    kb = KBS::DSL::KnowledgeBase.new
+    kb.rule("urgent", priority: 100) do
+      priority 5
+      on :alarm
+    end
+
+    assert_equal 5, kb.rules["urgent"].priority
+  end
+
+  def test_defrule_passes_priority_keyword
+    kb = KBS::DSL::KnowledgeBase.new
+    kb.defrule("urgent", priority: 50) { on :alarm }
+
+    assert_equal 50, kb.rules["urgent"].priority
+  end
+
+  def test_rule_priority_keyword_inside_knowledge_base_block
+    fired = []
+    kb = KBS.knowledge_base do
+      rule "urgent", priority: 100 do
+        on :alarm
+        perform { fired << :urgent }
+      end
+      fact :alarm
+      run
+    end
+
+    assert_equal 100, kb.rules["urgent"].priority
+    assert_equal [:urgent], fired
+  end
+
   def test_add_fact
     kb = KBS::DSL::KnowledgeBase.new
     kb.fact(:car, color: :red, speed: 100)
