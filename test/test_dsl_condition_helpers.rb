@@ -122,4 +122,28 @@ class TestDSLConditionHelpers < Minitest::Test
     assert_includes result, :red
     assert_includes result, :blue
   end
+
+  # Issue #40: helpers inside the block form of `on` used to be recorded
+  # as pattern keys of their own, so the rule never fired.
+  def test_helpers_in_block_form_on_are_conditions_not_keys
+    kb = KBS::DSL::KnowledgeBase.new
+    fired = []
+
+    kb.rule('big')  { on(:stock) { volume greater_than(500_000) };            perform { fired << :big } }
+    kb.rule('soon') { on(:earnings) { days_until satisfies { |d| d <= 3 } };  perform { fired << :soon } }
+    kb.rule('hot')  { on(:stock) { sector one_of(:tech, :energy) };            perform { fired << :hot } }
+    kb.rule('low')  { on(:stock) { rsi less_than(30) };                        perform { fired << :low } }
+    kb.rule('flat') { on(:stock) { change not_equal(0) };                      perform { fired << :flat } }
+    kb.rule('mid')  { on(:stock) { rsi range(20..40) };                        perform { fired << :mid } }
+    kb.rule('ex')   { on(:stock) { exchange equals(:nyse) };                   perform { fired << :ex } }
+
+    assert_equal [[:volume], [:days_until], [:sector], [:rsi], [:change], [:rsi], [:exchange]],
+                 kb.rules.values.map { |rule| rule.conditions.first.pattern.keys }
+
+    kb.fact :stock, volume: 900_000, sector: :tech, rsi: 25, change: 1, exchange: :nyse
+    kb.fact :earnings, days_until: 2
+    kb.run
+
+    assert_equal %i[big soon hot low flat mid ex], fired
+  end
 end
