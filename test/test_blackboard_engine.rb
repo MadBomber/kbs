@@ -163,3 +163,17 @@ class TestBlackboardEngine < Minitest::Test
     assert observer.called
   end
 end
+
+require_relative 'late_rule_addition_tests'
+
+class TestBlackboardEngineLateRuleAddition < Minitest::Test
+  include LateRuleAdditionTests
+
+  def setup
+    @engine = KBS::Blackboard::Engine.new(db_path: ':memory:')
+  end
+
+  def teardown
+    @engine.blackboard.close
+  end
+end
