@@ -45,6 +45,13 @@ class TestRule < Minitest::Test
     DSL
   end
 
+  def test_to_s_falls_back_when_condition_proc_cannot_be_decompiled
+    condition = KBS::Condition.new(:n, { value: :even?.to_proc })
+    rule = KBS::Rule.new("evens", conditions: [condition])
+
+    assert_match(/\A  on :n, value: <decompilation failed: .+>\z/, rule.to_s.lines[1].chomp)
+  end
+
   def test_fire_executes_action
     fired = false
     action = ->(facts, bindings) { fired = true }

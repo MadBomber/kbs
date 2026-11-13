@@ -16,6 +16,7 @@
 - The Redis store tests no longer connect to `localhost:6379` and flush database 15 there. They are skipped unless `KBS_TEST_REDIS_URL` names a disposable Redis database, such as a throwaway server; see `test/README.md`.
 - `require 'kbs/blackboard'` no longer fails when the `redis` gem is not installed, so the SQLite blackboard works without it. `RedisStore` and `HybridStore` still need redis, and raise `LoadError` when they open a connection without it.
 - Variable bindings are now correct when a `without` (negated) condition comes before other conditions in a rule. The action used to receive values from the wrong facts, or miss variables, and the blackboard audit log recorded the same wrong bindings. `KBS::Rule#bindings_for(facts)` is now public and is used by both.
+- `KBS::Rule#to_s` and `KnowledgeBase#rule_source` no longer raise `NoMethodError` when a condition value cannot be decompiled, such as `satisfies(&:even?)` in a rule with no source file. That value now prints as `<decompilation failed: ...>`, the same way an action that cannot be decompiled already did.
 - A rule that starts with a `without` condition now fires when no matching fact exists, including right after the rule is added and after `reset` (#11).
 - Rule actions written as zero-argument lambdas, such as `perform -> { ... }`, no longer raise `ArgumentError` when the rule fires (#14).
 

@@ -49,8 +49,7 @@ module KBS
       @conditions.each do |condition|
         keyword = condition.negated ? "without" : "on"
         pattern = condition.pattern.map do |key, value|
-          value = value.is_a?(Proc) ? KBS::Decompiler.new(value).decompile : value.inspect
-          "#{key}: #{value}"
+          "#{key}: #{pattern_value_source(value)}"
         end.join(", ")
         line = "  #{keyword} #{condition.type.inspect}"
         line += ", #{pattern}" unless pattern.empty?
@@ -68,6 +67,16 @@ module KBS
 
       lines << "end"
       lines.join("\n")
+    end
+
+    private
+
+    def pattern_value_source(value)
+      return value.inspect unless value.is_a?(Proc)
+
+      KBS::Decompiler.new(value).decompile
+    rescue StandardError => e
+      "<decompilation failed: #{e.message}>"
     end
   end
 end
