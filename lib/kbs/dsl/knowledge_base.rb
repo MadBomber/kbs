@@ -145,13 +145,15 @@ module KBS
         return "" if pattern.empty?
 
         pattern.map do |key, value|
-          val_str = if value.is_a?(Proc)
-                      Decompiler.new(value).decompile
-                    else
-                      value.inspect
-                    end
+          val_str = value.is_a?(Proc) ? decompile_proc(value) : value.inspect
           "#{key}: #{val_str}"
         end.join(", ")
+      end
+
+      def decompile_proc(proc_obj)
+        Decompiler.new(proc_obj).decompile
+      rescue => e
+        "<decompilation failed: #{e.message}>"
       end
 
       def decompile_proc_block(proc_obj)
