@@ -46,11 +46,17 @@ module KBS
     end
 
     def run
-      @production_nodes.values.each do |node|
+      prioritized_production_nodes.each do |node|
         node.tokens.each do |token|
           node.fire_rule(token)
         end
       end
+    end
+
+    # Production nodes in firing order: higher rule priority first, and
+    # definition order among rules of equal priority.
+    def prioritized_production_nodes
+      @production_nodes.values.sort_by.with_index { |node, index| [-node.rule.priority, index] }
     end
 
     # Clear all transient RETE state while preserving the compiled rule network.

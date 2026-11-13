@@ -210,7 +210,7 @@ engine.add_fact(:sensor, status: "active")
 # Facts are in working memory but rules haven't fired
 engine.run  # Execute all matching rules
 
-# Rules fire based on priority (highest first within each production)
+# Rules fire in priority order (highest first)
 ```
 
 **Using DSL (Recommended)**:
@@ -229,9 +229,8 @@ end
 ```
 
 **Execution Order**:
-- Production nodes fire in arbitrary order (dictionary order by rule name)
+- Production nodes fire in priority order, highest first; rules with equal priority fire in definition order
 - Within a production node, tokens fire in insertion order
-- For priority-based execution, use `KBS::Blackboard::Engine`
 
 **Example - Multiple Rule Firings**:
 ```ruby
@@ -253,8 +252,8 @@ kb.rules.each { |r| engine.add_rule(r) }
 engine.add_fact(:temperature, value: 85)
 engine.run
 
-# Both rules fire (priority doesn't affect KBS::Engine execution order)
-puts fired_rules  # => ["rule_a", "rule_b"] or ["rule_b", "rule_a"]
+# Both rules fire, higher priority first
+puts fired_rules  # => ["rule_b", "rule_a"]
 ```
 
 **Best Practice**: Call `run` after batch adding facts:

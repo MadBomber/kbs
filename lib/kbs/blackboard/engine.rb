@@ -37,7 +37,7 @@ module KBS
       end
 
       def run
-        @production_nodes.values.each do |node|
+        prioritized_production_nodes.each do |node|
           node.tokens.each do |token|
             # Only fire if not already fired
             next if token.fired?
