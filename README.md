@@ -196,8 +196,12 @@ puts "Received: #{message[:content]}" if message
 require 'kbs'
 require 'ruby_llm'
 
-# Requires Ollama with a model installed
-# export OLLAMA_MODEL=gpt-oss:latest
+# Requires `gem install ruby_llm` and LM Studio's server (`lms server start`) with a model loaded
+# LM Studio speaks the OpenAI API, so ruby_llm's :openai provider points at it
+RubyLLM.configure do |config|
+  config.openai_api_base = ENV.fetch("LMS_API_BASE", "http://localhost:1234/v1")
+  config.openai_api_key  = ENV.fetch("LMS_API_KEY", "lm-studio") # LM Studio ignores it; ruby_llm needs one set
+end
 
 kb = KBS.knowledge_base do
   rule "ai_sentiment_analysis" do
@@ -206,7 +210,11 @@ kb = KBS.knowledge_base do
     perform do |facts|
       news = facts.first
       # AI-powered sentiment analysis
-      client = RubyLLM::Chat.new(provider: :ollama, model: 'gpt-oss:latest')
+      client = RubyLLM::Chat.new(
+        provider: :openai,
+        model: ENV.fetch("LMS_MODEL", "openai/gpt-oss-20b"),
+        assume_model_exists: true # local model ids aren't in ruby_llm's registry
+      )
       response = client.ask("Analyze sentiment: #{news[:headline]}")
 
       puts "🤖 AI SENTIMENT ANALYSIS: #{news[:symbol]}"
