@@ -20,6 +20,7 @@
 - A rule that starts with a `without` condition now fires when no matching fact exists, including right after the rule is added and after `reset` (#11).
 - Rule actions written as zero-argument lambdas, such as `perform -> { ... }`, no longer raise `ArgumentError` when the rule fires (#14).
 - `rule "name", priority: N do ... end` and `defrule` now accept a `priority:` keyword, as the README and docs show. It used to raise `ArgumentError`. A `priority` call inside the block still wins (#29).
+- Condition helpers such as `greater_than`, `less_than`, `satisfies`, `one_of`, `not_equal`, `range` and `equals` now work inside the block form of `on`. They used to be recorded as pattern keys of their own (or raise for multi-argument helpers), so the rule never fired. An attribute named after a helper in the block form now means the helper (#40).
 
 ## [0.2.1] - 2026-02-26
 
