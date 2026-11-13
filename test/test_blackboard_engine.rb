@@ -162,6 +162,63 @@ class TestBlackboardEngine < Minitest::Test
 
     assert observer.called
   end
+
+  # Issue #42: remove_fact must retract the fact from the Rete network,
+  # so a rule negated on it fires afterwards.
+  def test_remove_fact_retracts_negated_fact_from_network
+    fired = 0
+    @engine.add_rule(KBS::Rule.new('a_without_b',
+      conditions: [KBS::Condition.new(:a, {}), KBS::Condition.new(:b, {}, negated: true)],
+      action: ->(_facts) { fired += 1 }))
+    @engine.add_fact(:a, {})
+    b = @engine.add_fact(:b, {})
+    @engine.remove_fact(b)
+    @engine.run
+
+    assert_equal 1, fired
+    assert_empty @engine.alpha_memories[{ type: :b }].items
+  end
+
+  def test_remove_fact_retracts_positive_match
+    fired = 0
+    @engine.add_rule(KBS::Rule.new('a_and_b',
+      conditions: [KBS::Condition.new(:a, {}), KBS::Condition.new(:b, {})],
+      action: ->(_facts) { fired += 1 }))
+    @engine.add_fact(:a, {})
+    b = @engine.add_fact(:b, {})
+    @engine.remove_fact(b)
+    @engine.run
+
+    assert_equal 0, fired
+    assert_empty @engine.production_nodes['a_and_b'].tokens
+  end
+end
+
+class TestBlackboardFactEquality < Minitest::Test
+  def test_facts_with_the_same_uuid_are_equal
+    a = KBS::Blackboard::Fact.new('u-1', :a, { x: 1 })
+    b = KBS::Blackboard::Fact.new('u-1', :a, { x: 2 })
+
+    assert_equal a, b
+    assert a.eql?(b)
+    assert_equal a.hash, b.hash
+    assert_equal 1, [a, b].uniq.size
+  end
+
+  def test_facts_with_different_uuids_are_not_equal
+    a = KBS::Blackboard::Fact.new('u-1', :a, { x: 1 })
+    b = KBS::Blackboard::Fact.new('u-2', :a, { x: 1 })
+
+    refute_equal a, b
+    refute a.eql?(b)
+  end
+
+  def test_fact_is_not_equal_to_other_objects
+    fact = KBS::Blackboard::Fact.new('u-1', :a, {})
+
+    refute_equal fact, 'u-1'
+    refute_equal fact, KBS::Fact.new(:a, {})
+  end
 end
 
 require_relative 'late_rule_addition_tests'
