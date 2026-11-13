@@ -20,6 +20,7 @@
 - A rule that starts with a `without` condition now fires when no matching fact exists, including right after the rule is added and after `reset` (#11).
 - Rule actions written as zero-argument lambdas, such as `perform -> { ... }`, no longer raise `ArgumentError` when the rule fires (#14).
 - `rule "name", priority: N do ... end` and `defrule` now accept a `priority:` keyword, as the README and docs show. It used to raise `ArgumentError`. A `priority` call inside the block still wins (#29).
+- `KBS::Blackboard::Engine#remove_fact` now retracts the fact from the Rete network. It used to stay in its alpha memory, so a rule negated on it never fired and a rule matched on it still fired. `KBS::Blackboard::Fact` now compares, and hashes, by `uuid` (#42).
 
 ## [0.2.1] - 2026-02-26
 
