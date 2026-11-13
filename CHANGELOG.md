@@ -20,6 +20,7 @@
 - A rule that starts with a `without` condition now fires when no matching fact exists, including right after the rule is added and after `reset` (#11).
 - Rule actions written as zero-argument lambdas, such as `perform -> { ... }`, no longer raise `ArgumentError` when the rule fires (#14).
 - `rule "name", priority: N do ... end` and `defrule` now accept a `priority:` keyword, as the README and docs show. It used to raise `ArgumentError`. A `priority` call inside the block still wins (#29).
+- `KBS::Rule#to_s` and `KnowledgeBase#rule_source` now render `&&` and `||` in decompiled conditions, so `between(1, 9)` prints as `->(v) { v >= 1 && v <= 9 }` instead of `v >= 1; v <= 9`. An `||` used as a side of `&&` is parenthesized (#36).
 - Rule `priority` now sets firing order in `KBS::Engine` and `KBS::Blackboard::Engine`: higher-priority rules fire first, and rules of equal priority keep definition order. Rules used to fire in definition order regardless of priority, which changes the order for anyone who already sets priorities (#35).
 - Adding a rule after facts exist no longer makes earlier rules fire again for facts they already matched. A late rule now picks up existing facts without replaying them into every alpha memory (#34).
 
