@@ -21,6 +21,11 @@
 - Rule actions written as zero-argument lambdas, such as `perform -> { ... }`, no longer raise `ArgumentError` when the rule fires (#14).
 - `rule "name", priority: N do ... end` and `defrule` now accept a `priority:` keyword, as the README and docs show. It used to raise `ArgumentError`. A `priority` call inside the block still wins (#29).
 - `KBS::Blackboard::Engine#remove_fact` now retracts the fact from the Rete network. It used to stay in its alpha memory, so a rule negated on it never fired and a rule matched on it still fired. `KBS::Blackboard::Fact` now compares, and hashes, by `uuid` (#42).
+- A rule with two or more conditions now fires once per match when its facts arrive in a different order from its conditions. It used to fire once per extra join, and `KBS::Blackboard::Engine` wrote duplicate audit rows (#41).
+- Condition helpers such as `greater_than`, `less_than`, `satisfies`, `one_of`, `not_equal`, `range` and `equals` now work inside the block form of `on`. They used to be recorded as pattern keys of their own (or raise for multi-argument helpers), so the rule never fired. An attribute named after a helper in the block form now means the helper (#40).
+- `KBS::Rule#to_s` and `KnowledgeBase#rule_source` now render `&&` and `||` in decompiled conditions, so `between(1, 9)` prints as `->(v) { v >= 1 && v <= 9 }` instead of `v >= 1; v <= 9`. An `||` used as a side of `&&` is parenthesized (#36).
+- Rule `priority` now sets firing order in `KBS::Engine` and `KBS::Blackboard::Engine`: higher-priority rules fire first, and rules of equal priority keep definition order. Rules used to fire in definition order regardless of priority, which changes the order for anyone who already sets priorities (#35).
+- Adding a rule after facts exist no longer makes earlier rules fire again for facts they already matched. A late rule now picks up existing facts without replaying them into every alpha memory (#34).
 
 ## [0.2.1] - 2026-02-26
 

@@ -298,7 +298,7 @@ end
 
 ### Priority Control
 
-Control rule firing order (Blackboard only):
+Control rule firing order (higher priority fires first):
 
 ```ruby
 rule "critical_alert" do

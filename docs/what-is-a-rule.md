@@ -158,7 +158,7 @@ Optional information about the rule:
 ```ruby
 rule "fraud_detection" do
   desc "Flag transactions with suspicious patterns"
-  priority 100  # Higher priority = fires first (blackboard only)
+  priority 100  # Higher priority = fires first
   # ... conditions and action
 end
 ```
@@ -448,7 +448,7 @@ end
 
 ## Rule Ordering and Priority
 
-### Priority in KBS::Blackboard::Engine
+### Priority
 
 Controls which rules fire first when multiple are activated:
 
@@ -474,9 +474,7 @@ end
 # 3. log_reading (priority 10)
 ```
 
-### Priority in KBS::Engine
-
-Priority is stored but **not used** for ordering - rules fire in arbitrary order.
+Both `KBS::Engine` and `KBS::Blackboard::Engine` use priority. Rules with the same priority fire in the order they were defined.
 
 ### When Priority Matters
 
@@ -828,6 +826,6 @@ A **rule** is:
 - Composed of **conditions** (patterns to match) and **action** (code to execute)
 - **Automatically activated** by the RETE engine when facts satisfy conditions
 - The "logic" that operates on facts (the "data") in a knowledge base
-- Available with optional **priority** for execution ordering (blackboard only)
+- Available with optional **priority** for execution ordering
 
 Think of rules as **automated sentinels** that continuously watch for specific patterns and react instantly when those patterns appear.

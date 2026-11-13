@@ -46,11 +46,17 @@ module KBS
     end
 
     def run
-      @production_nodes.values.each do |node|
+      prioritized_production_nodes.each do |node|
         node.tokens.each do |token|
           node.fire_rule(token)
         end
       end
+    end
+
+    # Production nodes in firing order: higher rule priority first, and
+    # definition order among rules of equal priority.
+    def prioritized_production_nodes
+      @production_nodes.values.sort_by.with_index { |node, index| [-node.rule.priority, index] }
     end
 
     # Clear all transient RETE state while preserving the compiled rule network.
@@ -134,6 +140,7 @@ module KBS
           join_node = JoinNode.new(alpha_memory, current_beta, tests)
           new_beta = BetaMemory.new
           join_node.successors << new_beta
+          current_beta.tokens.each { |token| join_node.left_activate(token) }
           current_beta = new_beta
         end
       end
@@ -144,16 +151,15 @@ module KBS
       unless rule.conditions.empty?
         current_beta.tokens.each { |token| production_node.activate(token) }
       end
-
-      @working_memory.facts.each do |fact|
-        @alpha_memories.each do |pattern, memory|
-          memory.activate(fact) if fact.matches?(pattern)
-        end
-      end
     end
 
+    # A new alpha memory starts with the facts already in working memory.
+    # Facts go straight into its items: the memory has no successors yet,
+    # and existing alpha memories already hold their facts.
     def get_or_create_alpha_memory(pattern)
-      @alpha_memories[pattern] ||= AlphaMemory.new(pattern)
+      @alpha_memories[pattern] ||= AlphaMemory.new(pattern).tap do |memory|
+        memory.items.concat(@working_memory.facts.select { |fact| fact.matches?(pattern) })
+      end
     end
   end
 end

@@ -522,7 +522,7 @@ rule2 = Rule.new("normal", priority: 0) { ... }
 # rule1 fires before rule2
 ```
 
-For same-priority rules, firing order is deterministic but unspecified (depends on hash ordering).
+Rules with the same priority fire in the order they were defined.
 
 ### Fact Retraction
 
