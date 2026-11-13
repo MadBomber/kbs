@@ -449,3 +449,13 @@ class TestEngine < Minitest::Test
     end
   end
 end
+
+require_relative 'late_rule_addition_tests'
+
+class TestEngineLateRuleAddition < Minitest::Test
+  include LateRuleAdditionTests
+
+  def setup
+    @engine = KBS::Engine.new
+  end
+end

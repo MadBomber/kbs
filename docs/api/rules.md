@@ -151,8 +151,8 @@ end
 ```
 
 **Priority Semantics**:
-- **KBS::Engine**: Priority is stored but NOT used for execution order (rules fire in arbitrary order)
-- **KBS::Blackboard::Engine**: Higher priority rules fire first within production nodes
+- Higher priority rules fire first in both `KBS::Engine` and `KBS::Blackboard::Engine`
+- Rules with equal priority fire in the order they were defined
 
 **Common Priority Ranges**:
 ```ruby

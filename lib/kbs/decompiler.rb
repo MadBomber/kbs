@@ -62,10 +62,33 @@ module KBS
       stack = []
       statements = []
       instructions = body.select { |i| i.is_a?(Array) }
+      steps = body.select { |i| i.is_a?(Array) || label?(i) }
+      pending = []        # open && / || operators waiting for their label
+      or_exprs = {}.compare_by_identity
+      skip = 0
 
-      instructions.each do |inst|
+      steps.each_with_index do |inst, index|
+        if skip.positive?
+          skip -= 1
+          next
+        end
+
+        if label?(inst)
+          close_logical_ops(inst, pending, stack, or_exprs)
+          next
+        end
+
         op = inst[0]
         case op
+        when :dup
+          logical = logical_op_at(steps, index)
+          if logical
+            pending.push([logical, stack.pop, steps[index + 1][1]])
+            skip = 2
+          else
+            stack.push("/* dup */")
+          end
+
         when :getlocal_WC_0
           idx = inst[1]
           name = slot_to_name(idx)
@@ -169,6 +192,34 @@ module KBS
 
       all = statements + [stack.last].compact
       all.join("; ")
+    end
+
+    # Ruby compiles `a && b` as `a; dup; branchunless L; pop; b; L:`, and
+    # `a || b` the same way with branchif. Returns "&&" or "||" when the
+    # dup at index starts that sequence, else nil.
+    def logical_op_at(steps, index)
+      branch, pop = steps[index + 1], steps[index + 2]
+      return unless pop.is_a?(Array) && pop[0] == :pop && branch.is_a?(Array)
+
+      { branchunless: "&&", branchif: "||" }[branch[0]]
+    end
+
+    # At a jump target, joins each pending operator whose branch goes
+    # there with the expression on top of the stack, innermost first.
+    # An || result used as either side of && is parenthesized.
+    def close_logical_ops(label, pending, stack, or_exprs)
+      while pending.any? && pending.last[2] == label
+        op, left, _label = pending.pop
+        right = stack.pop
+        left, right = [left, right].map { |side| or_exprs.key?(side) ? "(#{side})" : side } if op == "&&"
+        expr = "#{left} #{op} #{right}"
+        or_exprs[expr] = true if op == "||"
+        stack.push(expr)
+      end
+    end
+
+    def label?(item)
+      item.is_a?(Symbol) && item.start_with?("label_")
     end
 
     def format_call(receiver, method, args)

@@ -357,7 +357,7 @@ Sets the rule priority (higher priority rules fire first).
 
 **Returns**: `self` (chainable)
 
-**Note**: Priority only affects execution order in `KBS::Blackboard::Engine`, not `KBS::Engine`.
+**Note**: Both `KBS::Engine` and `KBS::Blackboard::Engine` honor priority. Rules with equal priority fire in definition order.
 
 **Example**:
 ```ruby
