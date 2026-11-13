@@ -20,6 +20,7 @@
 - A rule that starts with a `without` condition now fires when no matching fact exists, including right after the rule is added and after `reset` (#11).
 - Rule actions written as zero-argument lambdas, such as `perform -> { ... }`, no longer raise `ArgumentError` when the rule fires (#14).
 - `rule "name", priority: N do ... end` and `defrule` now accept a `priority:` keyword, as the README and docs show. It used to raise `ArgumentError`. A `priority` call inside the block still wins (#29).
+- A rule with two or more conditions now fires once per match when its facts arrive in a different order from its conditions. It used to fire once per extra join, and `KBS::Blackboard::Engine` wrote duplicate audit rows (#41).
 
 ## [0.2.1] - 2026-02-26
 

@@ -21,9 +21,10 @@ module KBS
       @left_linked = false
     end
 
+    # The beta memory relinks when it gains its first token, and then
+    # propagates that token itself, so there is nothing to replay here.
     def left_relink!
       @left_linked = true
-      @beta_memory.tokens.each { |token| left_activate(token) } if @beta_memory
     end
 
     def right_unlink!
