@@ -78,6 +78,26 @@ class TestBlackboardMemory < Minitest::Test
     assert_equal 10, message[:priority]
   end
 
+  # Issue #60: a consumer that claimed the message between another
+  # consumer's read and update used to receive it as well.
+  def test_message_consumed_by_only_one_consumer
+    @memory.post_message("s", "q", { n: 1 })
+    queue = @memory.message_queue
+    db = @memory.store.db
+    original = db.method(:get_first_row)
+    received = []
+
+    db.define_singleton_method(:get_first_row) do |*args|
+      row = original.call(*args)
+      db.singleton_class.send(:remove_method, :get_first_row)
+      received << queue.consume("q", "rival")
+      row
+    end
+
+    received << queue.consume("q", "c")
+    assert_equal 1, received.compact.size
+  end
+
   def test_peek_messages
     @memory.post_message("Sensor1", "readings", { temp: 22 })
     @memory.post_message("Sensor2", "readings", { temp: 25 })

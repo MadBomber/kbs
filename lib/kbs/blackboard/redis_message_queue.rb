@@ -39,11 +39,12 @@ module KBS
       end
 
       def consume(topic, consumer)
-        # Get highest priority (lowest score) unconsumed message
-        messages = @redis.zrange("messages:#{topic}", 0, 0)
-        return nil if messages.empty?
+        # Atomically pop the highest priority (lowest score) message, so no
+        # other consumer can receive it too
+        popped = @redis.zpopmin("messages:#{topic}")
+        return nil unless popped
 
-        message_id = messages.first
+        message_id = popped.first
         message_data = @redis.hgetall("message:#{message_id}")
 
         return nil if message_data.empty? || message_data['consumed'] == '1'
@@ -53,7 +54,6 @@ module KBS
           pipeline.hset("message:#{message_id}", 'consumed', '1')
           pipeline.hset("message:#{message_id}", 'consumed_by', consumer)
           pipeline.hset("message:#{message_id}", 'consumed_at', Time.now.to_f)
-          pipeline.zrem("messages:#{topic}", message_id)
         end
 
         {

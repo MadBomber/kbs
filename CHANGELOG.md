@@ -31,6 +31,7 @@
 - `KBS::Rule#to_s` and `KnowledgeBase#rule_source` now render `&&` and `||` in decompiled conditions, so `between(1, 9)` prints as `->(v) { v >= 1 && v <= 9 }` instead of `v >= 1; v <= 9`. An `||` used as a side of `&&` is parenthesized (#36).
 - Rule `priority` now sets firing order in `KBS::Engine` and `KBS::Blackboard::Engine`: higher-priority rules fire first, and rules of equal priority keep definition order. Rules used to fire in definition order regardless of priority, which changes the order for anyone who already sets priorities (#35).
 - Adding a rule after facts exist no longer makes earlier rules fire again for facts they already matched. A late rule now picks up existing facts without replaying them into every alpha memory (#34).
+- Two consumers sharing one SQLite or Redis blackboard can no longer both receive the same message from `consume_message`. The SQLite queue now claims a message with an update guarded by `consumed = 0` and moves on if another consumer got there first, and the Redis queue pops the message with `ZPOPMIN` before reading it (#60).
 
 ## [0.2.1] - 2026-02-26
 
