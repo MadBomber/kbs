@@ -869,8 +869,8 @@ metrics.report
 ```ruby
 # Without DSL - manual Rule object
 condition = KBS::Condition.new(:temperature, { value: -> (v) { v > 80 } })
-action = ->(bindings) { puts "High temperature detected" }
-rule = KBS::Rule.new(name: "high_temp", priority: 10, conditions: [condition], action: action)
+action = ->(facts) { puts "High temperature detected" }
+rule = KBS::Rule.new("high_temp", priority: 10, conditions: [condition], action: action)
 
 engine.add_rule(rule)
 ```
@@ -912,17 +912,20 @@ end
 
 ### Rule Ordering
 
-Rules are added to `@rules` array in registration order, but execution order depends on when tokens reach production nodes.
+`run` fires production nodes in priority order, highest first. Rules with equal priority fire in the order they were defined. Both `KBS::Engine` and `KBS::Blackboard::Engine` behave this way.
 
 ```ruby
 # Both rules activated by same fact
+condition = KBS::Condition.new(:temperature, {})
+rule_a = KBS::Rule.new(:rule_a, conditions: [condition], action: ->(facts) { puts "a" }, priority: 1)
+rule_b = KBS::Rule.new(:rule_b, conditions: [condition], action: ->(facts) { puts "b" }, priority: 5)
+
 engine.add_rule(rule_a)  # Registered first
 engine.add_rule(rule_b)  # Registered second
 
 engine.add_fact(:temperature, value: 85)
 engine.run
-# Both fire, but order is unpredictable in KBS::Engine
-# Use KBS::Blackboard::Engine with priority for deterministic order
+# rule_b fires first (higher priority), then rule_a
 ```
 
 ---
