@@ -12,6 +12,7 @@
 - `examples/temp_dsl.txt`, a captured demo output file, is no longer shipped in the gem (#15).
 
 ### Fixed
+- `KBS::Blackboard::Memory#clear_session` now clears the session's facts when a store is passed in, such as a `SqliteStore`, `RedisStore` or `HybridStore` made without a `session_id`. The memory now uses the store's session id, and `SqliteStore` and `HybridStore` make one when none is given (#51).
 - `rake` and `rake test` now run the test suite. SimpleCov's exit hook used to fire first and abort before any test ran. One side effect: the existing 35% minimum-coverage gate now applies to rake runs, so a narrowly filtered run or `rake test:deps` can fail on coverage alone.
 - `KBS.knowledge_base(engine: ...)` and `KBS::DSL::KnowledgeBase.new(engine: ...)` now accept an engine, such as a `KBS::Blackboard::Engine`. Passing one used to raise `ArgumentError`, which broke the README's SQLite and Redis blackboard examples and the docs examples that pass `engine:`. Without the keyword a new `KBS::Engine` is used, as before (#10).
 - The Redis store tests no longer connect to `localhost:6379` and flush database 15 there. They are skipped unless `KBS_TEST_REDIS_URL` names a disposable Redis database, such as a throwaway server; see `test/README.md`.

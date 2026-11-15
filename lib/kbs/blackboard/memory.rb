@@ -14,7 +14,7 @@ module KBS
       attr_reader :session_id, :store, :message_queue, :audit_log
 
       def initialize(db_path: ':memory:', store: nil)
-        @session_id = SecureRandom.uuid
+        @session_id = (store.session_id if store.respond_to?(:session_id)) || SecureRandom.uuid
         @observers = []
 
         # Use provided store or create default SqliteStore
