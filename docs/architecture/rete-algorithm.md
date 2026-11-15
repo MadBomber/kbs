@@ -710,9 +710,9 @@ KBS implements RETE with unlinking optimization.
 | Negation nodes | `lib/kbs/negation_node.rb` | ~90 |
 | Production nodes | `lib/kbs/production_node.rb` | ~30 |
 | Conditions | `lib/kbs/condition.rb` | ~30 |
-| Rules | `lib/kbs/rule.rb` | ~50 |
+| Rules | `lib/kbs/rule.rb` | ~80 |
 
-**Total**: ~650 lines of core RETE implementation.
+**Total**: ~720 lines of core RETE implementation.
 
 ## Further Reading
 

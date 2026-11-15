@@ -916,8 +916,12 @@ end
 
 ```ruby
 # Both rules activated by same fact
-engine.add_rule(rule_a)  # Registered first, priority: 1
-engine.add_rule(rule_b)  # Registered second, priority: 5
+condition = KBS::Condition.new(:temperature, {})
+rule_a = KBS::Rule.new(:rule_a, conditions: [condition], action: ->(facts) { puts "a" }, priority: 1)
+rule_b = KBS::Rule.new(:rule_b, conditions: [condition], action: ->(facts) { puts "b" }, priority: 5)
+
+engine.add_rule(rule_a)  # Registered first
+engine.add_rule(rule_b)  # Registered second
 
 engine.add_fact(:temperature, value: 85)
 engine.run
