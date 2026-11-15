@@ -712,7 +712,7 @@ KBS implements RETE with unlinking optimization.
 | Conditions | `lib/kbs/condition.rb` | ~30 |
 | Rules | `lib/kbs/rule.rb` | ~80 |
 
-**Total**: ~720 lines of core RETE implementation.
+**Total**: ~735 lines of core RETE implementation.
 
 ## Further Reading
 

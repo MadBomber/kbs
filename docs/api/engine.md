@@ -869,8 +869,8 @@ metrics.report
 ```ruby
 # Without DSL - manual Rule object
 condition = KBS::Condition.new(:temperature, { value: -> (v) { v > 80 } })
-action = ->(bindings) { puts "High temperature detected" }
-rule = KBS::Rule.new(name: "high_temp", priority: 10, conditions: [condition], action: action)
+action = ->(facts) { puts "High temperature detected" }
+rule = KBS::Rule.new("high_temp", priority: 10, conditions: [condition], action: action)
 
 engine.add_rule(rule)
 ```
