@@ -168,13 +168,13 @@ module KBS
           stack.push("{ #{entries.join(', ')} }")
 
         when :branchunless
-          # Anything else left open, such as an && or a branchif, would be lost.
-          lone = pending.empty? && stack.size == 1
+          # Anything else on the stack, such as from a bare branchif, would be lost.
+          lone = stack.size == 1
           stack.push(lone ? ternary(stack.pop, steps[index + 1..], inst[1]) : '/* branchunless */')
           break
 
-        when :leave
-          # ignore
+        when :leave, :nop
+          # ignore; Ruby 3.x starts a block with nop
 
         when :pop
           val = stack.pop
@@ -184,6 +184,9 @@ module KBS
           stack.push("/* #{op} */")
         end
       end
+
+      # An operator whose label lies outside these steps never closed.
+      return "/* #{pending.last[0]} */" if pending.any?
 
       all = statements + [stack.last].compact
       all.join("; ")
