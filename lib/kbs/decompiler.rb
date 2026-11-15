@@ -61,7 +61,6 @@ module KBS
     def decompile_body(body)
       stack = []
       statements = []
-      instructions = body.select { |i| i.is_a?(Array) }
       steps = body.select { |i| i.is_a?(Array) || label?(i) }
       pending = []        # open && / || operators waiting for their label
       or_exprs = {}.compare_by_identity
@@ -169,14 +168,8 @@ module KBS
           stack.push("{ #{entries.join(', ')} }")
 
         when :branchunless
-          condition = stack.pop
-          remaining = instructions[instructions.index(inst) + 1..]
-          true_val = extract_value(remaining, 0)
-          false_val = extract_value(remaining, 1)
-          if true_val && false_val
-            stack.push("#{condition} ? #{true_val} : #{false_val}")
-            break
-          end
+          stack.push(ternary(stack.pop, steps[index + 1..], inst[1]))
+          break
 
         when :leave
           # ignore
@@ -253,12 +246,24 @@ module KBS
       end
     end
 
-    def extract_value(instructions, index)
-      values = instructions.select { |i|
-        i.is_a?(Array) && (i[0] == :putchilledstring || i[0] == :putstring || i[0] == :putobject)
-      }
-      val = values[index]
-      val[1].inspect if val
+    # `cond ? a : b` compiles to `branchunless L; a; leave; L: b; leave`.
+    # Any other shape becomes a placeholder, so the condition is never
+    # silently dropped.
+    def ternary(condition, rest, else_label)
+      split = rest.index(else_label)
+      sources = split && [rest[0...split], rest[split + 1..]].map { |steps| branch_source(steps) }
+      return '/* branchunless */' unless sources&.all?
+
+      "#{condition} ? #{sources.join(' : ')}"
+    end
+
+    # Source of a ternary branch that ends the block with one
+    # expression, else nil.
+    def branch_source(steps)
+      return unless steps.last.is_a?(Array) && steps.last[0] == :leave
+
+      src = decompile_body(steps)
+      src unless src.empty? || src.include?(';')
     end
 
     # The value of a variable the proc captured from the method that

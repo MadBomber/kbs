@@ -103,6 +103,21 @@ class TestDecompiler < Minitest::Test
     assert_equal '->(v) { v.any? { |x| x > v } }', decompile(inner_block_lambda)
   end
 
+
+  def test_renders_ternary_branches_that_are_not_plain_objects
+    assert_equal '->(v) { v > 5 ? "hi" : "lo" }', decompile(->(v) { v > 5 ? 'hi' : 'lo' })
+    assert_equal '->(v) { v ? 1 : 2 }', decompile(->(v) { v ? 1 : 2 })
+    assert_equal '->(v) { v ? nil : 3 }', decompile(->(v) { v ? nil : 3 })
+    assert_equal '->(v) { v ? 0 : :x }', decompile(->(v) { v ? 0 : :x })
+    assert_equal '->(v) { v > 5 ? v + 1 : 2 }', decompile(->(v) { v > 5 ? v + 1 : 2 })
+    assert_equal '->(v) { v ? v.foo(:a) : :b }', decompile(->(v) { v ? v.foo(:a) : :b })
+  end
+
+
+  def test_ternary_branch_it_cannot_render_keeps_the_condition
+    assert_equal '->(v) { v ? /* opt_size */ : 5 }', decompile(->(v) { v ? 's'.size : 5 })
+  end
+
   private
 
 
