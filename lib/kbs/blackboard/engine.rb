@@ -24,18 +24,6 @@ module KBS
         @blackboard.remove_fact(fact)
       end
 
-      def update(action, fact)
-        if action == :add
-          @alpha_memories.each do |pattern, memory|
-            memory.activate(fact) if fact.matches?(pattern)
-          end
-        elsif action == :remove
-          @alpha_memories.each do |pattern, memory|
-            memory.deactivate(fact) if fact.matches?(pattern)
-          end
-        end
-      end
-
       def run
         prioritized_production_nodes.each do |node|
           node.tokens.each do |token|

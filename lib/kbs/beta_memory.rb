@@ -45,7 +45,6 @@ module KBS
 
     def add_token(token)
       @tokens << token
-      unlink! if @tokens.empty?
       relink! if @tokens.size == 1
     end
 
