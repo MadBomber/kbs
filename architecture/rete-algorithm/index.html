@@ -2165,7 +2165,7 @@
   <span class="md-ellipsis">
     
   
-    ReteEngine
+    Engine
   
 
     
@@ -3222,7 +3222,7 @@
 </span><span id="__span-10-29"><a id="__codelineno-10-29" name="__codelineno-10-29" href="#__codelineno-10-29"></a><span class="w">  </span><span class="vi">@production_nodes</span><span class="o">[</span><span class="n">rule</span><span class="o">.</span><span class="n">name</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">production_node</span>
 </span><span id="__span-10-30"><a id="__codelineno-10-30" name="__codelineno-10-30" href="#__codelineno-10-30"></a><span class="k">end</span>
 </span></code></pre></div>
-<p><strong>Implementation</strong>: <code>lib/kbs/rete_engine.rb:58</code></p>
+<p><strong>Implementation</strong>: <code>KBS::Engine#build_network_for_rule</code> in <code>lib/kbs/engine.rb</code></p>
 <h3 id="2-fact-assertion">2. Fact Assertion<a class="headerlink" href="#2-fact-assertion" title="Permanent link">&para;</a></h3>
 <p>When <code>engine.add_fact(:stock, symbol: "AAPL", price: 150)</code> is called:</p>
 <p><img alt="Fact Assertion Flow" src="../../assets/images/fact-assertion-flow.svg" /></p>
@@ -3243,15 +3243,21 @@
 <h3 id="4-rule-execution">4. Rule Execution<a class="headerlink" href="#4-rule-execution" title="Permanent link">&para;</a></h3>
 <p>The final phase is <code>engine.run()</code>:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">run</span>
-</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="vi">@production_nodes</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">node</span><span class="o">|</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="n">prioritized_production_nodes</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">node</span><span class="o">|</span>
 </span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">    </span><span class="n">node</span><span class="o">.</span><span class="n">tokens</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">token</span><span class="o">|</span>
 </span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">      </span><span class="n">node</span><span class="o">.</span><span class="n">fire_rule</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
 </span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">    </span><span class="k">end</span>
 </span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="w">  </span><span class="k">end</span>
 </span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="k">end</span>
+</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>
+</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="c1"># Production nodes in firing order: higher rule priority first, and</span>
+</span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="c1"># definition order among rules of equal priority.</span>
+</span><span id="__span-12-11"><a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="k">def</span><span class="w"> </span><span class="nf">prioritized_production_nodes</span>
+</span><span id="__span-12-12"><a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a><span class="w">  </span><span class="vi">@production_nodes</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">sort_by</span><span class="o">.</span><span class="n">with_index</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">node</span><span class="p">,</span><span class="w"> </span><span class="n">index</span><span class="o">|</span><span class="w"> </span><span class="o">[-</span><span class="n">node</span><span class="o">.</span><span class="n">rule</span><span class="o">.</span><span class="n">priority</span><span class="p">,</span><span class="w"> </span><span class="n">index</span><span class="o">]</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-12-13"><a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a><span class="k">end</span>
 </span></code></pre></div>
 <p>Each production node fires its accumulated tokens. The <code>fired?</code> flag prevents duplicate firing.</p>
-<p><strong>Implementation</strong>: <code>lib/kbs/rete_engine.rb:48</code></p>
+<p><strong>Implementation</strong>: <code>KBS::Engine#run</code> in <code>lib/kbs/engine.rb</code></p>
 <h2 id="rete-optimization-unlinking">RETE Optimization: Unlinking<a class="headerlink" href="#rete-optimization-unlinking" title="Permanent link">&para;</a></h2>
 <h3 id="the-problem">The Problem<a class="headerlink" href="#the-problem" title="Permanent link">&para;</a></h3>
 <p>In basic RETE, join nodes always process activations even when one input is empty:</p>
@@ -3398,7 +3404,7 @@
 <p>If 10 rules all match <code>stock(symbol: "AAPL")</code>, they share one <code>AlphaMemory</code> node, reducing:
 - Memory usage (one fact store instead of 10)
 - Computation (one pattern match instead of 10)</p>
-<p><strong>Implementation</strong>: <code>lib/kbs/rete_engine.rb:104</code></p>
+<p><strong>Implementation</strong>: <code>KBS::Engine#get_or_create_alpha_memory</code> in <code>lib/kbs/engine.rb</code></p>
 <h3 id="incremental-matching">Incremental Matching<a class="headerlink" href="#incremental-matching" title="Permanent link">&para;</a></h3>
 <p>RETE is <strong>incremental</strong>: after the initial network build, only changes are processed. Adding a fact activates a small subgraph, not the entire network.</p>
 <p><strong>Complexity</strong>:
@@ -3556,8 +3562,8 @@
 <tbody>
 <tr>
 <td>Core engine</td>
-<td><code>lib/kbs/rete_engine.rb</code></td>
-<td>~110</td>
+<td><code>lib/kbs/engine.rb</code></td>
+<td>~165</td>
 </tr>
 <tr>
 <td>Working memory</td>
@@ -3607,11 +3613,11 @@
 <tr>
 <td>Rules</td>
 <td><code>lib/kbs/rule.rb</code></td>
-<td>~50</td>
+<td>~80</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Total</strong>: ~650 lines of core RETE implementation.</p>
+<p><strong>Total</strong>: ~735 lines of core RETE implementation.</p>
 <h2 id="further-reading">Further Reading<a class="headerlink" href="#further-reading" title="Permanent link">&para;</a></h2>
 <h3 id="academic-papers">Academic Papers<a class="headerlink" href="#academic-papers" title="Permanent link">&para;</a></h3>
 <ul>

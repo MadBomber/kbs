@@ -1489,7 +1489,7 @@
   <span class="md-ellipsis">
     
   
-    ReteEngine
+    Engine
   
 
     
@@ -1958,7 +1958,7 @@
 <h3 id="1-rete-engine">1. RETE Engine<a class="headerlink" href="#1-rete-engine" title="Permanent link">&para;</a></h3>
 <p>The heart of KBS. Implements Charles Forgy's RETE algorithm with modern optimizations.</p>
 <p><strong>Key Files:</strong>
-- <code>lib/kbs/rete_engine.rb</code> - Main engine coordinator
+- <code>lib/kbs/engine.rb</code> - Main engine coordinator
 - <code>lib/kbs/alpha_memory.rb</code> - Pattern-level fact storage
 - <code>lib/kbs/beta_memory.rb</code> - Token (partial match) storage
 - <code>lib/kbs/join_node.rb</code> - Inter-condition joins
@@ -2161,7 +2161,7 @@
 </span></code></pre></div>
 <h2 id="file-organization">File Organization<a class="headerlink" href="#file-organization" title="Permanent link">&para;</a></h2>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>lib/kbs/
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>├── rete_engine.rb         # Main engine
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>├── engine.rb              # Main engine
 </span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>├── working_memory.rb      # Fact storage
 </span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>├── fact.rb                # Fact representation
 </span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>├── rule.rb                # Rule definition

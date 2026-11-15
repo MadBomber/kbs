@@ -29,7 +29,7 @@
     
     
       
-        <title>ReteEngine - KBS - Knowledge-Based Systems for Ruby</title>
+        <title>Engine - KBS - Knowledge-Based Systems for Ruby</title>
       
     
     
@@ -122,7 +122,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              ReteEngine
+              Engine
             
           </span>
         </div>
@@ -1498,7 +1498,7 @@
   <span class="md-ellipsis">
     
   
-    ReteEngine
+    Engine
   
 
     
@@ -1516,7 +1516,7 @@
   <span class="md-ellipsis">
     
   
-    ReteEngine
+    Engine
   
 
     
@@ -3552,8 +3552,8 @@
 <h3 id="programmatic-rule-creation">Programmatic Rule Creation<a class="headerlink" href="#programmatic-rule-creation" title="Permanent link">&para;</a></h3>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-36-1"><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="c1"># Without DSL - manual Rule object</span>
 </span><span id="__span-36-2"><a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a><span class="n">condition</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">v</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">80</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">})</span>
-</span><span id="__span-36-3"><a id="__codelineno-36-3" name="__codelineno-36-3" href="#__codelineno-36-3"></a><span class="n">action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-&gt;</span><span class="p">(</span><span class="n">bindings</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"High temperature detected"</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-36-4"><a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a><span class="n">rule</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Rule</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="nb">name</span><span class="p">:</span><span class="w"> </span><span class="s2">"high_temp"</span><span class="p">,</span><span class="w"> </span><span class="ss">priority</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="ss">conditions</span><span class="p">:</span><span class="w"> </span><span class="o">[</span><span class="n">condition</span><span class="o">]</span><span class="p">,</span><span class="w"> </span><span class="ss">action</span><span class="p">:</span><span class="w"> </span><span class="n">action</span><span class="p">)</span>
+</span><span id="__span-36-3"><a id="__codelineno-36-3" name="__codelineno-36-3" href="#__codelineno-36-3"></a><span class="n">action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-&gt;</span><span class="p">(</span><span class="n">facts</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"High temperature detected"</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-36-4"><a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a><span class="n">rule</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Rule</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">"high_temp"</span><span class="p">,</span><span class="w"> </span><span class="ss">priority</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="ss">conditions</span><span class="p">:</span><span class="w"> </span><span class="o">[</span><span class="n">condition</span><span class="o">]</span><span class="p">,</span><span class="w"> </span><span class="ss">action</span><span class="p">:</span><span class="w"> </span><span class="n">action</span><span class="p">)</span>
 </span><span id="__span-36-5"><a id="__codelineno-36-5" name="__codelineno-36-5" href="#__codelineno-36-5"></a>
 </span><span id="__span-36-6"><a id="__codelineno-36-6" name="__codelineno-36-6" href="#__codelineno-36-6"></a><span class="n">engine</span><span class="o">.</span><span class="n">add_rule</span><span class="p">(</span><span class="n">rule</span><span class="p">)</span>
 </span></code></pre></div>
@@ -3585,15 +3585,18 @@
 <hr />
 <h2 id="performance-considerations">Performance Considerations<a class="headerlink" href="#performance-considerations" title="Permanent link">&para;</a></h2>
 <h3 id="rule-ordering">Rule Ordering<a class="headerlink" href="#rule-ordering" title="Permanent link">&para;</a></h3>
-<p>Rules are added to <code>@rules</code> array in registration order, but execution order depends on when tokens reach production nodes.</p>
+<p><code>run</code> fires production nodes in priority order, highest first. Rules with equal priority fire in the order they were defined. Both <code>KBS::Engine</code> and <code>KBS::Blackboard::Engine</code> behave this way.</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-38-1"><a id="__codelineno-38-1" name="__codelineno-38-1" href="#__codelineno-38-1"></a><span class="c1"># Both rules activated by same fact</span>
-</span><span id="__span-38-2"><a id="__codelineno-38-2" name="__codelineno-38-2" href="#__codelineno-38-2"></a><span class="n">engine</span><span class="o">.</span><span class="n">add_rule</span><span class="p">(</span><span class="n">rule_a</span><span class="p">)</span><span class="w">  </span><span class="c1"># Registered first</span>
-</span><span id="__span-38-3"><a id="__codelineno-38-3" name="__codelineno-38-3" href="#__codelineno-38-3"></a><span class="n">engine</span><span class="o">.</span><span class="n">add_rule</span><span class="p">(</span><span class="n">rule_b</span><span class="p">)</span><span class="w">  </span><span class="c1"># Registered second</span>
-</span><span id="__span-38-4"><a id="__codelineno-38-4" name="__codelineno-38-4" href="#__codelineno-38-4"></a>
-</span><span id="__span-38-5"><a id="__codelineno-38-5" name="__codelineno-38-5" href="#__codelineno-38-5"></a><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span><span class="p">)</span>
-</span><span id="__span-38-6"><a id="__codelineno-38-6" name="__codelineno-38-6" href="#__codelineno-38-6"></a><span class="n">engine</span><span class="o">.</span><span class="n">run</span>
-</span><span id="__span-38-7"><a id="__codelineno-38-7" name="__codelineno-38-7" href="#__codelineno-38-7"></a><span class="c1"># Both fire, but order is unpredictable in KBS::Engine</span>
-</span><span id="__span-38-8"><a id="__codelineno-38-8" name="__codelineno-38-8" href="#__codelineno-38-8"></a><span class="c1"># Use KBS::Blackboard::Engine with priority for deterministic order</span>
+</span><span id="__span-38-2"><a id="__codelineno-38-2" name="__codelineno-38-2" href="#__codelineno-38-2"></a><span class="n">condition</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="p">{})</span>
+</span><span id="__span-38-3"><a id="__codelineno-38-3" name="__codelineno-38-3" href="#__codelineno-38-3"></a><span class="n">rule_a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Rule</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:rule_a</span><span class="p">,</span><span class="w"> </span><span class="ss">conditions</span><span class="p">:</span><span class="w"> </span><span class="o">[</span><span class="n">condition</span><span class="o">]</span><span class="p">,</span><span class="w"> </span><span class="ss">action</span><span class="p">:</span><span class="w"> </span><span class="o">-&gt;</span><span class="p">(</span><span class="n">facts</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"a"</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="ss">priority</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-38-4"><a id="__codelineno-38-4" name="__codelineno-38-4" href="#__codelineno-38-4"></a><span class="n">rule_b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Rule</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:rule_b</span><span class="p">,</span><span class="w"> </span><span class="ss">conditions</span><span class="p">:</span><span class="w"> </span><span class="o">[</span><span class="n">condition</span><span class="o">]</span><span class="p">,</span><span class="w"> </span><span class="ss">action</span><span class="p">:</span><span class="w"> </span><span class="o">-&gt;</span><span class="p">(</span><span class="n">facts</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"b"</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="ss">priority</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">)</span>
+</span><span id="__span-38-5"><a id="__codelineno-38-5" name="__codelineno-38-5" href="#__codelineno-38-5"></a>
+</span><span id="__span-38-6"><a id="__codelineno-38-6" name="__codelineno-38-6" href="#__codelineno-38-6"></a><span class="n">engine</span><span class="o">.</span><span class="n">add_rule</span><span class="p">(</span><span class="n">rule_a</span><span class="p">)</span><span class="w">  </span><span class="c1"># Registered first</span>
+</span><span id="__span-38-7"><a id="__codelineno-38-7" name="__codelineno-38-7" href="#__codelineno-38-7"></a><span class="n">engine</span><span class="o">.</span><span class="n">add_rule</span><span class="p">(</span><span class="n">rule_b</span><span class="p">)</span><span class="w">  </span><span class="c1"># Registered second</span>
+</span><span id="__span-38-8"><a id="__codelineno-38-8" name="__codelineno-38-8" href="#__codelineno-38-8"></a>
+</span><span id="__span-38-9"><a id="__codelineno-38-9" name="__codelineno-38-9" href="#__codelineno-38-9"></a><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span><span class="p">)</span>
+</span><span id="__span-38-10"><a id="__codelineno-38-10" name="__codelineno-38-10" href="#__codelineno-38-10"></a><span class="n">engine</span><span class="o">.</span><span class="n">run</span>
+</span><span id="__span-38-11"><a id="__codelineno-38-11" name="__codelineno-38-11" href="#__codelineno-38-11"></a><span class="c1"># rule_b fires first (higher priority), then rule_a</span>
 </span></code></pre></div>
 <hr />
 <h3 id="fact-batching">Fact Batching<a class="headerlink" href="#fact-batching" title="Permanent link">&para;</a></h3>
