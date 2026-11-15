@@ -18,7 +18,7 @@ Comprehensive test suite for the KBS (Knowledge-Based System) Ruby gem using Min
 - `test_rete_engine.rb` - Complete RETE network building and inference
 
 ### DSL Tests
-- `test_dsl_variable.rb` - Logic variables (symbols starting with `?`)
+- `test_dsl_variable.rb` - Logic variables (symbols ending with `?`)
 - `test_dsl_knowledge_base.rb` - KB initialization, facts, rules, queries
 - `test_dsl_rule_builder.rb` - Fluent API for rule definition, aliases
 - `test_dsl_condition_helpers.rb` - Pattern matching helpers (less_than, greater_than, between, etc.)

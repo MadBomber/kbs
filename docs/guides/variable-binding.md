@@ -4,7 +4,7 @@ Variables connect facts across conditions, enabling join constraints in the RETE
 
 ## Variable Syntax
 
-Variables start with `?` and are symbols:
+Variables end with `?` and are symbols:
 
 ```ruby
 :temp?      # Variable named "temp"

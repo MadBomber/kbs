@@ -59,7 +59,7 @@ A condition specifies a pattern that facts must match. Patterns can include:
 
 - **Type matching**: `{ type: :stock }`
 - **Literal values**: `{ symbol: "AAPL" }`
-- **Variable bindings**: `{ price: :price? }` (variables start with `?`)
+- **Variable bindings**: `{ price: :price? }` (variables end with `?`)
 - **Predicates**: `{ price: ->(p) { p > 100 } }`
 - **Negation**: `negated: true` (match when pattern is absent)
 
@@ -449,7 +449,7 @@ This is especially critical for:
 
 ## Variable Binding
 
-Variables (symbols starting with `?`) enable cross-condition constraints and action parameterization:
+Variables (symbols ending with `?`) enable cross-condition constraints and action parameterization:
 
 ### Extraction During Network Build
 
@@ -458,7 +458,7 @@ class Condition
   def extract_variables(pattern)
     vars = {}
     pattern.each do |key, value|
-      if value.is_a?(Symbol) && value.to_s.start_with?('?')
+      if value.is_a?(Symbol) && value.to_s.end_with?('?')
         vars[value] = key  # { :symbol? => :symbol, :price? => :price }
       end
     end
