@@ -18,6 +18,18 @@ class TestDSLKnowledgeBase < Minitest::Test
     assert_same engine, kb.engine
   end
 
+  # Issue #58: print_rules used to show helpers as raw Proc objects.
+  def test_print_rules_renders_condition_helpers
+    kb = KBS.knowledge_base do
+      rule 'hot' do
+        on :temperature, value: greater_than(80), location: "lab"
+        perform { }
+      end
+    end
+
+    assert_output(/1\. temperature\(value: ->\(v\) \{ v > 80 \}, location: "lab"\)$/) { kb.print_rules }
+  end
+
   def test_knowledge_base_with_blackboard_engine_fires_rules
     engine = KBS::Blackboard::Engine.new
     fired = []
