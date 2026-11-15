@@ -13,7 +13,6 @@ module KBS
         @priority = 0
         @conditions = []
         @action_block = nil
-        @current_condition_group = []
         @negated = false
       end
 

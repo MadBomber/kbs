@@ -31,9 +31,9 @@
   <!-- Arrow to Step 2 -->
   <path d="M 190 160 L 190 200" class="flow-arrow"/>
 
-  <!-- Step 2: ReteEngine.update -->
+  <!-- Step 2: Engine.update -->
   <rect x="50" y="200" width="280" height="80" class="highlight-box" rx="5"/>
-  <text x="190" y="225" class="step-label" text-anchor="middle">2. ReteEngine.update(:add, fact)</text>
+  <text x="190" y="225" class="step-label" text-anchor="middle">2. Engine.update(:add, fact)</text>
   <text x="190" y="250" class="code-label" text-anchor="middle">For each alpha_memory:</text>
   <text x="190" y="267" class="code-label" text-anchor="middle">if fact.matches?(pattern)</text>
 

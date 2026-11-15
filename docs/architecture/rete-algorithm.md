@@ -323,7 +323,7 @@ def build_network_for_rule(rule)
 end
 ```
 
-**Implementation**: `lib/kbs/rete_engine.rb:58`
+**Implementation**: `KBS::Engine#build_network_for_rule` in `lib/kbs/engine.rb`
 
 ### 2. Fact Assertion
 
@@ -358,17 +358,23 @@ The final phase is `engine.run()`:
 
 ```ruby
 def run
-  @production_nodes.values.each do |node|
+  prioritized_production_nodes.each do |node|
     node.tokens.each do |token|
       node.fire_rule(token)
     end
   end
 end
+
+# Production nodes in firing order: higher rule priority first, and
+# definition order among rules of equal priority.
+def prioritized_production_nodes
+  @production_nodes.values.sort_by.with_index { |node, index| [-node.rule.priority, index] }
+end
 ```
 
 Each production node fires its accumulated tokens. The `fired?` flag prevents duplicate firing.
 
-**Implementation**: `lib/kbs/rete_engine.rb:48`
+**Implementation**: `KBS::Engine#run` in `lib/kbs/engine.rb`
 
 ## RETE Optimization: Unlinking
 
@@ -564,7 +570,7 @@ If 10 rules all match `stock(symbol: "AAPL")`, they share one `AlphaMemory` node
 - Memory usage (one fact store instead of 10)
 - Computation (one pattern match instead of 10)
 
-**Implementation**: `lib/kbs/rete_engine.rb:104`
+**Implementation**: `KBS::Engine#get_or_create_alpha_memory` in `lib/kbs/engine.rb`
 
 ### Incremental Matching
 
@@ -694,7 +700,7 @@ KBS implements RETE with unlinking optimization.
 
 | Component | File | Lines |
 |-----------|------|-------|
-| Core engine | `lib/kbs/rete_engine.rb` | ~110 |
+| Core engine | `lib/kbs/engine.rb` | ~165 |
 | Working memory | `lib/kbs/working_memory.rb` | ~35 |
 | Facts | `lib/kbs/fact.rb` | ~45 |
 | Tokens | `lib/kbs/token.rb` | ~40 |
@@ -704,9 +710,9 @@ KBS implements RETE with unlinking optimization.
 | Negation nodes | `lib/kbs/negation_node.rb` | ~90 |
 | Production nodes | `lib/kbs/production_node.rb` | ~30 |
 | Conditions | `lib/kbs/condition.rb` | ~30 |
-| Rules | `lib/kbs/rule.rb` | ~50 |
+| Rules | `lib/kbs/rule.rb` | ~80 |
 
-**Total**: ~650 lines of core RETE implementation.
+**Total**: ~735 lines of core RETE implementation.
 
 ## Further Reading
 
