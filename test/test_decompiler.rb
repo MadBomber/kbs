@@ -118,6 +118,12 @@ class TestDecompiler < Minitest::Test
     assert_equal '->(v) { v ? /* opt_size */ : 5 }', decompile(->(v) { v ? 's'.size : 5 })
   end
 
+
+  def test_ternary_inside_and_or_falls_back_to_comment
+    assert_equal '->(v) { /* branchunless */ }', decompile(->(v) { v && (v ? 1 : 2) })
+    assert_equal '->(v) { /* branchunless */ }', decompile(->(v) { v || (v ? 1 : 2) })
+  end
+
   private
 
 

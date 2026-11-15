@@ -168,7 +168,8 @@ module KBS
           stack.push("{ #{entries.join(', ')} }")
 
         when :branchunless
-          stack.push(ternary(stack.pop, steps[index + 1..], inst[1]))
+          # Inside an open && or ||, the ternary would need parentheses.
+          stack.push(pending.empty? ? ternary(stack.pop, steps[index + 1..], inst[1]) : '/* branchunless */')
           break
 
         when :leave
