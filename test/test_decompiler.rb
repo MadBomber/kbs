@@ -130,6 +130,19 @@ class TestDecompiler < Minitest::Test
     assert_equal '->(a, b) { a ? /* && */ : 2 }', decompile(->(a, b) { a ? b && 1 : 2 })
   end
 
+
+  # Ruby 4.1 pushes string literals with dupchilledstring, so swap it in
+  # for the opcode the running Ruby used.
+  def test_renders_dupchilledstring_literal
+    decompiler = KBS::Decompiler.new(->(v) { v == 'hi' })
+    body = decompiler.instance_variable_get(:@body).map do |inst|
+      inst.is_a?(Array) && inst[1] == 'hi' ? [:dupchilledstring, 'hi'] : inst
+    end
+    decompiler.instance_variable_set(:@body, body)
+
+    assert_equal '->(v) { v == "hi" }', decompiler.decompile
+  end
+
   private
 
 

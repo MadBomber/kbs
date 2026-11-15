@@ -122,7 +122,7 @@ module KBS
         when :putnil
           stack.push("nil")
 
-        when :putchilledstring, :putstring
+        when :putchilledstring, :dupchilledstring, :putstring
           stack.push(inst[1].inspect)
 
         when :opt_plus, :opt_minus, :opt_mult, :opt_div, :opt_mod,
