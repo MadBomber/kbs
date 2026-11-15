@@ -175,7 +175,7 @@ nav:
       - Testing Rules: advanced/testing.md
   - API Reference:
       - api/index.md
-      - ReteEngine: api/engine.md
+      - Engine: api/engine.md
       - Facts: api/facts.md
       - Rules: api/rules.md
       - Blackboard: api/blackboard.md

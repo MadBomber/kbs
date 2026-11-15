@@ -323,7 +323,7 @@ def build_network_for_rule(rule)
 end
 ```
 
-**Implementation**: `lib/kbs/engine.rb:111`
+**Implementation**: `KBS::Engine#build_network_for_rule` in `lib/kbs/engine.rb`
 
 ### 2. Fact Assertion
 
@@ -372,9 +372,9 @@ def prioritized_production_nodes
 end
 ```
 
-Production nodes fire in priority order, highest first; rules with equal priority fire in the order they were defined. Each production node fires its accumulated tokens. The `fired?` flag prevents duplicate firing.
+Each production node fires its accumulated tokens. The `fired?` flag prevents duplicate firing.
 
-**Implementation**: `lib/kbs/engine.rb:48`
+**Implementation**: `KBS::Engine#run` in `lib/kbs/engine.rb`
 
 ## RETE Optimization: Unlinking
 
@@ -570,7 +570,7 @@ If 10 rules all match `stock(symbol: "AAPL")`, they share one `AlphaMemory` node
 - Memory usage (one fact store instead of 10)
 - Computation (one pattern match instead of 10)
 
-**Implementation**: `lib/kbs/engine.rb:159`
+**Implementation**: `KBS::Engine#get_or_create_alpha_memory` in `lib/kbs/engine.rb`
 
 ### Incremental Matching
 

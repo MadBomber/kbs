@@ -912,7 +912,7 @@ end
 
 ### Rule Ordering
 
-`run` fires production nodes in priority order, highest first. Rules with equal priority fire in the order they were added. Both `KBS::Engine` and `KBS::Blackboard::Engine` behave this way.
+`run` fires production nodes in priority order, highest first. Rules with equal priority fire in the order they were defined. Both `KBS::Engine` and `KBS::Blackboard::Engine` behave this way.
 
 ```ruby
 # Both rules activated by same fact
