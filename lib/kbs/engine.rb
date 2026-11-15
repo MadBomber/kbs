@@ -33,6 +33,10 @@ module KBS
       @working_memory.remove_fact(fact)
     end
 
+    def facts
+      @working_memory.facts
+    end
+
     def update(action, fact)
       if action == :add
         @alpha_memories.each do |pattern, memory|

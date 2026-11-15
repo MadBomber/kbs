@@ -18,6 +18,15 @@ class TestDSLKnowledgeBase < Minitest::Test
     assert_same engine, kb.engine
   end
 
+  # Issue #64: the docs call kb.close.
+  def test_close_closes_a_blackboard_engine
+    engine = KBS::Blackboard::Engine.new
+    KBS.knowledge_base(engine: engine).close
+    assert engine.blackboard.store.db.closed?
+
+    KBS.knowledge_base.close
+  end
+
   def test_knowledge_base_with_blackboard_engine_fires_rules
     engine = KBS::Blackboard::Engine.new
     fired = []
