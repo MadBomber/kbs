@@ -78,6 +78,16 @@ class TestBlackboardMemory < Minitest::Test
     assert_equal 10, message[:priority]
   end
 
+  # Issue #63: a String message raised JSON::ParserError and blocked its topic.
+  def test_string_message_does_not_block_topic
+    @memory.post_message("s", "q", "plain text")
+    @memory.post_message("s", "q", { ok: true })
+
+    assert_equal ["plain text", { ok: true }], @memory.peek_messages("q").map { |m| m[:content] }
+    assert_equal "plain text", @memory.consume_message("q", "c")[:content]
+    assert_equal({ ok: true }, @memory.consume_message("q", "c")[:content])
+  end
+
   def test_peek_messages
     @memory.post_message("Sensor1", "readings", { temp: 22 })
     @memory.post_message("Sensor2", "readings", { temp: 25 })
