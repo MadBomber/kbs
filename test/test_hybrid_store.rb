@@ -99,4 +99,15 @@ class TestHybridStore < Minitest::Test
     fact = @store.get_fact('uuid-1')
     assert_equal 25, fact[:attributes][:temp]
   end
+
+  def test_memory_clear_session_without_session_id
+    store = KBS::Blackboard::Persistence::HybridStore.new(redis: @redis, db_path: ':memory:')
+    memory = KBS::Blackboard::Memory.new(store: store)
+    memory.add_fact(:sensor, { temp: 22 })
+
+    memory.clear_session
+    assert_equal 0, memory.get_facts(:sensor).size
+  ensure
+    store&.close
+  end
 end

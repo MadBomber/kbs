@@ -164,6 +164,18 @@ class TestBlackboardMemory < Minitest::Test
     assert_equal 0, @memory.get_facts(:sensor).size
   end
 
+  def test_clear_session_with_store_passed_in
+    store = KBS::Blackboard::Persistence::SqliteStore.new(db_path: ':memory:')
+    memory = KBS::Blackboard::Memory.new(store: store)
+    memory.add_fact(:sensor, { temp: 22 })
+
+    memory.clear_session
+    assert_equal 0, memory.get_facts(:sensor).size
+    assert_equal store.session_id, memory.session_id
+  ensure
+    memory&.close
+  end
+
   def test_register_knowledge_source
     @memory.register_knowledge_source(
       "TemperatureMonitor",

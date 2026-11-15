@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'securerandom'
 require 'sqlite3'
 require 'json'
 require_relative 'store'
@@ -12,7 +13,7 @@ module KBS
 
         def initialize(db_path: ':memory:', session_id: nil)
           @db_path = db_path
-          @session_id = session_id
+          @session_id = session_id || SecureRandom.uuid
           @transaction_depth = 0
           setup_database
         end
