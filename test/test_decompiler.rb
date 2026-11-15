@@ -122,6 +122,7 @@ class TestDecompiler < Minitest::Test
   def test_ternary_inside_and_or_falls_back_to_comment
     assert_equal '->(v) { /* branchunless */ }', decompile(->(v) { v && (v ? 1 : 2) })
     assert_equal '->(v) { /* branchunless */ }', decompile(->(v) { v || (v ? 1 : 2) })
+    assert_equal '->(a, b) { /* branchunless */ }', decompile(->(a, b) { a || b ? 1 : 2 })
   end
 
   private
