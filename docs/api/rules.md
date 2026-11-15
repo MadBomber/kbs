@@ -128,7 +128,7 @@ puts kb.rules.first.name  # => "high_temperature"
 
 **Read-only**: Yes (via `attr_reader`)
 
-**Description**: Rule priority (higher = executes first in KBS::Blackboard::Engine)
+**Description**: Rule priority (higher = executes first)
 
 **Default**: `0`
 

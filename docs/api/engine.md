@@ -912,17 +912,16 @@ end
 
 ### Rule Ordering
 
-Rules are added to `@rules` array in registration order, but execution order depends on when tokens reach production nodes.
+`run` fires production nodes in priority order, highest first. Rules with equal priority fire in the order they were added. Both `KBS::Engine` and `KBS::Blackboard::Engine` behave this way.
 
 ```ruby
 # Both rules activated by same fact
-engine.add_rule(rule_a)  # Registered first
-engine.add_rule(rule_b)  # Registered second
+engine.add_rule(rule_a)  # Registered first, priority: 1
+engine.add_rule(rule_b)  # Registered second, priority: 5
 
 engine.add_fact(:temperature, value: 85)
 engine.run
-# Both fire, but order is unpredictable in KBS::Engine
-# Use KBS::Blackboard::Engine with priority for deterministic order
+# rule_b fires first (higher priority), then rule_a
 ```
 
 ---

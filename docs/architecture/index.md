@@ -15,7 +15,7 @@ KBS is built on a layered architecture that separates concerns while maintaining
 The heart of KBS. Implements Charles Forgy's RETE algorithm with modern optimizations.
 
 **Key Files:**
-- `lib/kbs/rete_engine.rb` - Main engine coordinator
+- `lib/kbs/engine.rb` - Main engine coordinator
 - `lib/kbs/alpha_memory.rb` - Pattern-level fact storage
 - `lib/kbs/beta_memory.rb` - Token (partial match) storage
 - `lib/kbs/join_node.rb` - Inter-condition joins
@@ -245,7 +245,7 @@ end
 
 ```
 lib/kbs/
-├── rete_engine.rb         # Main engine
+├── engine.rb              # Main engine
 ├── working_memory.rb      # Fact storage
 ├── fact.rb                # Fact representation
 ├── rule.rb                # Rule definition

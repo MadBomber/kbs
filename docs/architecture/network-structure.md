@@ -340,4 +340,4 @@ end
 
 ---
 
-*This document describes implementation details in `lib/kbs/rete_engine.rb:58` (network compilation) and related node classes.*
+*This document describes implementation details in `lib/kbs/engine.rb:111` (network compilation) and related node classes.*
