@@ -62,7 +62,7 @@ module KBS
             topic: result['topic'],
             content: JSON.parse(result['content'], symbolize_names: true),
             priority: result['priority'],
-            posted_at: Time.parse(result['posted_at'])
+            posted_at: Time.parse("#{result['posted_at']} UTC").localtime
           }
         end
       end
@@ -80,7 +80,7 @@ module KBS
             topic: row['topic'],
             content: JSON.parse(row['content'], symbolize_names: true),
             priority: row['priority'],
-            posted_at: Time.parse(row['posted_at'])
+            posted_at: Time.parse("#{row['posted_at']} UTC").localtime
           }
         end
       end

@@ -78,6 +78,23 @@ class TestBlackboardMemory < Minitest::Test
     assert_equal 10, message[:priority]
   end
 
+  # Issue #62: SQLite stores CURRENT_TIMESTAMP as UTC text, which used to be
+  # read back as local time.
+  def test_timestamps_read_back_in_utc
+    original_tz = ENV['TZ']
+    ENV['TZ'] = 'America/Chicago'
+
+    @memory.post_message("s", "t", { a: 1 })
+    @memory.log_rule_firing("r", [], {})
+    fact = @memory.add_fact(:x, v: 1)
+
+    assert_in_delta Time.now.to_f, @memory.consume_message("t", "c")[:posted_at].to_f, 60
+    assert_in_delta Time.now.to_f, @memory.get_rule_firings.first[:fired_at].to_f, 60
+    assert_in_delta Time.now.to_f, @memory.get_history(fact.uuid).first[:timestamp].to_f, 60
+  ensure
+    ENV['TZ'] = original_tz
+  end
+
   def test_peek_messages
     @memory.post_message("Sensor1", "readings", { temp: 22 })
     @memory.post_message("Sensor2", "readings", { temp: 25 })

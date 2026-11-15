@@ -75,7 +75,7 @@ module KBS
             fact_type: row['fact_type'].to_sym,
             attributes: JSON.parse(row['attributes'], symbolize_names: true),
             action: row['action'],
-            timestamp: Time.parse(row['timestamp']),
+            timestamp: Time.parse("#{row['timestamp']} UTC").localtime,
             session_id: row['session_id']
           }
         end
@@ -99,7 +99,7 @@ module KBS
             rule_name: row['rule_name'],
             fact_uuids: JSON.parse(row['fact_uuids']),
             bindings: row['bindings'] ? JSON.parse(row['bindings'], symbolize_names: true) : {},
-            fired_at: Time.parse(row['fired_at']),
+            fired_at: Time.parse("#{row['fired_at']} UTC").localtime,
             session_id: row['session_id']
           }
         end
