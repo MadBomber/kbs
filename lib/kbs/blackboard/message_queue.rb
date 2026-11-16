@@ -45,16 +45,24 @@ module KBS
       end
 
       def consume(topic, consumer)
-        result = @db.get_first_row(
-          "SELECT * FROM blackboard_messages WHERE topic = ? AND consumed = 0 ORDER BY priority DESC, posted_at ASC LIMIT 1",
-          [topic]
-        )
+        result = nil
 
-        if result
+        loop do
+          result = @db.get_first_row(
+            "SELECT * FROM blackboard_messages WHERE topic = ? AND consumed = 0 ORDER BY priority DESC, posted_at ASC LIMIT 1",
+            [topic]
+          )
+          break unless result
+
+          # Claim the message only if no other consumer took it since the SELECT
           @db.execute(
-            "UPDATE blackboard_messages SET consumed = 1, consumed_by = ?, consumed_at = CURRENT_TIMESTAMP WHERE id = ?",
+            "UPDATE blackboard_messages SET consumed = 1, consumed_by = ?, consumed_at = CURRENT_TIMESTAMP WHERE id = ? AND consumed = 0",
             [consumer, result['id']]
           )
+          break if @db.changes == 1
+        end
+
+        if result
 
           {
             id: result['id'],
