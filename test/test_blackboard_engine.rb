@@ -113,6 +113,15 @@ class TestBlackboardEngine < Minitest::Test
     assert_equal 22, message[:content][:temp]
   end
 
+  # Issue #64: the docs call engine.facts and engine.close.
+  def test_facts_and_close
+    @engine.add_fact(:sensor, { temp: 22 })
+    assert_equal [22], @engine.facts.map { |f| f[:temp] }
+
+    @engine.close
+    assert @engine.blackboard.store.db.closed?
+  end
+
   def test_stats
     @engine.add_fact(:sensor, { temp: 22 })
     @engine.post_message("Sensor1", "readings", { temp: 22 })

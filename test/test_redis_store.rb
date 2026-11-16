@@ -135,6 +135,17 @@ class TestRedisStore < Minitest::Test
     @store.vacuum
   end
 
+  # Issue #63: a String message raised JSON::ParserError on consume.
+  def test_memory_string_message
+    memory = KBS::Blackboard::Memory.new(store: @store)
+    memory.post_message("s", "q", "plain text")
+    memory.post_message("s", "q", { ok: true })
+
+    assert_equal ["plain text", { ok: true }], memory.peek_messages("q").map { |m| m[:content] }
+    assert_equal "plain text", memory.consume_message("q", "c")[:content]
+    assert_equal({ ok: true }, memory.consume_message("q", "c")[:content])
+  end
+
   def test_memory_clear_session_without_session_id
     store = KBS::Blackboard::Persistence::RedisStore.new(redis: @redis)
     memory = KBS::Blackboard::Memory.new(store: store)
