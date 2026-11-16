@@ -32,6 +32,7 @@
 - Rule `priority` now sets firing order in `KBS::Engine` and `KBS::Blackboard::Engine`: higher-priority rules fire first, and rules of equal priority keep definition order. Rules used to fire in definition order regardless of priority, which changes the order for anyone who already sets priorities (#35).
 - Adding a rule after facts exist no longer makes earlier rules fire again for facts they already matched. A late rule now picks up existing facts without replaying them into every alpha memory (#34).
 - Condition helpers `greater_than`, `less_than`, `between`, `range` and `matches` now just fail to match a value of the wrong type, such as a String compared with `greater_than(5)`. `add_fact` used to raise and leave the fact in working memory, where other rules still fired on it (#67).
+- The README "Using the DSL" breakout rule and `examples/advanced_example_dsl.rb` now put each stock's checks in one `on :stock` condition. Two separate conditions matched different stocks, so the README reported stocks that did not qualify, twice, and the example printed a buy signal for a stock with no P/E (#66).
 
 ## [0.2.1] - 2026-02-26
 
