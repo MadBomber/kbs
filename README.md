@@ -388,7 +388,7 @@ See the [DSL guide](docs/guides/dsl.md#pattern-helpers) for examples.
 
 ## 🔧 Requirements
 
-- Ruby >= 3.2.0
+- Ruby >= 4.0
 - SQLite3 (bundled with most systems)
 - Redis (optional, for Redis storage)
 - Ollama (optional, for AI integration)
