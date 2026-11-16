@@ -108,7 +108,7 @@ module KBS
           puts "  Conditions: #{builder.conditions.size}"
           builder.conditions.each_with_index do |cond, i|
             negated = cond.negated ? "NOT " : ""
-            puts "    #{i + 1}. #{negated}#{cond.type}(#{cond.pattern})"
+            puts "    #{i + 1}. #{negated}#{cond.type}(#{reconstruct_pattern(cond.pattern)})"
           end
           puts ""
         end

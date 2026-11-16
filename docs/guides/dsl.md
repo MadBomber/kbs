@@ -291,7 +291,8 @@ end
 #   Description: Alert on high temperature
 #   Priority: 10
 #   Conditions: 1
-#     1. temperature({:value=>#<Proc:...>})
+#     1. temperature(value: ->(v) { v > 80 })
+#
 # ----------------------------------------
 ```
 
@@ -1070,7 +1071,8 @@ end
 #   Description: Alert on high temperature
 #   Priority: 10
 #   Conditions: 1
-#     1. temperature({:value=>#<Proc:...>})
+#     1. temperature(value: ->(v) { v > 80 })
+#
 # ----------------------------------------
 ```
 

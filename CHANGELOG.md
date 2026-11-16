@@ -39,6 +39,7 @@
 - With the SQLite store, message `posted_at`, rule firing `fired_at` and fact history `timestamp` values are now read back as UTC and shown in local time. SQLite writes them as UTC text with no zone, and they used to be read as local time, so they were off by the local UTC offset. The Redis store was already correct (#62).
 - Two consumers sharing one SQLite or Redis blackboard can no longer both receive the same message from `consume_message`. The SQLite queue now claims a message with an update guarded by `consumed = 0` and moves on if another consumer got there first, and the Redis queue pops the message with `ZPOPMIN` before reading it (#60).
 - The docs now describe pattern variables as symbols ending with `?`, such as `:id?`, as the code matches them. The `docs/advanced/debugging.md` join-variable helper used `start_with?('?')`, found no variables and reported every rule as independent. The `Fact#to_s` and `print_facts` examples now show the `fact :temperature, value: 85` output (#59).
+- `KnowledgeBase#print_rules` now shows each condition in DSL form, so `greater_than(80)` prints as `temperature(value: ->(v) { v > 80 })`. It used to print the raw `Proc` object (#58).
 
 ## [0.2.1] - 2026-02-26
 
