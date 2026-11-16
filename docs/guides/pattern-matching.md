@@ -100,7 +100,7 @@ KBS::Condition.new(:sensor, { error: nil })
 
 ### Basic Binding
 
-Variables start with `?` and bind to fact attribute values:
+Variables end with `?` and bind to fact attribute values:
 
 ```ruby
 # Condition with variable
