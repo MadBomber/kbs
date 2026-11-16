@@ -36,6 +36,7 @@
 - A condition helper such as `one_of`, or a `?variable`, on a user attribute named `type` now matches, and blocks in a `without` condition. It used to make a positive condition never match and a negated one never block; a literal value already worked (#65).
 - `KBS::Engine#facts`, `KBS::Blackboard::Engine#close` and `KnowledgeBase#close` now exist, as the getting-started, persistence and blackboard guides use them. Those examples used to raise `NoMethodError`. `facts` returns the working memory facts on both engines; `KnowledgeBase#close` closes an engine that can be closed and does nothing otherwise (#64).
 - A String posted as message content with `post_message` now comes back as that String from `consume_message` and `peek_messages`, on both the SQLite and Redis queues. Reading it used to raise `JSON::ParserError`, and on SQLite the message stayed at the head of its topic, so every later read of that topic raised too (#63).
+- With the SQLite store, message `posted_at`, rule firing `fired_at` and fact history `timestamp` values are now read back as UTC and shown in local time. SQLite writes them as UTC text with no zone, and they used to be read as local time, so they were off by the local UTC offset. The Redis store was already correct (#62).
 
 ## [0.2.1] - 2026-02-26
 
