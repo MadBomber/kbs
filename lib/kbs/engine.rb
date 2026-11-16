@@ -121,9 +121,12 @@ module KBS
         alpha_memory = get_or_create_alpha_memory(pattern)
 
         # Build join tests - if pattern has :type that differs from condition.type,
-        # add it as an attribute test since it was overwritten in the merge
+        # add it as an attribute test since it was overwritten in the merge.
+        # A ?variable on :type matches any value, so it needs no test.
         tests = []
-        if condition.pattern[:type] && condition.pattern[:type] != condition.type
+        user_type = condition.pattern[:type]
+        variable = user_type.is_a?(Symbol) && user_type.to_s.end_with?('?')
+        if user_type && user_type != condition.type && !variable
           # The pattern's :type should be checked as an attribute constraint
           tests << {
             token_field_index: index,

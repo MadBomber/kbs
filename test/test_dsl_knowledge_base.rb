@@ -550,6 +550,23 @@ class TestDSLKnowledgeBase < Minitest::Test
     assert_includes source, "priority 10"
   end
 
+  # Issue #65: a helper or ?variable on a user attribute named `type`
+  # never matched, and a negated one never blocked.
+  def test_helper_and_variable_on_type_attribute
+    fired = []
+    KBS.knowledge_base do
+      rule('helper') { on :sensor, type: one_of('temperature'); perform { |f| fired << [:helper, f.first[:type]] } }
+      rule('variable') { on :sensor, type: :t?; perform { |_f, b| fired << [:variable, b[:t?]] } }
+      rule('blocked') { on :go; without :sensor, type: one_of('temperature'); perform { fired << :blocked } }
+      rule('literal') { on :sensor, type: 'humidity'; perform { fired << :literal } }
+      fact :go
+      fact :sensor, type: 'temperature'
+      run
+    end
+
+    assert_equal [[:helper, 'temperature'], [:variable, 'temperature']], fired.sort
+  end
+
   private
 
   def hot_sensor_knowledge_base(engine, fired)
