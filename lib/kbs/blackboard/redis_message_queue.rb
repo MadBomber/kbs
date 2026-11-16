@@ -60,7 +60,7 @@ module KBS
           id: message_data['id'].to_i,
           sender: message_data['sender'],
           topic: message_data['topic'],
-          content: JSON.parse(message_data['content'], symbolize_names: true),
+          content: parse_content(message_data['content']),
           priority: message_data['priority'].to_i,
           posted_at: Time.at(message_data['posted_at'].to_f)
         }
@@ -79,7 +79,7 @@ module KBS
             id: message_data['id'].to_i,
             sender: message_data['sender'],
             topic: message_data['topic'],
-            content: JSON.parse(message_data['content'], symbolize_names: true),
+            content: parse_content(message_data['content']),
             priority: message_data['priority'].to_i,
             posted_at: Time.at(message_data['posted_at'].to_f)
           }
@@ -105,6 +105,15 @@ module KBS
           total_messages: total_messages,
           unconsumed_messages: total_unconsumed
         }
+      end
+
+      private
+
+      # A String posted as content is stored as is, so it may not be JSON.
+      def parse_content(content)
+        JSON.parse(content, symbolize_names: true)
+      rescue JSON::ParserError
+        content
       end
     end
   end

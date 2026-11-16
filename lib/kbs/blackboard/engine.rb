@@ -51,6 +51,10 @@ module KBS
       def stats
         @blackboard.stats
       end
+
+      def close
+        @blackboard.close
+      end
     end
   end
 end

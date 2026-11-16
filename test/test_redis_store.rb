@@ -135,6 +135,17 @@ class TestRedisStore < Minitest::Test
     @store.vacuum
   end
 
+  # Issue #63: a String message raised JSON::ParserError on consume.
+  def test_memory_string_message
+    memory = KBS::Blackboard::Memory.new(store: @store)
+    memory.post_message("s", "q", "plain text")
+    memory.post_message("s", "q", { ok: true })
+
+    assert_equal ["plain text", { ok: true }], memory.peek_messages("q").map { |m| m[:content] }
+    assert_equal "plain text", memory.consume_message("q", "c")[:content]
+    assert_equal({ ok: true }, memory.consume_message("q", "c")[:content])
+  end
+
   # Issue #60: a consumer that claimed the message between another
   # consumer's read and update used to receive it as well.
   def test_message_consumed_by_only_one_consumer

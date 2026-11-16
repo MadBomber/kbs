@@ -4,11 +4,11 @@ module KBS
   module DSL
     module ConditionHelpers
       def less_than(value)
-        ->(v) { v < value }
+        ->(v) { v < value rescue false }
       end
 
       def greater_than(value)
-        ->(v) { v > value }
+        ->(v) { v > value rescue false }
       end
 
       def equals(value)
@@ -25,9 +25,9 @@ module KBS
 
       def range(min_or_range, max = nil)
         if min_or_range.is_a?(Range)
-          ->(v) { min_or_range.include?(v) }
+          ->(v) { min_or_range.include?(v) rescue false }
         else
-          ->(v) { v >= min_or_range && v <= max }
+          ->(v) { v >= min_or_range && v <= max rescue false }
         end
       end
 
@@ -46,7 +46,7 @@ module KBS
       end
 
       def matches(pattern)
-        ->(v) { v.match?(pattern) }
+        ->(v) { v.match?(pattern) rescue false }
       end
 
       def satisfies(&block)

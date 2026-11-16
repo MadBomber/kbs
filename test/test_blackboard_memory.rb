@@ -78,6 +78,33 @@ class TestBlackboardMemory < Minitest::Test
     assert_equal 10, message[:priority]
   end
 
+  # Issue #63: a String message raised JSON::ParserError and blocked its topic.
+  def test_string_message_does_not_block_topic
+    @memory.post_message("s", "q", "plain text")
+    @memory.post_message("s", "q", { ok: true })
+
+    assert_equal ["plain text", { ok: true }], @memory.peek_messages("q").map { |m| m[:content] }
+    assert_equal "plain text", @memory.consume_message("q", "c")[:content]
+    assert_equal({ ok: true }, @memory.consume_message("q", "c")[:content])
+  end
+
+  # Issue #62: SQLite stores CURRENT_TIMESTAMP as UTC text, which used to be
+  # read back as local time.
+  def test_timestamps_read_back_in_utc
+    original_tz = ENV['TZ']
+    ENV['TZ'] = 'America/Chicago'
+
+    @memory.post_message("s", "t", { a: 1 })
+    @memory.log_rule_firing("r", [], {})
+    fact = @memory.add_fact(:x, v: 1)
+
+    assert_in_delta Time.now.to_f, @memory.consume_message("t", "c")[:posted_at].to_f, 60
+    assert_in_delta Time.now.to_f, @memory.get_rule_firings.first[:fired_at].to_f, 60
+    assert_in_delta Time.now.to_f, @memory.get_history(fact.uuid).first[:timestamp].to_f, 60
+  ensure
+    ENV['TZ'] = original_tz
+  end
+
   # Issue #60: a consumer that claimed the message between another
   # consumer's read and update used to receive it as well.
   def test_message_consumed_by_only_one_consumer
