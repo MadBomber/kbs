@@ -29,6 +29,13 @@ class TestEngine < Minitest::Test
     refute_includes @engine.working_memory.facts, fact
   end
 
+  # Issue #64: the docs call engine.facts.
+  def test_facts
+    fact = @engine.add_fact(:car, { color: :red })
+
+    assert_equal [fact], @engine.facts
+  end
+
   def test_add_rule
     rule = KBS::Rule.new('test_rule') do |r|
       r.conditions << KBS::Condition.new(:car, { color: :red })
