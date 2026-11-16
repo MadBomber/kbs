@@ -103,8 +103,7 @@ kb = KBS.knowledge_base do
     desc "Detect stock momentum breakouts"
     priority 10
 
-    on :stock, volume: greater_than(1_000_000)
-    on :stock, price_change_pct: greater_than(3)
+    on :stock, volume: greater_than(1_000_000), price_change_pct: greater_than(3)
     without :position, status: "open"
 
     perform do |facts, bindings|

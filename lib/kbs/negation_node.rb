@@ -72,10 +72,13 @@ module KBS
 
         # If test has expected_value, compare against that constant
         if test.key?(:expected_value)
-          if test[:operation] == :eq
-            fact_value == test[:expected_value]
+          expected = test[:expected_value]
+          if expected.is_a?(Proc)
+            fact_value && expected.call(fact_value)
+          elsif test[:operation] == :eq
+            fact_value == expected
           elsif test[:operation] == :ne
-            fact_value != test[:expected_value]
+            fact_value != expected
           else
             true
           end
