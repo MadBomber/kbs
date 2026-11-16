@@ -39,11 +39,12 @@ module KBS
       end
 
       def consume(topic, consumer)
-        # Get highest priority (lowest score) unconsumed message
-        messages = @redis.zrange("messages:#{topic}", 0, 0)
-        return nil if messages.empty?
+        # Atomically pop the highest priority (lowest score) message, so no
+        # other consumer can receive it too
+        popped = @redis.zpopmin("messages:#{topic}")
+        return nil unless popped
 
-        message_id = messages.first
+        message_id = popped.first
         message_data = @redis.hgetall("message:#{message_id}")
 
         return nil if message_data.empty? || message_data['consumed'] == '1'
@@ -53,14 +54,13 @@ module KBS
           pipeline.hset("message:#{message_id}", 'consumed', '1')
           pipeline.hset("message:#{message_id}", 'consumed_by', consumer)
           pipeline.hset("message:#{message_id}", 'consumed_at', Time.now.to_f)
-          pipeline.zrem("messages:#{topic}", message_id)
         end
 
         {
           id: message_data['id'].to_i,
           sender: message_data['sender'],
           topic: message_data['topic'],
-          content: JSON.parse(message_data['content'], symbolize_names: true),
+          content: parse_content(message_data['content']),
           priority: message_data['priority'].to_i,
           posted_at: Time.at(message_data['posted_at'].to_f)
         }
@@ -79,7 +79,7 @@ module KBS
             id: message_data['id'].to_i,
             sender: message_data['sender'],
             topic: message_data['topic'],
-            content: JSON.parse(message_data['content'], symbolize_names: true),
+            content: parse_content(message_data['content']),
             priority: message_data['priority'].to_i,
             posted_at: Time.at(message_data['posted_at'].to_f)
           }
@@ -105,6 +105,15 @@ module KBS
           total_messages: total_messages,
           unconsumed_messages: total_unconsumed
         }
+      end
+
+      private
+
+      # A String posted as content is stored as is, so it may not be JSON.
+      def parse_content(content)
+        JSON.parse(content, symbolize_names: true)
+      rescue JSON::ParserError
+        content
       end
     end
   end

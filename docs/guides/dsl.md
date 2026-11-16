@@ -258,8 +258,8 @@ end
 # Output:
 # Working Memory Contents:
 # ----------------------------------------
-# 1. temperature(value: 85)
-# 2. humidity(value: 60)
+# 1. fact :temperature, value: 85
+# 2. fact :humidity, value: 60
 # ----------------------------------------
 ```
 
@@ -434,7 +434,7 @@ on :order, status: "pending", total: 100  # Both must match exactly
 
 ### Variable Binding
 
-Capture attribute values in variables (symbols starting with `?`):
+Capture attribute values in variables (symbols ending with `?`):
 
 ```ruby
 on :temperature, value: :temp?, location: :loc?
@@ -1043,8 +1043,8 @@ end
 # Output:
 # Working Memory Contents:
 # ----------------------------------------
-# 1. temperature(value: 85)
-# 2. humidity(value: 60)
+# 1. fact :temperature, value: 85
+# 2. fact :humidity, value: 60
 # ----------------------------------------
 ```
 

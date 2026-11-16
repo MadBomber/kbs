@@ -15,8 +15,7 @@ class StockTradingExpertSystem
       rule "bull_market_buy" do
         priority 10
         on :market, trend: "bullish"
-        on :stock, rsi: satisfies { |rsi| rsi < 70 }
-        on :stock, pe_ratio: satisfies { |pe| pe < 25 }
+        on :stock, rsi: satisfies { |rsi| rsi < 70 }, pe_ratio: satisfies { |pe| pe < 25 }
 
         perform do |facts|
           stock = facts.find { |f| f.type == :stock }
@@ -27,8 +26,7 @@ class StockTradingExpertSystem
 
       rule "oversold_bounce" do
         priority 8
-        on :stock, rsi: satisfies { |rsi| rsi < 30 }
-        on :stock, volume: satisfies { |v| v > 1000000 }
+        on :stock, rsi: satisfies { |rsi| rsi < 30 }, volume: satisfies { |v| v > 1000000 }
         without.on :news, sentiment: "negative"
 
         perform do |facts|
@@ -65,8 +63,7 @@ class StockTradingExpertSystem
 
       rule "price_volume_divergence" do
         priority 5
-        on :stock, price_trend: "up"
-        on :stock, volume_trend: "down"
+        on :stock, price_trend: "up", volume_trend: "down"
 
         perform do |facts|
           stock = facts.find { |f| f.type == :stock }

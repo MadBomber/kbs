@@ -50,6 +50,10 @@ module KBS
         @engine.reset
       end
 
+      def close
+        @engine.close if @engine.respond_to?(:close)
+      end
+
       def facts
         @engine.working_memory.facts
       end
