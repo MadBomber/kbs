@@ -123,6 +123,34 @@ class TestDSLConditionHelpers < Minitest::Test
     assert_includes result, :blue
   end
 
+  # Issue #67: a value of the wrong type used to raise from add_fact and
+  # leave the fact half added.
+  def test_wrong_type_value_does_not_match
+    refute greater_than(5).call("7")
+    refute less_than(5).call("3")
+    refute between(1, 9).call("5")
+    refute range(1..9).call("5")
+    refute matches(/1/).call(1)
+
+    kb = KBS::DSL::KnowledgeBase.new
+    fired = []
+
+    kb.rule 'big' do
+      on :s, v: greater_than(5)
+      perform { fired << :big }
+    end
+    kb.rule 'digit' do
+      on :s, v: matches(/1/)
+      perform { fired << :digit }
+    end
+
+    kb.fact(:s, v: "7")
+    kb.fact(:s, v: 1)
+    kb.run
+
+    assert_empty fired
+  end
+
   # Issue #40: helpers inside the block form of `on` used to be recorded
   # as pattern keys of their own, so the rule never fired.
   def test_helpers_in_block_form_on_are_conditions_not_keys
