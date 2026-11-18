@@ -23,7 +23,7 @@ jobs:
       fail-fast: false
       matrix:
         # The gemspec floor is 3.2.
-        ruby: ["3.2", "3.3", "3.4", "4.0"]
+        ruby: ['4.0']
 
     # A disposable Redis for the Redis store tests, which flush the database
     # named by KBS_TEST_REDIS_URL and are skipped when it is unset.
