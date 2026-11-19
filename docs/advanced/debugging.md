@@ -645,8 +645,8 @@ def diagnose_join(engine, condition1, condition2)
   matches2.first(3).each { |f| puts "  - #{f.attributes.inspect}" }
 
   # Find join variables
-  vars1 = condition1.pattern.values.select { |v| v.is_a?(Symbol) && v.to_s.start_with?('?') }
-  vars2 = condition2.pattern.values.select { |v| v.is_a?(Symbol) && v.to_s.start_with?('?') }
+  vars1 = condition1.pattern.values.select { |v| v.is_a?(Symbol) && v.to_s.end_with?('?') }
+  vars2 = condition2.pattern.values.select { |v| v.is_a?(Symbol) && v.to_s.end_with?('?') }
   join_vars = vars1 & vars2
 
   puts "\nJoin variables: #{join_vars.inspect}"

@@ -3,6 +3,12 @@
 module KBS
   module DSL
     class PatternEvaluator
+      # The block form of `on` runs here, so helpers such as greater_than
+      # must resolve to the helper, not fall into method_missing as keys.
+      # Methods this class defines itself (between, matches, any, all)
+      # still take precedence over the module's.
+      include ConditionHelpers
+
       attr_reader :pattern
 
       def initialize

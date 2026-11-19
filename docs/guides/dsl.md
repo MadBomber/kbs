@@ -51,9 +51,12 @@ end
 
 ### Creating a Knowledge Base
 
-#### `KBS.knowledge_base(&block)`
+#### `KBS.knowledge_base(engine: nil, &block)`
 
 Creates a new knowledge base and evaluates the block in its context.
+
+**Parameters**:
+- `engine` - Engine to run on, such as `KBS::Blackboard::Engine.new(db_path: "knowledge.db")` for persistence (optional; a new `KBS::Engine` when omitted)
 
 **Returns**: `KBS::DSL::KnowledgeBase` instance
 
@@ -255,8 +258,8 @@ end
 # Output:
 # Working Memory Contents:
 # ----------------------------------------
-# 1. temperature(value: 85)
-# 2. humidity(value: 60)
+# 1. fact :temperature, value: 85
+# 2. fact :humidity, value: 60
 # ----------------------------------------
 ```
 
@@ -288,7 +291,8 @@ end
 #   Description: Alert on high temperature
 #   Priority: 10
 #   Conditions: 1
-#     1. temperature({:value=>#<Proc:...>})
+#     1. temperature(value: ->(v) { v > 80 })
+#
 # ----------------------------------------
 ```
 
@@ -354,7 +358,7 @@ Sets the rule priority (higher priority rules fire first).
 
 **Returns**: `self` (chainable)
 
-**Note**: Priority only affects execution order in `KBS::Blackboard::Engine`, not `KBS::Engine`.
+**Note**: Both `KBS::Engine` and `KBS::Blackboard::Engine` honor priority. Rules with equal priority fire in definition order.
 
 **Example**:
 ```ruby
@@ -430,7 +434,7 @@ on :order, status: "pending", total: 100  # Both must match exactly
 
 ### Variable Binding
 
-Capture attribute values in variables (symbols starting with `?`):
+Capture attribute values in variables (symbols ending with `?`):
 
 ```ruby
 on :temperature, value: :temp?, location: :loc?
@@ -1039,8 +1043,8 @@ end
 # Output:
 # Working Memory Contents:
 # ----------------------------------------
-# 1. temperature(value: 85)
-# 2. humidity(value: 60)
+# 1. fact :temperature, value: 85
+# 2. fact :humidity, value: 60
 # ----------------------------------------
 ```
 
@@ -1067,7 +1071,8 @@ end
 #   Description: Alert on high temperature
 #   Priority: 10
 #   Conditions: 1
-#     1. temperature({:value=>#<Proc:...>})
+#     1. temperature(value: ->(v) { v > 80 })
+#
 # ----------------------------------------
 ```
 

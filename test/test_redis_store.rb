@@ -4,27 +4,10 @@ require_relative 'test_helper'
 require_relative '../lib/kbs/blackboard'
 
 class TestRedisStore < Minitest::Test
-  def redis_url
-    ENV.fetch('KBS_TEST_REDIS_URL', 'redis://localhost:6379/15')
-  end
-
-  def redis_available?
-    begin
-      require 'redis'
-      redis = Redis.new(url: redis_url, timeout: 1)
-      redis.ping
-      redis.close
-      true
-    rescue LoadError, Redis::CannotConnectError, Redis::TimeoutError
-      false
-    end
-  end
+  include RedisTestSupport
 
   def setup
-    skip "Redis not available" unless redis_available?
-
-    require 'redis'
-    @redis = Redis.new(url: redis_url)
+    @redis = redis_test_connection
     @redis.flushdb # Clear test database
     @store = KBS::Blackboard::Persistence::RedisStore.new(
       redis: @redis,
@@ -33,10 +16,8 @@ class TestRedisStore < Minitest::Test
   end
 
   def teardown
-    if redis_available?
-      @redis.flushdb if @redis
-      @redis.close if @redis
-    end
+    @redis&.flushdb
+    @redis&.close
   end
 
   def test_initialization
@@ -152,5 +133,45 @@ class TestRedisStore < Minitest::Test
     @store.add_fact('uuid-1', :sensor, { temp: 22 })
     @store.remove_fact('uuid-1')
     @store.vacuum
+  end
+
+  # Issue #63: a String message raised JSON::ParserError on consume.
+  def test_memory_string_message
+    memory = KBS::Blackboard::Memory.new(store: @store)
+    memory.post_message("s", "q", "plain text")
+    memory.post_message("s", "q", { ok: true })
+
+    assert_equal ["plain text", { ok: true }], memory.peek_messages("q").map { |m| m[:content] }
+    assert_equal "plain text", memory.consume_message("q", "c")[:content]
+    assert_equal({ ok: true }, memory.consume_message("q", "c")[:content])
+  end
+
+  # Issue #60: a consumer that claimed the message between another
+  # consumer's read and update used to receive it as well.
+  def test_message_consumed_by_only_one_consumer
+    redis = @redis
+    queue = KBS::Blackboard::RedisMessageQueue.new(redis)
+    queue.post("s", "q", { n: 1 })
+    original = redis.method(:hgetall)
+    received = []
+
+    redis.define_singleton_method(:hgetall) do |*args|
+      data = original.call(*args)
+      redis.singleton_class.send(:remove_method, :hgetall)
+      received << queue.consume("q", "rival")
+      data
+    end
+
+    received << queue.consume("q", "c")
+    assert_equal 1, received.compact.size
+  end
+
+  def test_memory_clear_session_without_session_id
+    store = KBS::Blackboard::Persistence::RedisStore.new(redis: @redis)
+    memory = KBS::Blackboard::Memory.new(store: store)
+    memory.add_fact(:sensor, { temp: 22 })
+
+    memory.clear_session
+    assert_equal 0, memory.get_facts(:sensor).size
   end
 end

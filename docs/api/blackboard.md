@@ -30,7 +30,7 @@ Creates a new blackboard memory.
 
 **Parameters**:
 - `db_path` (String, optional) - Path to SQLite database (default: `:memory:`)
-- `store` (KBS::Blackboard::Persistence::Store, optional) - Custom store (default: `nil`, creates SQLiteStore)
+- `store` (KBS::Blackboard::Persistence::Store, optional) - Custom store (default: `nil`, creates SqliteStore)
 
 **Returns**: `KBS::Blackboard::Memory` instance
 

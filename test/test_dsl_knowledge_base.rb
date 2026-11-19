@@ -11,6 +11,43 @@ class TestDSLKnowledgeBase < Minitest::Test
     assert_instance_of KBS::Engine, kb.engine
   end
 
+  def test_knowledge_base_uses_passed_engine
+    engine = KBS::Engine.new
+    kb = KBS.knowledge_base(engine: engine)
+
+    assert_same engine, kb.engine
+  end
+
+  # Issue #64: the docs call kb.close.
+  def test_close_closes_a_blackboard_engine
+    engine = KBS::Blackboard::Engine.new
+    KBS.knowledge_base(engine: engine).close
+    assert engine.blackboard.store.db.closed?
+
+    KBS.knowledge_base.close
+  end
+
+  # Issue #58: print_rules used to show helpers as raw Proc objects.
+  def test_print_rules_renders_condition_helpers
+    kb = KBS.knowledge_base do
+      rule 'hot' do
+        on :temperature, value: greater_than(80), location: "lab"
+        perform { }
+      end
+    end
+
+    assert_output(/1\. temperature\(value: ->\(v\) \{ v > 80 \}, location: "lab"\)$/) { kb.print_rules }
+  end
+
+  def test_knowledge_base_with_blackboard_engine_fires_rules
+    engine = KBS::Blackboard::Engine.new
+    fired = []
+    hot_sensor_knowledge_base(engine, fired).run
+
+    assert_equal [28], fired
+    assert_equal 2, engine.blackboard.get_facts(:sensor).size
+  end
+
   def test_initialization_with_engine
     engine = KBS::Engine.new
     kb = KBS::DSL::KnowledgeBase.new(engine: engine)
@@ -30,11 +67,43 @@ class TestDSLKnowledgeBase < Minitest::Test
     assert_instance_of KBS::Engine, kb.engine
   end
 
-  def test_dsl_entry_point_with_engine_without_block
-    engine = KBS::Engine.new
-    kb = KBS.knowledge_base(engine: engine)
+  def test_rule_priority_keyword_sets_rule_priority
+    kb = KBS::DSL::KnowledgeBase.new
+    kb.rule("urgent", priority: 100) { on :alarm }
 
-    assert_same engine, kb.engine
+    assert_equal 100, kb.rules["urgent"].priority
+  end
+
+  def test_rule_priority_in_block_overrides_keyword
+    kb = KBS::DSL::KnowledgeBase.new
+    kb.rule("urgent", priority: 100) do
+      priority 5
+      on :alarm
+    end
+
+    assert_equal 5, kb.rules["urgent"].priority
+  end
+
+  def test_defrule_passes_priority_keyword
+    kb = KBS::DSL::KnowledgeBase.new
+    kb.defrule("urgent", priority: 50) { on :alarm }
+
+    assert_equal 50, kb.rules["urgent"].priority
+  end
+
+  def test_rule_priority_keyword_inside_knowledge_base_block
+    fired = []
+    kb = KBS.knowledge_base do
+      rule "urgent", priority: 100 do
+        on :alarm
+        perform { fired << :urgent }
+      end
+      fact :alarm
+      run
+    end
+
+    assert_equal 100, kb.rules["urgent"].priority
+    assert_equal [:urgent], fired
   end
 
   def test_add_fact
@@ -491,5 +560,35 @@ class TestDSLKnowledgeBase < Minitest::Test
     source = kb.rule_source("important")
     assert_includes source, 'desc "A high-priority rule"'
     assert_includes source, "priority 10"
+  end
+
+  # Issue #65: a helper or ?variable on a user attribute named `type`
+  # never matched, and a negated one never blocked.
+  def test_helper_and_variable_on_type_attribute
+    fired = []
+    KBS.knowledge_base do
+      rule('helper') { on :sensor, type: one_of('temperature'); perform { |f| fired << [:helper, f.first[:type]] } }
+      rule('variable') { on :sensor, type: :t?; perform { |_f, b| fired << [:variable, b[:t?]] } }
+      rule('blocked') { on :go; without :sensor, type: one_of('temperature'); perform { fired << :blocked } }
+      rule('literal') { on :sensor, type: 'humidity'; perform { fired << :literal } }
+      fact :go
+      fact :sensor, type: 'temperature'
+      run
+    end
+
+    assert_equal [[:helper, 'temperature'], [:variable, 'temperature']], fired.sort
+  end
+
+  private
+
+  def hot_sensor_knowledge_base(engine, fired)
+    KBS.knowledge_base(engine: engine) do
+      rule 'hot' do
+        on :sensor, value: greater_than(25)
+        perform { |facts| fired << facts.first[:value] }
+      end
+      fact :sensor, value: 22
+      fact :sensor, value: 28
+    end
   end
 end

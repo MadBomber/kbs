@@ -20,7 +20,7 @@ See the [full documentation website](https://madbomber.github.io/kbs/).
 
 ### Declarative DSL
 - **Readable Syntax**: Write rules in natural, expressive Ruby syntax
-- **Condition Helpers**: `greater_than`, `less_than`, `range`, `one_of`, `matches` for intuitive pattern matching
+- **Condition Helpers**: `greater_than`, `less_than`, `range`, `one_of`, `satisfies` and more (see [DSL Helpers](#dsl-helpers))
 - **Rule Metadata**: Descriptions, priorities, and documentation built-in
 - **Negative Patterns**: `without` keyword for absence testing
 
@@ -103,8 +103,7 @@ kb = KBS.knowledge_base do
     desc "Detect stock momentum breakouts"
     priority 10
 
-    on :stock, volume: greater_than(1_000_000)
-    on :stock, price_change_pct: greater_than(3)
+    on :stock, volume: greater_than(1_000_000), price_change_pct: greater_than(3)
     without :position, status: "open"
 
     perform do |facts, bindings|
@@ -196,8 +195,12 @@ puts "Received: #{message[:content]}" if message
 require 'kbs'
 require 'ruby_llm'
 
-# Requires Ollama with a model installed
-# export OLLAMA_MODEL=gpt-oss:latest
+# Requires `gem install ruby_llm` and LM Studio's server (`lms server start`) with a model loaded
+# LM Studio speaks the OpenAI API, so ruby_llm's :openai provider points at it
+RubyLLM.configure do |config|
+  config.openai_api_base = ENV.fetch("LMS_API_BASE", "http://localhost:1234/v1")
+  config.openai_api_key  = ENV.fetch("LMS_API_KEY", "lm-studio") # LM Studio ignores it; ruby_llm needs one set
+end
 
 kb = KBS.knowledge_base do
   rule "ai_sentiment_analysis" do
@@ -206,7 +209,11 @@ kb = KBS.knowledge_base do
     perform do |facts|
       news = facts.first
       # AI-powered sentiment analysis
-      client = RubyLLM::Chat.new(provider: :ollama, model: 'gpt-oss:latest')
+      client = RubyLLM::Chat.new(
+        provider: :openai,
+        model: ENV.fetch("LMS_MODEL", "openai/gpt-oss-20b"),
+        assume_model_exists: true # local model ids aren't in ruby_llm's registry
+      )
       response = client.ask("Analyze sentiment: #{news[:headline]}")
 
       puts "🤖 AI SENTIMENT ANALYSIS: #{news[:symbol]}"
@@ -336,18 +343,18 @@ Facts → Alpha Network → Beta Network → Production Nodes
 Run the comprehensive test suite:
 
 ```bash
-bundle exec rake test
+rake test
 ```
 
-Individual test files:
+Run a single test file (`test/test_*.rb`):
 
 ```bash
-bundle exec ruby -Ilib:test test/test_rule.rb
-bundle exec ruby -Ilib:test test/test_blackboard_engine.rb
-bundle exec ruby -Ilib:test test/test_dsl_condition_helpers.rb
+bundle exec ruby test/test_rule.rb
 ```
 
-Test runs generate a SimpleCov coverage report in `coverage/`.
+SimpleCov measures coverage on every run and fails the run below the minimum set in `test/test_helper.rb` (currently 35% line coverage).
+
+The Redis store tests are skipped unless `KBS_TEST_REDIS_URL` names a disposable Redis database. See [test/README.md](test/README.md) before setting it, because those tests flush the database.
 
 ## 📖 Documentation
 
@@ -358,26 +365,30 @@ Test runs generate a SimpleCov coverage report in `coverage/`.
 - **KBS::Condition** - Pattern matching conditions
 - **KBS::Fact** - Working memory facts
 - **KBS::Blackboard::Engine** - Blackboard coordination
-- **KBS::Blackboard::Persistence::SQLiteStore** - SQLite backend
+- **KBS::Blackboard::Persistence::SqliteStore** - SQLite backend
 - **KBS::Blackboard::Persistence::RedisStore** - Redis backend
 - **KBS::Blackboard::Persistence::HybridStore** - Hybrid storage
 
 ### DSL Helpers
 
+Use these as attribute values in the hash form of `on`, for example `on :reading, value: greater_than(100)`. The block form of `on` has its own operators; see [Block-Style Patterns](docs/guides/dsl.md#block-style-patterns).
+
 - `greater_than(n)` - Match values > n
 - `less_than(n)` - Match values < n
 - `equals(value)` - Match values equal to value
 - `not_equal(value)` - Match values not equal to value
-- `range(min, max)` or `range(ruby_range)` - Match values in the inclusive bounds or Ruby range
-- `between(min, max)` - Alias for `range(min, max)`
+- `range(min, max)`, `between(min, max)` or `range(a_range)` - Match values from min to max inclusive, or values in the Range
 - `one_of(*values)` - Match any of the values
-- `any(*values)` - Match any of the values, or anything when called without arguments
-- `matches(regex)` - Match regex pattern
-- `satisfies { |value| ... }` - Match values using a custom predicate
+- `any(*values)` - Same as `one_of`; with no arguments, match anything
+- `satisfies { |v| ... }` - Match values for which the block returns true
+
+For a regex in the hash form, use `satisfies { |v| regex.match?(v.to_s) }`. In that position `matches` is another name for `on`, not a helper.
+
+See the [DSL guide](docs/guides/dsl.md#pattern-helpers) for examples.
 
 ## 🔧 Requirements
 
-- Ruby >= 3.2.0
+- Ruby >= 4.0
 - SQLite3 (bundled with most systems)
 - Redis (optional, for Redis storage)
 - Ollama (optional, for AI integration)

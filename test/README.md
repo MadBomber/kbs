@@ -18,7 +18,7 @@ Comprehensive test suite for the KBS (Knowledge-Based System) Ruby gem using Min
 - `test_rete_engine.rb` - Complete RETE network building and inference
 
 ### DSL Tests
-- `test_dsl_variable.rb` - Logic variables (symbols starting with `?`)
+- `test_dsl_variable.rb` - Logic variables (symbols ending with `?`)
 - `test_dsl_knowledge_base.rb` - KB initialization, facts, rules, queries
 - `test_dsl_rule_builder.rb` - Fluent API for rule definition, aliases
 - `test_dsl_condition_helpers.rb` - Pattern matching helpers (less_than, greater_than, between, etc.)
@@ -26,10 +26,21 @@ Comprehensive test suite for the KBS (Knowledge-Based System) Ruby gem using Min
 ### Blackboard Pattern Tests
 - `test_blackboard_memory.rb` - Persistent facts, messages, audit trail
 - `test_blackboard_engine.rb` - RETE + Blackboard integration, rule logging
+- `test_optional_redis.rb` - the SQLite blackboard loads without the redis gem, and `RedisStore` still needs it
 
 ### Redis Persistence Tests
-- `test_redis_store.rb` - RedisStore implementation (skipped if Redis unavailable)
+- `test_redis_store.rb` - RedisStore implementation
 - `test_hybrid_store.rb` - HybridStore (Redis + SQLite) integration
+
+These tests flush the Redis database they use, so they are skipped unless
+`KBS_TEST_REDIS_URL` names a disposable one. Point it at a throwaway server,
+not the Redis you use day to day:
+
+```bash
+redis-server --port 6399 --bind 127.0.0.1 --save '' --appendonly no --daemonize yes
+KBS_TEST_REDIS_URL=redis://127.0.0.1:6399/15 bundle exec rake test
+redis-cli -p 6399 shutdown nosave
+```
 
 ### Integration Tests
 - `test_integration.rb` - End-to-end scenarios:
@@ -61,41 +72,27 @@ ruby -Ilib:test -e "Dir['test/test_*.rb'].each { |f| require f.sub('test/', '') 
 
 ## Coverage Goals
 
-- **Minimum Overall Coverage**: 80%
-- **Minimum Per-File Coverage**: 70%
-
-Coverage configured in `test/test_helper.rb`:
-```ruby
-SimpleCov.start do
-  add_filter '/test/'
-  add_filter '/examples/'
-  add_group 'Core RETE', 'lib/kbs'
-  add_group 'DSL', 'lib/kbs/dsl'
-  add_group 'Blackboard', 'lib/kbs/blackboard'
-  minimum_coverage 80
-  minimum_coverage_by_file 70
-end
-```
+The minimum overall coverage is set in `test/test_helper.rb`, and a run below it fails. The per-file minimum is currently disabled there.
 
 ## Test Patterns
 
 ### No Mocking Policy
 All tests use **real production code** with no mocks or stubs. This ensures tests verify actual behavior.
+The exceptions are `test_redis_test_support.rb`, which stubs `Redis.new` to prove the Redis tests never connect unless opted in, and `test_optional_redis.rb`, which makes `require 'redis'` fail in a child process to stand in for a missing redis gem.
 
 ### In-Memory Databases
 - SQLite tests use `:memory:` databases
-- Redis tests use DB 15 (cleared before each test)
+- Redis tests use the database named by `KBS_TEST_REDIS_URL` (cleared before each test)
 - Teardown methods ensure proper cleanup
 
-### Redis Availability
-Redis tests automatically skip if Redis is not available:
+### Redis Opt-In
+Redis tests skip unless `KBS_TEST_REDIS_URL` is set:
 ```ruby
-def redis_available?
-  # Attempts connection, returns true/false
-end
+include RedisTestSupport
 
 def setup
-  skip "Redis not available" unless redis_available?
+  @redis = redis_test_connection # skips when KBS_TEST_REDIS_URL is unset
+  @redis.flushdb
   # ... test setup
 end
 ```
@@ -188,25 +185,7 @@ assert_equal 1, results.size
 
 ## Continuous Integration
 
-To run in CI:
-```yaml
-# .github/workflows/test.yml (example)
-- name: Install dependencies
-  run: bundle install
-
-- name: Start Redis
-  run: redis-server --daemonize yes
-
-- name: Run tests with coverage
-  run: bundle exec ruby -Ilib:test -e "Dir['test/test_*.rb'].each { |f| require f.sub('test/', '') }"
-
-- name: Check coverage
-  run: |
-    if [ $(grep -oP 'covered at \K[\d.]+' coverage/index.html | head -1 | cut -d. -f1) -lt 80 ]; then
-      echo "Coverage below 80%"
-      exit 1
-    fi
-```
+CI runs `bundle exec rake test` with a Redis service and `KBS_TEST_REDIS_URL` set; see `.github/workflows/test.yml`.
 
 ## Development Workflow
 
@@ -232,7 +211,7 @@ require_relative 'test_helper'
 
 - Tests use `frozen_string_literal: true` for performance
 - All database tests use transactions or cleanup in teardown
-- Redis tests gracefully skip if Redis unavailable
+- Redis tests skip unless `KBS_TEST_REDIS_URL` is set
 - Integration tests demonstrate real-world usage patterns
 - No deprecated features tested (backward compat aliases not tested)
 

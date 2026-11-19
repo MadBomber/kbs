@@ -59,7 +59,7 @@ A condition specifies a pattern that facts must match. Patterns can include:
 
 - **Type matching**: `{ type: :stock }`
 - **Literal values**: `{ symbol: "AAPL" }`
-- **Variable bindings**: `{ price: :price? }` (variables start with `?`)
+- **Variable bindings**: `{ price: :price? }` (variables end with `?`)
 - **Predicates**: `{ price: ->(p) { p > 100 } }`
 - **Negation**: `negated: true` (match when pattern is absent)
 
@@ -323,7 +323,7 @@ def build_network_for_rule(rule)
 end
 ```
 
-**Implementation**: `lib/kbs/rete_engine.rb:58`
+**Implementation**: `KBS::Engine#build_network_for_rule` in `lib/kbs/engine.rb`
 
 ### 2. Fact Assertion
 
@@ -358,17 +358,23 @@ The final phase is `engine.run()`:
 
 ```ruby
 def run
-  @production_nodes.values.each do |node|
+  prioritized_production_nodes.each do |node|
     node.tokens.each do |token|
       node.fire_rule(token)
     end
   end
 end
+
+# Production nodes in firing order: higher rule priority first, and
+# definition order among rules of equal priority.
+def prioritized_production_nodes
+  @production_nodes.values.sort_by.with_index { |node, index| [-node.rule.priority, index] }
+end
 ```
 
 Each production node fires its accumulated tokens. The `fired?` flag prevents duplicate firing.
 
-**Implementation**: `lib/kbs/rete_engine.rb:48`
+**Implementation**: `KBS::Engine#run` in `lib/kbs/engine.rb`
 
 ## RETE Optimization: Unlinking
 
@@ -443,7 +449,7 @@ This is especially critical for:
 
 ## Variable Binding
 
-Variables (symbols starting with `?`) enable cross-condition constraints and action parameterization:
+Variables (symbols ending with `?`) enable cross-condition constraints and action parameterization:
 
 ### Extraction During Network Build
 
@@ -452,7 +458,7 @@ class Condition
   def extract_variables(pattern)
     vars = {}
     pattern.each do |key, value|
-      if value.is_a?(Symbol) && value.to_s.start_with?('?')
+      if value.is_a?(Symbol) && value.to_s.end_with?('?')
         vars[value] = key  # { :symbol? => :symbol, :price? => :price }
       end
     end
@@ -491,26 +497,23 @@ When a rule fires, bindings are extracted for the action:
 
 ```ruby
 def fire(facts)
-  bindings = extract_bindings(facts)
+  bindings = bindings_for(facts)
   # bindings = { :symbol? => "AAPL", :price? => 150.0 }
 
   @action.call(facts, bindings)
 end
 
-def extract_bindings(facts)
-  bindings = {}
-  @conditions.each_with_index do |condition, index|
-    next if condition.negated  # Negated conditions have no fact
-    fact = facts[index]
-    condition.variable_bindings.each do |var, field|
-      bindings[var] = fact.attributes[field]
-    end
+def bindings_for(facts)
+  # Facts line up with the positive conditions only; negated conditions match no fact
+  @conditions.reject(&:negated).zip(facts).each_with_object({}) do |(condition, fact), bindings|
+    next unless fact
+
+    condition.variable_bindings.each { |var, field| bindings[var] = fact.attributes[field] }
   end
-  bindings
 end
 ```
 
-**Implementation**: `lib/kbs/rule.rb:34`
+**Implementation**: `lib/kbs/rule.rb:35`
 
 ## Advanced Topics
 
@@ -525,7 +528,7 @@ rule2 = Rule.new("normal", priority: 0) { ... }
 # rule1 fires before rule2
 ```
 
-For same-priority rules, firing order is deterministic but unspecified (depends on hash ordering).
+Rules with the same priority fire in the order they were defined.
 
 ### Fact Retraction
 
@@ -567,7 +570,7 @@ If 10 rules all match `stock(symbol: "AAPL")`, they share one `AlphaMemory` node
 - Memory usage (one fact store instead of 10)
 - Computation (one pattern match instead of 10)
 
-**Implementation**: `lib/kbs/rete_engine.rb:104`
+**Implementation**: `KBS::Engine#get_or_create_alpha_memory` in `lib/kbs/engine.rb`
 
 ### Incremental Matching
 
@@ -697,7 +700,7 @@ KBS implements RETE with unlinking optimization.
 
 | Component | File | Lines |
 |-----------|------|-------|
-| Core engine | `lib/kbs/rete_engine.rb` | ~110 |
+| Core engine | `lib/kbs/engine.rb` | ~165 |
 | Working memory | `lib/kbs/working_memory.rb` | ~35 |
 | Facts | `lib/kbs/fact.rb` | ~45 |
 | Tokens | `lib/kbs/token.rb` | ~40 |
@@ -707,9 +710,9 @@ KBS implements RETE with unlinking optimization.
 | Negation nodes | `lib/kbs/negation_node.rb` | ~90 |
 | Production nodes | `lib/kbs/production_node.rb` | ~30 |
 | Conditions | `lib/kbs/condition.rb` | ~30 |
-| Rules | `lib/kbs/rule.rb` | ~50 |
+| Rules | `lib/kbs/rule.rb` | ~80 |
 
-**Total**: ~650 lines of core RETE implementation.
+**Total**: ~735 lines of core RETE implementation.
 
 ## Further Reading
 

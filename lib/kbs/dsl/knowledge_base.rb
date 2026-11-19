@@ -5,6 +5,7 @@ module KBS
     class KnowledgeBase
       attr_reader :engine, :rules
 
+      # @param engine [KBS::Engine, nil] engine to run on; a new KBS::Engine when nil
       def initialize(engine: nil)
         @engine = engine || Engine.new
         @rules = {}
@@ -12,9 +13,11 @@ module KBS
         @rule_source_locations = {}
       end
 
-      def rule(name, &block)
+      # @param priority [Integer, nil] rule priority; a `priority` call in the block wins
+      def rule(name, priority: nil, &block)
         @rule_source_locations[name] = block.source_location if block
         builder = RuleBuilder.new(name)
+        builder.priority(priority) unless priority.nil?
         builder.instance_eval(&block) if block_given?
         @rule_builders[name] = builder
         rule = builder.build
@@ -23,8 +26,8 @@ module KBS
         builder
       end
 
-      def defrule(name, &block)
-        rule(name, &block)
+      def defrule(name, priority: nil, &block)
+        rule(name, priority: priority, &block)
       end
 
       def fact(type, attributes = {})
@@ -45,6 +48,10 @@ module KBS
 
       def reset
         @engine.reset
+      end
+
+      def close
+        @engine.close if @engine.respond_to?(:close)
       end
 
       def facts
@@ -101,7 +108,7 @@ module KBS
           puts "  Conditions: #{builder.conditions.size}"
           builder.conditions.each_with_index do |cond, i|
             negated = cond.negated ? "NOT " : ""
-            puts "    #{i + 1}. #{negated}#{cond.type}(#{cond.pattern})"
+            puts "    #{i + 1}. #{negated}#{cond.type}(#{reconstruct_pattern(cond.pattern)})"
           end
           puts ""
         end
@@ -142,13 +149,15 @@ module KBS
         return "" if pattern.empty?
 
         pattern.map do |key, value|
-          val_str = if value.is_a?(Proc)
-                      Decompiler.new(value).decompile
-                    else
-                      value.inspect
-                    end
+          val_str = value.is_a?(Proc) ? decompile_proc(value) : value.inspect
           "#{key}: #{val_str}"
         end.join(", ")
+      end
+
+      def decompile_proc(proc_obj)
+        Decompiler.new(proc_obj).decompile
+      rescue => e
+        "<decompilation failed: #{e.message}>"
       end
 
       def decompile_proc_block(proc_obj)

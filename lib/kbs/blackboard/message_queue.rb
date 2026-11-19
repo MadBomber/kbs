@@ -45,24 +45,32 @@ module KBS
       end
 
       def consume(topic, consumer)
-        result = @db.get_first_row(
-          "SELECT * FROM blackboard_messages WHERE topic = ? AND consumed = 0 ORDER BY priority DESC, posted_at ASC LIMIT 1",
-          [topic]
-        )
+        result = nil
 
-        if result
+        loop do
+          result = @db.get_first_row(
+            "SELECT * FROM blackboard_messages WHERE topic = ? AND consumed = 0 ORDER BY priority DESC, posted_at ASC LIMIT 1",
+            [topic]
+          )
+          break unless result
+
+          # Claim the message only if no other consumer took it since the SELECT
           @db.execute(
-            "UPDATE blackboard_messages SET consumed = 1, consumed_by = ?, consumed_at = CURRENT_TIMESTAMP WHERE id = ?",
+            "UPDATE blackboard_messages SET consumed = 1, consumed_by = ?, consumed_at = CURRENT_TIMESTAMP WHERE id = ? AND consumed = 0",
             [consumer, result['id']]
           )
+          break if @db.changes == 1
+        end
+
+        if result
 
           {
             id: result['id'],
             sender: result['sender'],
             topic: result['topic'],
-            content: JSON.parse(result['content'], symbolize_names: true),
+            content: parse_content(result['content']),
             priority: result['priority'],
-            posted_at: Time.parse(result['posted_at'])
+            posted_at: Time.parse("#{result['posted_at']} UTC").localtime
           }
         end
       end
@@ -78,9 +86,9 @@ module KBS
             id: row['id'],
             sender: row['sender'],
             topic: row['topic'],
-            content: JSON.parse(row['content'], symbolize_names: true),
+            content: parse_content(row['content']),
             priority: row['priority'],
-            posted_at: Time.parse(row['posted_at'])
+            posted_at: Time.parse("#{row['posted_at']} UTC").localtime
           }
         end
       end
@@ -90,6 +98,15 @@ module KBS
           total_messages: @db.get_first_value("SELECT COUNT(*) FROM blackboard_messages"),
           unconsumed_messages: @db.get_first_value("SELECT COUNT(*) FROM blackboard_messages WHERE consumed = 0")
         }
+      end
+
+      private
+
+      # A String posted as content is stored as is, so it may not be JSON.
+      def parse_content(content)
+        JSON.parse(content, symbolize_names: true)
+      rescue JSON::ParserError
+        content
       end
     end
   end

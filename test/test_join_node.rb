@@ -137,6 +137,23 @@ class TestJoinNode < Minitest::Test
     refute @join_node.left_linked
   end
 
+  # Issue #41: the beta memory propagates the token that relinked it, so
+  # replaying its tokens here made every join twice.
+  def test_left_relink_does_not_replay_beta_tokens
+    emitted = []
+    successor = Object.new
+    successor.define_singleton_method(:activate) { |token| emitted << token }
+    @join_node.successors << successor
+    @alpha_memory.items << KBS::Fact.new(:person, name: "Alice")
+    @beta_memory.tokens << KBS::Token.new(nil, nil, nil)
+
+    @join_node.left_unlink!
+    @join_node.left_relink!
+
+    assert @join_node.left_linked
+    assert_empty emitted
+  end
+
   def test_right_unlink
     @join_node.right_unlink!
     refute @join_node.right_linked

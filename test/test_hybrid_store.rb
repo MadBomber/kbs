@@ -4,27 +4,10 @@ require_relative 'test_helper'
 require_relative '../lib/kbs/blackboard'
 
 class TestHybridStore < Minitest::Test
-  def redis_url
-    ENV.fetch('KBS_TEST_REDIS_URL', 'redis://localhost:6379/15')
-  end
-
-  def redis_available?
-    begin
-      require 'redis'
-      redis = Redis.new(url: redis_url, timeout: 1)
-      redis.ping
-      redis.close
-      true
-    rescue LoadError, Redis::CannotConnectError, Redis::TimeoutError
-      false
-    end
-  end
+  include RedisTestSupport
 
   def setup
-    skip "Redis not available" unless redis_available?
-
-    require 'redis'
-    @redis = Redis.new(url: redis_url)
+    @redis = redis_test_connection
     @redis.flushdb
 
     @store = KBS::Blackboard::Persistence::HybridStore.new(
@@ -35,11 +18,9 @@ class TestHybridStore < Minitest::Test
   end
 
   def teardown
-    if redis_available?
-      @store.close if @store
-      @redis.flushdb if @redis
-      @redis.close if @redis
-    end
+    @store&.close
+    @redis&.flushdb
+    @redis&.close
   end
 
   def test_initialization
@@ -117,5 +98,16 @@ class TestHybridStore < Minitest::Test
 
     fact = @store.get_fact('uuid-1')
     assert_equal 25, fact[:attributes][:temp]
+  end
+
+  def test_memory_clear_session_without_session_id
+    store = KBS::Blackboard::Persistence::HybridStore.new(redis: @redis, db_path: ':memory:')
+    memory = KBS::Blackboard::Memory.new(store: store)
+    memory.add_fact(:sensor, { temp: 22 })
+
+    memory.clear_session
+    assert_equal 0, memory.get_facts(:sensor).size
+  ensure
+    store&.close
   end
 end

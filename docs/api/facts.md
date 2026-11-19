@@ -164,7 +164,7 @@ Checks if this fact matches a pattern.
 1. **Type constraint**: `pattern[:type]` must equal fact type
 2. **Literal values**: Attribute must equal specified value
 3. **Predicate lambdas**: `value.is_a?(Proc)` - attribute passed to lambda, must return truthy
-4. **Variable bindings**: `value.is_a?(Symbol) && value.to_s.start_with?('?')` - always matches (variable captures value)
+4. **Variable bindings**: `value.is_a?(Symbol) && value.to_s.end_with?('?')` - always matches (variable captures value)
 
 **Example - Literal Matching**:
 ```ruby
@@ -230,7 +230,7 @@ fact.matches?(type: :temperature, location: :loc?)  # => true (variable matches 
 1. If `pattern[:type]` present and doesn't match fact type → return `false`
 2. For each key in pattern (except `:type`):
    - If value is Proc: call with fact attribute value, return `false` if falsy or attribute missing
-   - If value is variable (symbol starting with `?`): skip (always matches)
+   - If value is variable (symbol ending with `?`): skip (always matches)
    - Otherwise: return `false` if fact attribute ≠ pattern value
 3. Return `true` if all checks passed
 
@@ -242,15 +242,15 @@ Returns string representation of fact.
 
 **Parameters**: None
 
-**Returns**: `String` in format `"type(attr1: val1, attr2: val2)"`
+**Returns**: `String` in DSL form, `"fact :type, attr1: val1, attr2: val2"` (values shown with `inspect`)
 
 **Example**:
 ```ruby
 fact = KBS::Fact.new(:temperature, location: "server_room", value: 85)
-puts fact.to_s  # => "temperature(location: server_room, value: 85)"
+puts fact.to_s  # => fact :temperature, location: "server_room", value: 85
 
 flag = KBS::Fact.new(:system_ready)
-puts flag.to_s  # => "system_ready()"
+puts flag.to_s  # => fact :system_ready
 ```
 
 ---
@@ -781,7 +781,7 @@ fact.matches?(type: :temperature, value: ->(v) { v > 0 })  # => false (no :value
 
 #### 4. Variable Binding Pattern
 
-Variables (symbols starting with `?`) capture attribute values for use in join tests and action blocks.
+Variables (symbols ending with `?`) capture attribute values for use in join tests and action blocks.
 
 ```ruby
 condition = KBS::Condition.new(
@@ -821,7 +821,7 @@ For `fact.matches?(pattern)`:
 
 1. **Type Check**: If `pattern[:type]` present, must equal `fact.type`
 2. **Attribute Checks**: For each `key, value` in pattern (except `:type`):
-   - **Variable** (`value.is_a?(Symbol) && value.to_s.start_with?('?')`): Always matches (captures `fact[key]`)
+   - **Variable** (`value.is_a?(Symbol) && value.to_s.end_with?('?')`): Always matches (captures `fact[key]`)
    - **Predicate** (`value.is_a?(Proc)`): Must satisfy `value.call(fact[key])`. **Fails if `fact[key]` is nil.**
    - **Literal**: Must equal `fact[key]`
 3. **Result**: `true` if all checks pass, `false` otherwise

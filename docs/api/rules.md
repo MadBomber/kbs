@@ -128,7 +128,7 @@ puts kb.rules.first.name  # => "high_temperature"
 
 **Read-only**: Yes (via `attr_reader`)
 
-**Description**: Rule priority (higher = executes first in KBS::Blackboard::Engine)
+**Description**: Rule priority (higher = executes first)
 
 **Default**: `0`
 
@@ -151,8 +151,8 @@ end
 ```
 
 **Priority Semantics**:
-- **KBS::Engine**: Priority is stored but NOT used for execution order (rules fire in arbitrary order)
-- **KBS::Blackboard::Engine**: Higher priority rules fire first within production nodes
+- Higher priority rules fire first in both `KBS::Engine` and `KBS::Blackboard::Engine`
+- Rules with equal priority fire in the order they were defined
 
 **Common Priority Ranges**:
 ```ruby
@@ -285,14 +285,14 @@ See [Performance Guide](../advanced/performance.md) for condition ordering strat
 Zero-argument actions are called without arguments.
 
 **Parameters**:
-- `facts` (Array<KBS::Fact>) - Array of matched facts (parallel to conditions array)
+- `facts` (Array<KBS::Fact>) - Array of matched facts, one per non-negated condition, in condition order (negated conditions have no entry)
 - `bindings` (Hash, optional) - Variable bindings extracted from facts
 
 **Example - Low-level API (Facts Parameter)**:
 ```ruby
 rule.action = ->(facts) do
-  temp_fact = facts[0]  # First condition's matched fact
-  sensor_fact = facts[1]  # Second condition's matched fact
+  temp_fact = facts[0]  # First positive condition's matched fact
+  sensor_fact = facts[1]  # Second positive condition's matched fact
 
   puts "Temperature: #{temp_fact[:value]} from sensor #{sensor_fact[:id]}"
 end
@@ -336,7 +336,7 @@ end
 Executes the rule's action with matched facts.
 
 **Parameters**:
-- `facts` (Array<KBS::Fact>) - Matched facts (one per condition)
+- `facts` (Array<KBS::Fact>) - Matched facts, one per non-negated condition, in condition order. Negated (`without`) conditions match no fact and have no entry.
 
 **Returns**: Result of action lambda, or `nil` if no action
 
@@ -376,6 +376,27 @@ end
 ```
 
 **Note**: Typically called by the RETE engine, not user code. Users call `engine.run` which fires all activated rules.
+
+#### `bindings_for(facts)`
+
+Returns the variable bindings for a set of matched facts. `fire` passes these to any action whose arity is not 1 or -1, and `KBS::Blackboard::Engine` records them in its audit log.
+
+**Parameters**:
+- `facts` (Array<KBS::Fact>) - Matched facts in the same shape `fire` takes: one per non-negated condition, in condition order
+
+**Returns**: `Hash` mapping each variable (such as `:temp?`) to its value in the matched facts
+
+**Example**:
+```ruby
+rule = KBS::Rule.new(:check, conditions: [
+  KBS::Condition.new(:sensor, { id: :id? }),
+  KBS::Condition.new(:alarm, {}, negated: true),
+  KBS::Condition.new(:reading, { value: :value? })
+])
+
+rule.bindings_for([KBS::Fact.new(:sensor, id: 7), KBS::Fact.new(:reading, value: 85)])
+# => {id?: 7, value?: 85}
+```
 
 ---
 

@@ -12,6 +12,9 @@ module KBS
   #   KBS::Decompiler.new(some_proc).decompile_block   # => "{ |x| x + 1 }"
   #
   class Decompiler
+    # Classes whose #inspect is Ruby source for an equal value.
+    LITERAL_CLASSES = [Integer, Symbol, NilClass, TrueClass, FalseClass].freeze
+
     def initialize(proc_obj)
       @iseq  = RubyVM::InstructionSequence.of(proc_obj)
       @arr   = @iseq.to_a
@@ -21,13 +24,14 @@ module KBS
       @children = []
       @iseq.each_child { |c| @children << c }
       @child_index = 0
-      @lambda = proc_obj.lambda?
+      @proc = proc_obj
+      @outer_locals = []          # local tables of enclosing blocks
     end
 
     def decompile
       expr = decompile_body(@body)
       params = build_params
-      if @lambda
+      if @proc.lambda?
         "->(#{params}) { #{expr} }"
       else
         "proc { |#{params}| #{expr} }"
@@ -57,15 +61,45 @@ module KBS
     def decompile_body(body)
       stack = []
       statements = []
-      instructions = body.select { |i| i.is_a?(Array) }
+      steps = body.select { |i| i.is_a?(Array) || label?(i) }
+      pending = []        # open && / || operators waiting for their label
+      or_exprs = {}.compare_by_identity
+      skip = 0
 
-      instructions.each do |inst|
+      steps.each_with_index do |inst, index|
+        if skip.positive?
+          skip -= 1
+          next
+        end
+
+        if label?(inst)
+          close_logical_ops(inst, pending, stack, or_exprs)
+          next
+        end
+
         op = inst[0]
         case op
+        when :dup
+          logical = logical_op_at(steps, index)
+          if logical
+            pending.push([logical, stack.pop, steps[index + 1][1]])
+            skip = 2
+          else
+            stack.push("/* dup */")
+          end
+
         when :getlocal_WC_0
           idx = inst[1]
           name = slot_to_name(idx)
           stack.push(name.to_s)
+
+        when :getlocal_WC_1
+          name = if @outer_locals.empty?
+                   captured_value(inst[1])
+                 else
+                   slot_to_name(inst[1], @outer_locals.last).to_s
+                 end
+          stack.push(name || '/* getlocal_WC_1 */')
 
         when :setlocal_WC_0
           idx = inst[1]
@@ -88,13 +122,13 @@ module KBS
         when :putnil
           stack.push("nil")
 
-        when :putchilledstring, :putstring
+        when :putchilledstring, :dupchilledstring, :putstring
           stack.push(inst[1].inspect)
 
         when :opt_plus, :opt_minus, :opt_mult, :opt_div, :opt_mod,
              :opt_eq, :opt_neq, :opt_lt, :opt_le, :opt_gt, :opt_ge,
              :opt_ltlt
-          op_sym = inst[1][:mid]
+          op_sym = inst.last[:mid] # opt_neq carries == then !=
           b = stack.pop
           a = stack.pop
           stack.push("#{a} #{op_sym} #{b}")
@@ -134,17 +168,13 @@ module KBS
           stack.push("{ #{entries.join(', ')} }")
 
         when :branchunless
-          condition = stack.pop
-          remaining = instructions[instructions.index(inst) + 1..]
-          true_val = extract_value(remaining, 0)
-          false_val = extract_value(remaining, 1)
-          if true_val && false_val
-            stack.push("#{condition} ? #{true_val} : #{false_val}")
-            break
-          end
+          # Anything else on the stack, such as from a bare branchif, would be lost.
+          lone = stack.size == 1
+          stack.push(lone ? ternary(stack.pop, steps[index + 1..], inst[1]) : '/* branchunless */')
+          break
 
-        when :leave
-          # ignore
+        when :leave, :nop
+          # ignore; Ruby 3.x starts a block with nop
 
         when :pop
           val = stack.pop
@@ -155,8 +185,39 @@ module KBS
         end
       end
 
+      # An operator whose label lies outside these steps never closed.
+      return "/* #{pending.last[0]} */" if pending.any?
+
       all = statements + [stack.last].compact
       all.join("; ")
+    end
+
+    # Ruby compiles `a && b` as `a; dup; branchunless L; pop; b; L:`, and
+    # `a || b` the same way with branchif. Returns "&&" or "||" when the
+    # dup at index starts that sequence, else nil.
+    def logical_op_at(steps, index)
+      branch, pop = steps[index + 1], steps[index + 2]
+      return unless pop.is_a?(Array) && pop[0] == :pop && branch.is_a?(Array)
+
+      { branchunless: "&&", branchif: "||" }[branch[0]]
+    end
+
+    # At a jump target, joins each pending operator whose branch goes
+    # there with the expression on top of the stack, innermost first.
+    # An || result used as either side of && is parenthesized.
+    def close_logical_ops(label, pending, stack, or_exprs)
+      while pending.any? && pending.last[2] == label
+        op, left, _label = pending.pop
+        right = stack.pop
+        left, right = [left, right].map { |side| or_exprs.key?(side) ? "(#{side})" : side } if op == "&&"
+        expr = "#{left} #{op} #{right}"
+        or_exprs[expr] = true if op == "||"
+        stack.push(expr)
+      end
+    end
+
+    def label?(item)
+      item.is_a?(Symbol) && item.start_with?("label_")
     end
 
     def format_call(receiver, method, args)
@@ -177,9 +238,11 @@ module KBS
       param_names = child_locals.first(count).join(", ")
 
       saved = [@locals, @params, @body]
+      @outer_locals.push(@locals)
       @locals, @params, @body = child_locals, child_params, child_body
       expr = decompile_body(child_body)
       @locals, @params, @body = saved
+      @outer_locals.pop
 
       if count > 0
         "|#{param_names}| #{expr}"
@@ -188,17 +251,80 @@ module KBS
       end
     end
 
-    def extract_value(instructions, index)
-      values = instructions.select { |i|
-        i.is_a?(Array) && (i[0] == :putchilledstring || i[0] == :putstring || i[0] == :putobject)
-      }
-      val = values[index]
-      val[1].inspect if val
+    # `cond ? a : b` compiles to `branchunless L; a; leave; L: b; leave`.
+    # Any other shape becomes a placeholder, so the condition is never
+    # silently dropped.
+    def ternary(condition, rest, else_label)
+      split = rest.index(else_label)
+      sources = split && [rest[0...split], rest[split + 1..]].map { |steps| branch_source(steps) }
+      return '/* branchunless */' unless sources&.all?
+
+      "#{condition} ? #{sources.join(' : ')}"
     end
 
-    def slot_to_name(slot_idx)
-      name_idx = @locals.size + 2 - slot_idx
-      @locals[name_idx] || "?local_#{slot_idx}"
+    # Source of a ternary branch that ends the block with one
+    # expression, else nil.
+    def branch_source(steps)
+      return unless steps.last.is_a?(Array) && steps.last[0] == :leave
+
+      src = decompile_body(steps)
+      src unless src.empty? || src.include?(';')
+    end
+
+    # The value of a variable the proc captured from the method that
+    # created it, as Ruby source, or nil when it can't be resolved or has
+    # no literal form.
+    def captured_value(slot_idx)
+      table = creator_locals or return nil
+      value = @proc.binding.local_variable_get(slot_to_name(slot_idx, table))
+      value.inspect if literal?(value)
+    rescue NameError, TypeError
+      nil
+    end
+
+    def literal?(value)
+      case value
+      when Float then value.finite?
+      when String
+        value.instance_of?(String) && value.encoding == Encoding::UTF_8 && value.valid_encoding?
+      else LITERAL_CLASSES.include?(value.class)
+      end
+    end
+
+    # Local table of the method whose body created the proc, or nil when
+    # the proc was made anywhere else (a nested block, a class body, the
+    # top level), where the slot would index some other scope.
+    def creator_locals
+      return @creator_locals if defined?(@creator_locals)
+
+      @creator_locals = begin
+        scope = @proc.binding
+        name = scope.eval('__method__')
+        method = name && Kernel.instance_method(:method).bind_call(scope.receiver, name)
+        creating_iseq(method)&.to_a&.[](10)
+      rescue NameError, TypeError, ArgumentError
+        nil
+      end
+    end
+
+    # Walks the method's super chain for the definition whose body holds
+    # the proc as a direct child.
+    def creating_iseq(method)
+      while method
+        iseq = RubyVM::InstructionSequence.of(method)
+        return iseq if iseq && direct_child?(iseq)
+
+        method = method.super_method
+      end
+    end
+
+    def direct_child?(iseq)
+      iseq.each_child { |child| return true if child.to_a == @arr }
+      false
+    end
+
+    def slot_to_name(slot_idx, locals = @locals)
+      locals[locals.size + 2 - slot_idx] || "?local_#{slot_idx}"
     end
   end
 end

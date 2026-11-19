@@ -21,9 +21,10 @@ module KBS
       @left_linked = false
     end
 
+    # The beta memory relinks when it gains its first token, and then
+    # propagates that token itself, so there is nothing to replay here.
     def left_relink!
       @left_linked = true
-      @beta_memory.tokens.each { |token| left_activate(token) } if @beta_memory
     end
 
     def right_unlink!
@@ -92,10 +93,13 @@ module KBS
 
         # If test has expected_value, compare against that constant
         if test.key?(:expected_value)
-          if test[:operation] == :eq
-            fact_value == test[:expected_value]
+          expected = test[:expected_value]
+          if expected.is_a?(Proc)
+            fact_value && expected.call(fact_value)
+          elsif test[:operation] == :eq
+            fact_value == expected
           elsif test[:operation] == :ne
-            fact_value != test[:expected_value]
+            fact_value != expected
           else
             true
           end

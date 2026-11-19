@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'securerandom'
 require_relative 'store'
 require_relative 'redis_store'
 require_relative 'sqlite_store'
@@ -22,7 +23,7 @@ module KBS
           db_path: 'audit.db',
           session_id: nil
         )
-          @session_id = session_id
+          @session_id = session_id || SecureRandom.uuid
 
           # Redis for hot data (facts, messages)
           @redis_store = RedisStore.new(

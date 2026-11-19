@@ -1,5 +1,46 @@
 ## [Unreleased]
 
+### Added
+- `benchmarks/regex_baseline.rb` measures regex pattern matching in the RETE network; results are in `docs/advanced/performance.md` (#4).
+
+### Changed
+- `KBS::Fact#to_s` and `KBS::Rule#to_s` now render DSL source, such as `fact :sensor, temp: 22` and a `rule "name" do ... end` block (#3).
+- `RedisStore#query_facts` and `HybridStore#query_facts` now raise `NotImplementedError` instead of returning every fact, since Redis cannot run SQL conditions (#16).
+- The gem now ships only the Ruby files under `lib/`, plus `README.md`, `CHANGELOG.md` and `LICENSE.txt`. It used to include `docs/`, `examples/`, `benchmarks/`, `.github/` and other repo files such as `Rakefile` and `mkdocs.yml`, which are still in the repository (#31).
+
+### Removed
+- `examples/temp_dsl.txt`, a captured demo output file, is no longer shipped in the gem (#15).
+
+### Fixed
+- `KBS::Blackboard::Memory#clear_session` now clears the session's facts when a store is passed in, such as a `SqliteStore`, `RedisStore` or `HybridStore` made without a `session_id`. The memory now uses the store's session id, and `SqliteStore` and `HybridStore` make one when none is given (#51).
+- `rake` and `rake test` now run the test suite. SimpleCov's exit hook used to fire first and abort before any test ran. One side effect: the existing 35% minimum-coverage gate now applies to rake runs, so a narrowly filtered run or `rake test:deps` can fail on coverage alone.
+- `KBS.knowledge_base(engine: ...)` and `KBS::DSL::KnowledgeBase.new(engine: ...)` now accept an engine, such as a `KBS::Blackboard::Engine`. Passing one used to raise `ArgumentError`, which broke the README's SQLite and Redis blackboard examples and the docs examples that pass `engine:`. Without the keyword a new `KBS::Engine` is used, as before (#10).
+- The Redis store tests no longer connect to `localhost:6379` and flush database 15 there. They are skipped unless `KBS_TEST_REDIS_URL` names a disposable Redis database, such as a throwaway server; see `test/README.md`.
+- `require 'kbs/blackboard'` no longer fails when the `redis` gem is not installed, so the SQLite blackboard works without it. `RedisStore` and `HybridStore` still need redis, and raise `LoadError` when they open a connection without it.
+- Variable bindings are now correct when a `without` (negated) condition comes before other conditions in a rule. The action used to receive values from the wrong facts, or miss variables, and the blackboard audit log recorded the same wrong bindings. `KBS::Rule#bindings_for(facts)` is now public and is used by both.
+- `KBS::Rule#to_s`, and `KnowledgeBase#rule_source` for a rule with no source file, now print simple literals, such as integers and plain strings, that helpers like `greater_than` and `not_equal` capture, so `greater_than(80)` shows `v > 80`. It used to show `v > /* getlocal_WC_1 */`. `not_equal(5)` now prints `!=`; it used to print `==` (#33).
+- `KBS::Rule#to_s` and `KnowledgeBase#rule_source` no longer raise `NoMethodError` when a condition value cannot be decompiled, such as `satisfies(&:even?)` in a rule with no source file. That value now prints as `<decompilation failed: ...>`, the same way an action that cannot be decompiled already did (#43).
+- A rule that starts with a `without` condition now fires when no matching fact exists, including right after the rule is added and after `reset` (#11).
+- Rule actions written as zero-argument lambdas, such as `perform -> { ... }`, no longer raise `ArgumentError` when the rule fires (#14).
+- `rule "name", priority: N do ... end` and `defrule` now accept a `priority:` keyword, as the README and docs show. It used to raise `ArgumentError`. A `priority` call inside the block still wins (#29).
+- `KBS::Blackboard::Engine#remove_fact` now retracts the fact from the Rete network. It used to stay in its alpha memory, so a rule negated on it never fired and a rule matched on it still fired. `KBS::Blackboard::Fact` now compares, and hashes, by `uuid` (#42).
+- `KBS::Rule#to_s` and `KnowledgeBase#rule_source` now print the condition of a ternary whose branch is `0`, `1`, `nil` or an expression, so `v ? 1 : 2` shows `v ? 1 : 2`. It used to show only `2`, and could show the wrong branch values. A ternary that cannot be decompiled now prints `/* branchunless */` instead of dropping its condition (#52).
+- `KBS::Rule#to_s` and `KnowledgeBase#rule_source` now print string literals in decompiled conditions on Ruby 4.1, so `->(v) { v == "hi" }` no longer shows `v == /* dupchilledstring */` (#50).
+- A rule with two or more conditions now fires once per match when its facts arrive in a different order from its conditions. It used to fire once per extra join, and `KBS::Blackboard::Engine` wrote duplicate audit rows (#41).
+- Condition helpers such as `greater_than`, `less_than`, `satisfies`, `one_of`, `not_equal`, `range` and `equals` now work inside the block form of `on`. They used to be recorded as pattern keys of their own (or raise for multi-argument helpers), so the rule never fired. An attribute named after a helper in the block form now means the helper (#40).
+- `KBS::Rule#to_s` and `KnowledgeBase#rule_source` now render `&&` and `||` in decompiled conditions, so `between(1, 9)` prints as `->(v) { v >= 1 && v <= 9 }` instead of `v >= 1; v <= 9`. An `||` used as a side of `&&` is parenthesized (#36).
+- Rule `priority` now sets firing order in `KBS::Engine` and `KBS::Blackboard::Engine`: higher-priority rules fire first, and rules of equal priority keep definition order. Rules used to fire in definition order regardless of priority, which changes the order for anyone who already sets priorities (#35).
+- Adding a rule after facts exist no longer makes earlier rules fire again for facts they already matched. A late rule now picks up existing facts without replaying them into every alpha memory (#34).
+- Condition helpers `greater_than`, `less_than`, `between`, `range` and `matches` now just fail to match a value of the wrong type, such as a String compared with `greater_than(5)`. `add_fact` used to raise and leave the fact in working memory, where other rules still fired on it (#67).
+- The README "Using the DSL" breakout rule and `examples/advanced_example_dsl.rb` now put each stock's checks in one `on :stock` condition. Two separate conditions matched different stocks, so the README reported stocks that did not qualify, twice, and the example printed a buy signal for a stock with no P/E (#66).
+- A condition helper such as `one_of`, or a `?variable`, on a user attribute named `type` now matches, and blocks in a `without` condition. It used to make a positive condition never match and a negated one never block; a literal value already worked (#65).
+- `KBS::Engine#facts`, `KBS::Blackboard::Engine#close` and `KnowledgeBase#close` now exist, as the getting-started, persistence and blackboard guides use them. Those examples used to raise `NoMethodError`. `facts` returns the working memory facts on both engines; `KnowledgeBase#close` closes an engine that can be closed and does nothing otherwise (#64).
+- A String posted as message content with `post_message` now comes back as that String from `consume_message` and `peek_messages`, on both the SQLite and Redis queues. Reading it used to raise `JSON::ParserError`, and on SQLite the message stayed at the head of its topic, so every later read of that topic raised too (#63).
+- With the SQLite store, message `posted_at`, rule firing `fired_at` and fact history `timestamp` values are now read back as UTC and shown in local time. SQLite writes them as UTC text with no zone, and they used to be read as local time, so they were off by the local UTC offset. The Redis store was already correct (#62).
+- Two consumers sharing one SQLite or Redis blackboard can no longer both receive the same message from `consume_message`. The SQLite queue now claims a message with an update guarded by `consumed = 0` and moves on if another consumer got there first, and the Redis queue pops the message with `ZPOPMIN` before reading it (#60).
+- The docs now describe pattern variables as symbols ending with `?`, such as `:id?`, as the code matches them. The `docs/advanced/debugging.md` join-variable helper used `start_with?('?')`, found no variables and reported every rule as independent. The `Fact#to_s` and `print_facts` examples now show the `fact :temperature, value: 85` output (#59).
+- `KnowledgeBase#print_rules` now shows each condition in DSL form, so `greater_than(80)` prints as `temperature(value: ->(v) { v > 80 })`. It used to print the raw `Proc` object (#58).
+
 ## [0.2.1] - 2026-02-26
 
 ### Added

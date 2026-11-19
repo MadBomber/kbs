@@ -1,7 +1,6 @@
 #!/usr/bin/env ruby
 
 require_relative '../lib/kbs'
-require 'csv'
 require 'date'
 
 class PortfolioRebalancingSystem

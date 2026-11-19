@@ -45,6 +45,13 @@ class TestRule < Minitest::Test
     DSL
   end
 
+  def test_to_s_falls_back_when_condition_proc_cannot_be_decompiled
+    condition = KBS::Condition.new(:n, { value: :even?.to_proc })
+    rule = KBS::Rule.new("evens", conditions: [condition])
+
+    assert_match(/\A  on :n, value: <decompilation failed: .+>\z/, rule.to_s.lines[1].chomp)
+  end
+
   def test_fire_executes_action
     fired = false
     action = ->(facts, bindings) { fired = true }
@@ -146,6 +153,21 @@ class TestRule < Minitest::Test
     # Should only extract bindings from non-negated conditions
     assert_equal 100, extracted_bindings[:temp?]
     assert_equal 1, extracted_bindings.size
+  end
+
+  def test_fire_with_negated_condition_between_positive_conditions
+    conditions = [
+      KBS::Condition.new(:a, { v: :x? }),
+      KBS::Condition.new(:blocker, {}, negated: true),
+      KBS::Condition.new(:b, { v: :y? }),
+      KBS::Condition.new(:c, { v: :z? })
+    ]
+    rule = KBS::Rule.new('test', conditions: conditions, action: ->(_facts, bindings) { bindings })
+
+    # Matched facts hold only the positive conditions, in order
+    bindings = rule.fire([KBS::Fact.new(:a, v: 'A'), KBS::Fact.new(:b, v: 'B'), KBS::Fact.new(:c, v: 'C')])
+
+    assert_equal({ x?: 'A', y?: 'B', z?: 'C' }, bindings)
   end
 
   def test_fire_without_action

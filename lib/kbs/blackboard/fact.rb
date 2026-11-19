@@ -13,6 +13,18 @@ module KBS
         @blackboard = blackboard
       end
 
+      # Facts are identified by uuid. The blackboard builds a new Fact
+      # object each time it reads or removes one, so the Rete network
+      # must find the object it holds by uuid, not by identity.
+      def ==(other)
+        other.is_a?(Fact) && other.uuid == @uuid
+      end
+      alias eql? ==
+
+      def hash
+        [Fact, @uuid].hash
+      end
+
       def [](key)
         @attributes[key]
       end

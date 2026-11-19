@@ -12,6 +12,11 @@ require_relative 'dsl/rule_builder'
 require_relative 'dsl/knowledge_base'
 
 module KBS
+  # Builds a knowledge base and evaluates the block in its context.
+  #
+  # @param engine [KBS::Engine, nil] engine to run on, such as a
+  #   KBS::Blackboard::Engine for persistence; a new KBS::Engine when nil
+  # @return [KBS::DSL::KnowledgeBase]
   def self.knowledge_base(engine: nil, &block)
     kb = DSL::KnowledgeBase.new(engine: engine)
     kb.instance_eval(&block) if block_given?
