@@ -5,7 +5,7 @@
 **A Ruby implementation of the RETE algorithm for building intelligent, rule-based systems with persistent memory.**
 
 [![Gem Version](https://badge.fury.io/rb/kbs.svg)](https://badge.fury.io/rb/kbs)
-[![Ruby](https://img.shields.io/badge/ruby-%3E%3D%202.7-ruby.svg)](https://www.ruby-lang.org/)
+[![Ruby](https://img.shields.io/badge/ruby-%3E%3D%204.0-ruby.svg)](https://www.ruby-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 ## What is KBS?
@@ -19,9 +19,10 @@ KBS (Knowledge-Based Systems) is a powerful Ruby gem that brings production rule
 - **🎯 Declarative DSL**: Write rules in natural, readable Ruby syntax
 - **🔄 Incremental Matching**: Process only changes, not entire fact sets
 - **🚫 Negation Support**: Express "absence of pattern" conditions naturally
+- **🧠 Agenda & Truth Maintenance**: Rules fire to quiescence by priority and strategy; facts asserted under `logical` conditions are retracted when their support goes away
 - **📊 Multi-Agent Systems**: Build collaborative systems with message passing
 - **🔍 Full Auditability**: Complete history of fact changes and rule firings
-- **⚡ High Performance**: Handle millions of facts with sub-millisecond updates
+- **⚡ High Performance**: Hash-indexed joins and alpha memories give sub-millisecond fact updates
 
 ## Quick Example
 
@@ -111,10 +112,10 @@ KBS is built for production workloads:
 - **Fact Addition**: O(N) where N = activated nodes (typically << total nodes)
 - **Rule Firing**: O(M) where M = matched tokens
 - **Memory Efficient**: Network sharing reduces redundant storage
-- **Scalable**: Tested with millions of facts, thousands of rules
+- **Scalable**: Alpha memories are found by fact type and constant, and joins on shared variables are hash-indexed (see `benchmarks/`)
 
 Benchmarks on M2 Max:
-- Add 100,000 facts: ~500ms
+- Add 100,000 facts to a two-rule network (one join, one negation): ~1s
 - Match complex 5-condition rule: <1ms per fact
 - Redis backend: 100x faster than SQLite for high-frequency updates
 

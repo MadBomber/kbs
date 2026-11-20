@@ -20,6 +20,7 @@ The blackboard architecture consists of three components:
 
 ```ruby
 require 'kbs'
+require 'kbs/blackboard'  # not loaded by require 'kbs'
 
 # With SQLite (default)
 engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
@@ -66,19 +67,19 @@ engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
 fact = engine.add_fact(:sensor, id: "bedroom", temp: 28)
 
 # Fact has UUID
-puts fact.id  # => "550e8400-e29b-41d4-a716-446655440000"
+puts fact.uuid  # => "550e8400-e29b-41d4-a716-446655440000"
 
-# Update fact
-engine.update_fact(fact.id, temp: 30)
+# Update fact (keeps the UUID, re-matches the rules)
+fact = engine.modify(fact, temp: 30)
 
-# Query fact history
-history = engine.fact_history(fact.id)
+# Query fact history (newest first)
+history = engine.blackboard.get_history(fact.uuid)
 history.each do |entry|
-  puts "#{entry[:timestamp]}: #{entry[:operation]} - #{entry[:attributes]}"
+  puts "#{entry[:timestamp]}: #{entry[:action]} - #{entry[:attributes]}"
 end
 
-# Delete fact
-engine.delete_fact(fact.id)
+# Retract fact (marked retracted in the database)
+engine.remove_fact(fact)
 ```
 
 ### Fact Attributes
@@ -93,12 +94,13 @@ fact = engine.add_fact(:stock, symbol: "AAPL", price: 150)
 fact.type           # => :stock
 fact[:symbol]       # => "AAPL"
 fact.attributes     # => { symbol: "AAPL", price: 150 }
-fact.id             # => UUID string
+fact.uuid           # => UUID string
 
-# Metadata
-fact.created_at     # => Time object
-fact.updated_at     # => Time object
+# As a hash
+fact.to_h           # => { uuid: "...", type: :stock, attributes: { symbol: "AAPL", price: 150 } }
 ```
+
+Attributes are stored as JSON. Facts read back from the store (`engine.facts`, or after a restart) have Symbol and Time values turned into Strings, so store timestamps as numbers (`Time.now.to_f`) if rules compare them.
 
 ## Message Queue
 
@@ -109,23 +111,28 @@ The blackboard includes a priority-based message queue for agent communication:
 ```ruby
 engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
 
-# Add message to queue
-engine.send_message(:alerts, "High temperature detected", priority: 10)
-engine.send_message(:alerts, "Critical failure", priority: 100)  # Higher priority
+# Add message to queue: sender, topic, content
+engine.post_message("monitor", "alerts", "High temperature detected", priority: 10)
+engine.post_message("monitor", "alerts", "Critical failure", priority: 100)  # Higher priority
 ```
+
+Use Strings for sender and topic; the SQLite queue cannot store Symbols. Content may be a String or anything JSON can encode.
 
 ### Receiving Messages
 
 ```ruby
-# Pop highest priority message
-msg = engine.pop_message(:alerts)
+# Take the highest priority message, recording who consumed it
+msg = engine.consume_message("alerts", "alert_agent")
 puts msg[:content]   # => "Critical failure"
 puts msg[:priority]  # => 100
 
 # Process all messages
-while (msg = engine.pop_message(:alerts))
+while (msg = engine.consume_message("alerts", "alert_agent"))
   process_alert(msg[:content])
 end
+
+# Look without consuming
+engine.blackboard.peek_messages("alerts", limit: 5)
 ```
 
 ### Message Topics
@@ -134,14 +141,14 @@ Organize messages by topic:
 
 ```ruby
 # Different topics for different concerns
-engine.send_message(:sensor_alerts, "Temp spike", priority: 50)
-engine.send_message(:system_events, "Startup complete", priority: 10)
-engine.send_message(:user_notifications, "Welcome!", priority: 1)
+engine.post_message("sensors", "sensor_alerts", "Temp spike", priority: 50)
+engine.post_message("system", "system_events", "Startup complete", priority: 10)
+engine.post_message("ui", "user_notifications", "Welcome!", priority: 1)
 
 # Agents process their own topics
-sensor_agent_msg = engine.pop_message(:sensor_alerts)
-system_msg = engine.pop_message(:system_events)
-user_msg = engine.pop_message(:user_notifications)
+sensor_agent_msg = engine.consume_message("sensor_alerts", "sensor_agent")
+system_msg = engine.consume_message("system_events", "system_agent")
+user_msg = engine.consume_message("user_notifications", "ui_agent")
 ```
 
 ## Audit Trail
@@ -157,35 +164,33 @@ engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
 fact = engine.add_fact(:order, id: 1, status: "pending")
 
 # Update fact
-engine.update_fact(fact.id, status: "processing")
+engine.modify(fact, status: "processing")
 
-# Delete fact
-engine.delete_fact(fact.id)
+# Retract fact
+engine.remove_fact(fact)
 
-# Query audit trail
-history = engine.fact_history(fact.id)
+# Query audit trail (newest first)
+history = engine.blackboard.get_history(fact.uuid)
 history.each do |entry|
-  puts "#{entry[:timestamp]}: #{entry[:operation]}"
+  puts "#{entry[:timestamp]}: #{entry[:action]}"
   puts "  Attributes: #{entry[:attributes]}"
 end
 
 # Output:
-# 2025-01-15 10:00:00: add
+# 2025-01-15 10:02:00 -0600: REMOVE
+#   Attributes: {id: 1, status: "processing"}
+# 2025-01-15 10:01:00 -0600: UPDATE
+#   Attributes: {id: 1, status: "processing"}
+# 2025-01-15 10:00:00 -0600: ADD
 #   Attributes: {id: 1, status: "pending"}
-# 2025-01-15 10:01:00: update
-#   Attributes: {id: 1, status: "processing"}
-# 2025-01-15 10:02:00: delete
-#   Attributes: {id: 1, status: "processing"}
 ```
 
 ### Rule Firing Log
 
+Every rule firing is logged; there is nothing to enable:
+
 ```ruby
-# Enable rule firing audit
-engine = KBS::Blackboard::Engine.new(
-  db_path: 'kb.db',
-  audit_rules: true
-)
+engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
 
 kb = KBS.knowledge_base(engine: engine) do
   rule "my_rule" do
@@ -198,10 +203,10 @@ kb = KBS.knowledge_base(engine: engine) do
 end
 
 # Query rule firings
-firings = engine.rule_firings(rule_name: "my_rule")
+firings = engine.blackboard.get_rule_firings("my_rule")
 firings.each do |firing|
-  puts "Rule '#{firing[:rule_name]}' fired at #{firing[:timestamp]}"
-  puts "  Facts: #{firing[:fact_ids]}"
+  puts "Rule '#{firing[:rule_name]}' fired at #{firing[:fired_at]}"
+  puts "  Facts: #{firing[:fact_uuids]}"
   puts "  Bindings: #{firing[:bindings]}"
 end
 ```
@@ -253,7 +258,7 @@ class MarketDataAgent < Agent
       symbol: data[:symbol],
       price: data[:price],
       volume: data[:volume],
-      timestamp: Time.now
+      timestamp: Time.now.to_f
     })
   end
 end
@@ -273,7 +278,7 @@ class TradingAgent < Agent
           price: fact[:price]
         })
 
-        @engine.send_message(:execution, "New buy order", priority: 50)
+        @engine.post_message(@name, "execution", "New buy order", priority: 50)
       end
     end
   end
@@ -287,7 +292,7 @@ end
 class ExecutionAgent < Agent
   def run
     # Check for execution messages
-    while (msg = @engine.pop_message(:execution))
+    while (msg = @engine.consume_message("execution", @name))
       # Find pending orders
       orders = @engine.facts.select { |f|
         f.type == :order && !f[:executed]
@@ -297,10 +302,10 @@ class ExecutionAgent < Agent
         execute_order(order)
 
         # Update fact
-        @engine.update_fact(order.id, executed: true)
+        @engine.modify(order, executed: true)
 
         # Notify
-        @engine.send_message(:notifications, "Order executed", priority: 10)
+        @engine.post_message(@name, "notifications", "Order executed", priority: 10)
       end
     end
   end
@@ -323,13 +328,13 @@ end
 
 ## Transactions
 
-Blackboard supports ACID transactions (SQLite backend):
+The blackboard memory supports transactions (SQLite backend):
 
 ```ruby
 engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
 
 # Transaction succeeds
-engine.transaction do
+engine.blackboard.transaction do
   engine.add_fact(:account, id: 1, balance: 1000)
   engine.add_fact(:account, id: 2, balance: 500)
 end
@@ -337,7 +342,7 @@ end
 
 # Transaction fails
 begin
-  engine.transaction do
+  engine.blackboard.transaction do
     engine.add_fact(:account, id: 3, balance: 100)
     raise "Error!"
     engine.add_fact(:account, id: 4, balance: 200)  # Never reached
@@ -347,6 +352,8 @@ rescue => e
 end
 # No facts committed
 ```
+
+A rollback undoes the database writes only. Facts added inside the block were already matched by the rules, so they stay in the RETE network and can still fire. The Redis and hybrid stores do not roll back.
 
 ## Observers
 
@@ -360,38 +367,40 @@ class FactObserver
       puts "Fact added: #{fact.type} - #{fact.attributes}"
     when :remove
       puts "Fact removed: #{fact.type} - #{fact.attributes}"
-    when :update
-      puts "Fact updated: #{fact.type} - #{fact.attributes}"
     end
   end
 end
 
 engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
 observer = FactObserver.new
-engine.memory.add_observer(observer)
+engine.blackboard.add_observer(observer)
 
 engine.add_fact(:sensor, temp: 28)
-# Output: Fact added: sensor - {:temp=>28}
+# Output: Fact added: sensor - {temp: 28}
 ```
+
+Observers see only `:add` and `:remove`. `engine.modify` reports a `:remove` followed by an `:add`; `fact.update` and `fact[:key] = value` write to the store without notifying observers.
 
 ## Performance Tuning
 
 ### SQLite Optimization
 
+The engine takes only `db_path:` or `store:` for storage. Tune SQLite through the store's `SQLite3::Database`:
+
 ```ruby
-engine = KBS::Blackboard::Engine.new(
-  db_path: 'kb.db',
-  journal_mode: 'WAL',       # Write-Ahead Logging
-  synchronous: 'NORMAL',     # Balance durability/speed
-  cache_size: -64000,        # 64MB cache
-  busy_timeout: 5000         # Wait 5s for locks
-)
+engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
+db = engine.blackboard.store.db
+
+db.execute("PRAGMA journal_mode = WAL")      # Write-Ahead Logging
+db.execute("PRAGMA synchronous = NORMAL")    # Balance durability/speed
+db.execute("PRAGMA cache_size = -64000")     # 64MB cache
+db.busy_timeout = 5000                        # Wait 5s for locks
 ```
 
 ### Redis for Speed
 
 ```ruby
-require 'kbs/blackboard/persistence/redis_store'
+require 'kbs/blackboard'  # loads every store; Redis needs the redis gem
 
 store = KBS::Blackboard::Persistence::RedisStore.new(
   url: 'redis://localhost:6379/0'
@@ -399,14 +408,14 @@ store = KBS::Blackboard::Persistence::RedisStore.new(
 
 engine = KBS::Blackboard::Engine.new(store: store)
 
-# 10-100x faster than SQLite
-# Perfect for high-frequency updates
+# Facts, messages and the audit log all in Redis
+# Suited to high-frequency updates
 ```
 
 ### Hybrid for Production
 
 ```ruby
-require 'kbs/blackboard/persistence/hybrid_store'
+require 'kbs/blackboard'
 
 store = KBS::Blackboard::Persistence::HybridStore.new(
   redis_url: 'redis://localhost:6379/0',
@@ -415,7 +424,7 @@ store = KBS::Blackboard::Persistence::HybridStore.new(
 
 engine = KBS::Blackboard::Engine.new(store: store)
 
-# Fast access (Redis) + durable audit (SQLite)
+# Facts and messages in Redis + durable audit log in SQLite
 ```
 
 ## Best Practices
@@ -424,7 +433,7 @@ engine = KBS::Blackboard::Engine.new(store: store)
 
 ```ruby
 # Good: Store fact UUID
-order_id = engine.add_fact(:order, { ... }).id
+order_id = engine.add_fact(:order, { ... }).uuid
 engine.add_fact(:payment, order_id: order_id)
 
 # Bad: Use attribute as reference
@@ -448,7 +457,7 @@ engine.add_fact(:signal, { ... })
 
 ```ruby
 # Good: Explicit coordination
-engine.send_message(:execution_queue, "Process order #123", priority: 50)
+engine.post_message("orders", "execution_queue", "Process order #123", priority: 50)
 
 # Bad: Polling facts
 loop do
@@ -465,11 +474,9 @@ engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
 
 kb = KBS.knowledge_base(engine: engine) do
   rule "cleanup_old_facts", priority: 1 do
+    # timestamp stored as Time.now.to_f
     on :market_data,
-      timestamp: :time?,
-      predicate: lambda { |f|
-        (Time.now - f[:timestamp]) > 3600  # 1 hour old
-      }
+      timestamp: ->(t) { Time.now.to_f - t > 3600 }  # 1 hour old
 
     perform do |facts, bindings|
       engine.remove_fact(facts[0])
@@ -484,14 +491,14 @@ end
 engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
 
 # Good: Atomic updates
-engine.transaction do
-  engine.update_fact(account1_id, balance: new_balance1)
-  engine.update_fact(account2_id, balance: new_balance2)
+engine.blackboard.transaction do
+  engine.modify(account1, balance: new_balance1)
+  engine.modify(account2, balance: new_balance2)
 end
 
 # Bad: Separate updates (not atomic)
-engine.update_fact(account1_id, balance: new_balance1)
-engine.update_fact(account2_id, balance: new_balance2)
+engine.modify(account1, balance: new_balance1)
+engine.modify(account2, balance: new_balance2)
 ```
 
 ## Common Patterns
@@ -507,8 +514,9 @@ kb = KBS.knowledge_base(engine: engine) do
     on :agent, name: :name?
     without :leader, {}
 
+    # self is the rule builder here, so assert through kb
     perform do |facts, bindings|
-      fact :leader, name: bindings[:name?]
+      kb.fact :leader, name: bindings[:name?]
       puts "#{bindings[:name?]} is now leader"
     end
   end
@@ -520,7 +528,7 @@ end
 ```ruby
 # Acquire lock
 def acquire_lock(engine, resource_id, agent_id)
-  engine.transaction do
+  engine.blackboard.transaction do
     lock = engine.facts.find { |f|
       f.type == :lock && f[:resource_id] == resource_id
     }

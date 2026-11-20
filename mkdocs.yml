@@ -145,7 +145,7 @@ extra:
 nav:
   - Home:
       - index.md
-      - What is aKnowledge Base?: what-is-a-knowledge-base.md
+      - What is a Knowledge Base?: what-is-a-knowledge-base.md
       - What is a Fact?: what-is-a-fact.md
       - What is a Rule?: what-is-a-rule.md
   - Installation: installation.md

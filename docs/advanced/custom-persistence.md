@@ -4,69 +4,94 @@ Implement custom storage backends for KBS by extending the `Store` interface. Th
 
 ## Store Interface
 
-Custom stores must implement the `KBS::Blackboard::Persistence::Store` interface:
+A store keeps the blackboard's facts. `KBS::Blackboard::Persistence::Store` is the abstract base class; KBS ships `SqliteStore`, `RedisStore` and `HybridStore` built on it:
 
 ```ruby
 module KBS
   module Blackboard
     module Persistence
       class Store
-        # Fact Operations
-        def save_fact(fact)
-          raise NotImplementedError
+        def add_fact(uuid, type, attributes)
+          raise NotImplementedError, "#{self.class} must implement #add_fact"
         end
 
-        def load_facts(type = nil)
-          raise NotImplementedError
+        def remove_fact(uuid)
+          raise NotImplementedError, "#{self.class} must implement #remove_fact"
         end
 
-        def update_fact(fact_id, attributes)
-          raise NotImplementedError
+        def update_fact(uuid, attributes)
+          raise NotImplementedError, "#{self.class} must implement #update_fact"
         end
 
-        def delete_fact(fact_id)
-          raise NotImplementedError
+        def get_fact(uuid)
+          raise NotImplementedError, "#{self.class} must implement #get_fact"
         end
 
-        # Message Queue Operations
-        def send_message(topic, content, priority:)
-          raise NotImplementedError
+        def get_facts(type = nil, pattern = {})
+          raise NotImplementedError, "#{self.class} must implement #get_facts"
         end
 
-        def pop_message(topic)
-          raise NotImplementedError
+        def query_facts(conditions = nil, params = [])
+          raise NotImplementedError, "#{self.class} must implement #query_facts"
         end
 
-        # Audit Operations
-        def log_fact_change(operation, fact, attributes = {})
-          raise NotImplementedError
+        def clear_session(session_id)
+          raise NotImplementedError, "#{self.class} must implement #clear_session"
         end
 
-        def fact_history(fact_id)
-          raise NotImplementedError
-        end
-
-        def log_rule_firing(rule_name, fact_ids, bindings)
-          raise NotImplementedError
-        end
-
-        def rule_firings(rule_name: nil, limit: 100)
-          raise NotImplementedError
-        end
-
-        # Transaction Operations (optional)
-        def transaction
-          yield
+        def stats
+          raise NotImplementedError, "#{self.class} must implement #stats"
         end
 
         def close
-          # Cleanup resources
+          raise NotImplementedError, "#{self.class} must implement #close"
+        end
+
+        def vacuum
+          # Optional operation - no-op by default
+        end
+
+        def transaction(&)
+          # Default: just execute the block
+          yield if block_given?
         end
       end
     end
   end
 end
 ```
+
+### What Each Method Must Do
+
+`KBS::Blackboard::Memory` (the blackboard behind `KBS::Blackboard::Engine`) calls these methods and relies on what they return. A fact row is a Hash `{ uuid:, type:, attributes: }` with `type` a Symbol and `attributes` a Hash with Symbol keys.
+
+| Method | Called when | Must return |
+|--------|-------------|-------------|
+| `add_fact(uuid, type, attributes)` | a fact is added; KBS makes the uuid | ignored |
+| `remove_fact(uuid)` | a fact is retracted | `{ type:, attributes: }` of the removed fact, or `nil` if there is no such active fact |
+| `update_fact(uuid, attributes)` | `Fact#update`, `Fact#[]=`, `engine.modify`; `attributes` is the complete new set | the fact's type (Symbol), or `nil` if there is no such active fact |
+| `get_fact(uuid)` | `engine.modify`, `blackboard.find_fact` | a fact row, or `nil` |
+| `get_facts(type = nil, pattern = {})` | `engine.facts`, `blackboard.get_facts`, adding a rule | an Array of fact rows; `pattern` values may be Procs, called with the attribute's value |
+| `query_facts(conditions = nil, params = [])` | `blackboard.query_facts` | an Array of fact rows; a store without a query language may raise `NotImplementedError` (as `RedisStore` does) |
+| `register_knowledge_source(name, description: nil, topics: [])` | `blackboard.register_knowledge_source` | ignored |
+| `clear_session(session_id)` | `blackboard.clear_session` | ignored |
+| `stats` | `engine.stats` | a Hash; it is merged with the message queue's and audit log's stats |
+| `vacuum`, `close` | `blackboard.vacuum`, `engine.close` | ignored |
+| `transaction { ... }` | around every add, remove, update and message consume | the block's value |
+| `session_id` | `Memory.new`, to share the store's session | a String |
+
+Note that `register_knowledge_source` and `session_id` are not defined on the base class, but `Memory` calls them, so a custom store has to define both.
+
+### Messages and the Audit Log
+
+The store holds only facts. `Memory` builds the message queue and the audit log itself, from a database connection the store exposes:
+
+- a store that responds to `connection` gets a Redis message queue and audit log on `store.connection` (a `Redis` client)
+- a store that responds to `db` gets SQLite ones on `store.db` (a `SQLite3::Database` with `results_as_hash = true`)
+- a store with `hybrid?` returning true and both methods gets Redis messages and a SQLite audit log, like `HybridStore`
+- any other store raises `ArgumentError` when the blackboard is created
+
+So a store for another database keeps its facts there and offers a SQLite database (or a Redis client) for messages and the audit trail. Writes to that database are not part of the store's own transactions.
 
 ## PostgreSQL Store
 
@@ -75,394 +100,309 @@ end
 ```ruby
 require 'pg'
 require 'json'
+require 'securerandom'
+require 'sqlite3'
+require 'kbs/blackboard'
 
 class PostgresStore < KBS::Blackboard::Persistence::Store
-  def initialize(connection_string:)
+  # The blackboard puts its message queue and audit log in `db`.
+  attr_reader :session_id, :db
+
+  def initialize(connection_string:, session_id: nil, audit_db_path: ':memory:')
+    super()
+    @session_id = session_id || SecureRandom.uuid
+    @transaction_depth = 0
     @conn = PG.connect(connection_string)
+    @db = SQLite3::Database.new(audit_db_path)
+    @db.results_as_hash = true
     setup_tables
   end
 
   def setup_tables
     @conn.exec <<~SQL
       CREATE TABLE IF NOT EXISTS facts (
-        id UUID PRIMARY KEY,
+        uuid UUID PRIMARY KEY,
         fact_type VARCHAR(255) NOT NULL,
         attributes JSONB NOT NULL,
+        session_id VARCHAR(255),
+        retracted BOOLEAN NOT NULL DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       );
 
       CREATE INDEX IF NOT EXISTS idx_facts_type ON facts(fact_type);
+      CREATE INDEX IF NOT EXISTS idx_facts_session ON facts(session_id);
       CREATE INDEX IF NOT EXISTS idx_facts_attributes ON facts USING gin(attributes);
 
-      CREATE TABLE IF NOT EXISTS messages (
-        id SERIAL PRIMARY KEY,
-        topic VARCHAR(255) NOT NULL,
-        content JSONB NOT NULL,
-        priority INTEGER NOT NULL,
-        created_at TIMESTAMP DEFAULT NOW()
+      CREATE TABLE IF NOT EXISTS knowledge_sources (
+        name VARCHAR(255) PRIMARY KEY,
+        description TEXT,
+        topics JSONB NOT NULL DEFAULT '[]',
+        registered_at TIMESTAMP DEFAULT NOW()
       );
-
-      CREATE INDEX IF NOT EXISTS idx_messages_topic_priority
-        ON messages(topic, priority DESC);
-
-      CREATE TABLE IF NOT EXISTS audit_log (
-        id SERIAL PRIMARY KEY,
-        fact_id UUID NOT NULL,
-        operation VARCHAR(50) NOT NULL,
-        attributes JSONB,
-        timestamp TIMESTAMP DEFAULT NOW()
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_audit_fact_id ON audit_log(fact_id);
-
-      CREATE TABLE IF NOT EXISTS rule_firings (
-        id SERIAL PRIMARY KEY,
-        rule_name VARCHAR(255) NOT NULL,
-        fact_ids UUID[] NOT NULL,
-        bindings JSONB NOT NULL,
-        timestamp TIMESTAMP DEFAULT NOW()
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_rule_firings_name ON rule_firings(rule_name);
     SQL
   end
 
   # Fact Operations
 
-  def save_fact(fact)
-    @conn.exec_params(
-      "INSERT INTO facts (id, fact_type, attributes) VALUES ($1, $2, $3)",
-      [fact.id, fact.type.to_s, fact.attributes.to_json]
-    )
-
-    log_fact_change('add', fact, fact.attributes)
-    fact
-  end
-
-  def load_facts(type = nil)
-    query = if type
-      @conn.exec_params(
-        "SELECT id, fact_type, attributes, created_at FROM facts WHERE fact_type = $1",
-        [type.to_s]
-      )
-    else
-      @conn.exec("SELECT id, fact_type, attributes, created_at FROM facts")
-    end
-
-    query.map do |row|
-      KBS::Blackboard::Fact.new(
-        row['fact_type'].to_sym,
-        JSON.parse(row['attributes'], symbolize_names: true),
-        id: row['id'],
-        created_at: Time.parse(row['created_at'])
-      )
-    end
-  end
-
-  def update_fact(fact_id, attributes)
-    @conn.exec_params(
-      "UPDATE facts SET attributes = $1, updated_at = NOW() WHERE id = $2",
-      [attributes.to_json, fact_id]
-    )
-
-    log_fact_change('update', fact_id, attributes)
-  end
-
-  def delete_fact(fact_id)
-    result = @conn.exec_params(
-      "DELETE FROM facts WHERE id = $1 RETURNING attributes",
-      [fact_id]
-    )
-
-    if result.ntuples > 0
-      attrs = JSON.parse(result[0]['attributes'], symbolize_names: true)
-      log_fact_change('delete', fact_id, attrs)
-    end
-  end
-
-  # Message Queue Operations
-
-  def send_message(topic, content, priority:)
-    @conn.exec_params(
-      "INSERT INTO messages (topic, content, priority) VALUES ($1, $2, $3)",
-      [topic.to_s, content.to_json, priority]
+  def add_fact(uuid, type, attributes)
+    exec(
+      "INSERT INTO facts (uuid, fact_type, attributes, session_id) VALUES ($1, $2, $3, $4)",
+      [uuid, type.to_s, JSON.generate(attributes), @session_id]
     )
   end
 
-  def pop_message(topic)
-    # Atomic pop using DELETE RETURNING
-    result = @conn.exec_params(<<~SQL, [topic.to_s])
-      DELETE FROM messages
-      WHERE id = (
-        SELECT id FROM messages
-        WHERE topic = $1
-        ORDER BY priority DESC, created_at ASC
-        LIMIT 1
-        FOR UPDATE SKIP LOCKED
-      )
-      RETURNING content, priority
+  def remove_fact(uuid)
+    result = exec(<<~SQL, [uuid])
+      UPDATE facts SET retracted = TRUE, updated_at = NOW()
+      WHERE uuid = $1 AND NOT retracted
+      RETURNING fact_type, attributes
     SQL
 
-    return nil if result.ntuples == 0
+    return nil if result.ntuples.zero?
 
+    row = result[0]
+    { type: row['fact_type'].to_sym, attributes: parse(row['attributes']) }
+  end
+
+  def update_fact(uuid, attributes)
+    result = exec(<<~SQL, [JSON.generate(attributes), uuid])
+      UPDATE facts SET attributes = $1, updated_at = NOW()
+      WHERE uuid = $2 AND NOT retracted
+      RETURNING fact_type
+    SQL
+
+    result.ntuples.zero? ? nil : result[0]['fact_type'].to_sym
+  end
+
+  def get_fact(uuid)
+    result = exec("SELECT * FROM facts WHERE uuid = $1 AND NOT retracted", [uuid])
+    result.ntuples.zero? ? nil : fact_row(result[0])
+  end
+
+  def get_facts(type = nil, pattern = {})
+    result = if type
+      exec("SELECT * FROM facts WHERE NOT retracted AND fact_type = $1 ORDER BY created_at", [type.to_s])
+    else
+      exec("SELECT * FROM facts WHERE NOT retracted ORDER BY created_at")
+    end
+
+    result.map { |row| fact_row(row) }
+          .select { |fact| matches_pattern?(fact[:attributes], pattern) }
+  end
+
+  # `conditions` is a SQL fragment with $1, $2 ... placeholders.
+  def query_facts(conditions = nil, params = [])
+    sql = "SELECT * FROM facts WHERE NOT retracted"
+    sql += " AND #{conditions}" if conditions
+
+    exec(sql, params).map { |row| fact_row(row) }
+  end
+
+  def register_knowledge_source(name, description: nil, topics: [])
+    exec(<<~SQL, [name, description, JSON.generate(topics)])
+      INSERT INTO knowledge_sources (name, description, topics) VALUES ($1, $2, $3)
+      ON CONFLICT (name) DO UPDATE SET description = EXCLUDED.description, topics = EXCLUDED.topics
+    SQL
+  end
+
+  def clear_session(session_id)
+    exec("UPDATE facts SET retracted = TRUE, updated_at = NOW() WHERE session_id = $1", [session_id])
+  end
+
+  def stats
     {
-      content: JSON.parse(result[0]['content'], symbolize_names: true),
-      priority: result[0]['priority'].to_i
+      total_facts: exec("SELECT COUNT(*) FROM facts")[0]['count'].to_i,
+      active_facts: exec("SELECT COUNT(*) FROM facts WHERE NOT retracted")[0]['count'].to_i,
+      knowledge_sources: exec("SELECT COUNT(*) FROM knowledge_sources")[0]['count'].to_i
     }
   end
 
-  # Audit Operations
-
-  def log_fact_change(operation, fact_or_id, attributes)
-    fact_id = fact_or_id.is_a?(String) ? fact_or_id : fact_or_id.id
-
-    @conn.exec_params(
-      "INSERT INTO audit_log (fact_id, operation, attributes) VALUES ($1, $2, $3)",
-      [fact_id, operation, attributes.to_json]
-    )
-  end
-
-  def fact_history(fact_id)
-    result = @conn.exec_params(
-      "SELECT operation, attributes, timestamp FROM audit_log WHERE fact_id = $1 ORDER BY timestamp",
-      [fact_id]
-    )
-
-    result.map do |row|
-      {
-        operation: row['operation'],
-        attributes: JSON.parse(row['attributes'], symbolize_names: true),
-        timestamp: Time.parse(row['timestamp'])
-      }
-    end
-  end
-
-  def log_rule_firing(rule_name, fact_ids, bindings)
-    @conn.exec_params(
-      "INSERT INTO rule_firings (rule_name, fact_ids, bindings) VALUES ($1, $2, $3)",
-      [rule_name, "{#{fact_ids.join(',')}}", bindings.to_json]
-    )
-  end
-
-  def rule_firings(rule_name: nil, limit: 100)
-    query = if rule_name
-      @conn.exec_params(
-        "SELECT rule_name, fact_ids, bindings, timestamp FROM rule_firings WHERE rule_name = $1 ORDER BY timestamp DESC LIMIT $2",
-        [rule_name, limit]
-      )
-    else
-      @conn.exec_params(
-        "SELECT rule_name, fact_ids, bindings, timestamp FROM rule_firings ORDER BY timestamp DESC LIMIT $1",
-        [limit]
-      )
-    end
-
-    query.map do |row|
-      {
-        rule_name: row['rule_name'],
-        fact_ids: row['fact_ids'].gsub(/[{}]/, '').split(','),
-        bindings: JSON.parse(row['bindings'], symbolize_names: true),
-        timestamp: Time.parse(row['timestamp'])
-      }
-    end
+  def vacuum
+    exec("VACUUM facts")
   end
 
   # Transaction Support
-
+  #
+  # Transactions nest (a removal can retract logically supported facts
+  # inside its own transaction, and callers can wrap several writes in
+  # blackboard.transaction), so only the outermost block opens a
+  # PostgreSQL transaction. An exception
+  # rolls it back and is raised again.
   def transaction
-    @conn.exec("BEGIN")
-    yield
-    @conn.exec("COMMIT")
-  rescue => e
-    @conn.exec("ROLLBACK")
-    raise e
+    @transaction_depth += 1
+    @transaction_depth == 1 ? @conn.transaction { yield } : yield
+  ensure
+    @transaction_depth -= 1
   end
 
   def close
-    @conn.close if @conn
+    @conn.close unless @conn.finished?
+    @db.close unless @db.closed?
+  end
+
+  private
+
+  def exec(sql, params = [])
+    @conn.exec_params(sql, params)
+  end
+
+  def parse(json)
+    JSON.parse(json, symbolize_names: true)
+  end
+
+  def fact_row(row)
+    { uuid: row['uuid'], type: row['fact_type'].to_sym, attributes: parse(row['attributes']) }
+  end
+
+  def matches_pattern?(attributes, pattern)
+    pattern.all? do |key, value|
+      actual = attributes[key]
+      value.is_a?(Proc) ? actual && value.call(actual) : actual == value
+    end
   end
 end
 
 # Usage
 store = PostgresStore.new(
-  connection_string: "postgresql://localhost/kbs_production"
+  connection_string: "postgresql://localhost/kbs_production",
+  audit_db_path: "kbs_audit.db"
 )
 
 engine = KBS::Blackboard::Engine.new(store: store)
 ```
 
+Attributes go through JSON, as they do in `SqliteStore`: a Symbol value comes back from the store as a String.
+
 ## MongoDB Store
 
 ### Implementation
 
+The same contract on MongoDB. Attributes are kept as a JSON string so they come back with Symbol keys, like the other stores. Multi-document transactions need a replica set, so this store keeps the base class's `transaction`, which just runs the block.
+
 ```ruby
 require 'mongo'
+require 'json'
 require 'securerandom'
+require 'sqlite3'
+require 'kbs/blackboard'
 
 class MongoStore < KBS::Blackboard::Persistence::Store
-  def initialize(url:, database: 'kbs')
-    @client = Mongo::Client.new(url)
-    @db = @client.use(database)
+  attr_reader :session_id, :db
+
+  def initialize(url:, database: 'kbs', session_id: nil, audit_db_path: ':memory:')
+    super()
+    @session_id = session_id || SecureRandom.uuid
+    @client = Mongo::Client.new(url, database: database)
+    @db = SQLite3::Database.new(audit_db_path)
+    @db.results_as_hash = true
     setup_collections
   end
 
   def setup_collections
-    # Facts collection
-    @facts = @db[:facts]
-    @facts.indexes.create_one({ fact_type: 1 })
-    @facts.indexes.create_one({ created_at: 1 })
+    @facts = @client[:facts]
+    @facts.indexes.create_one({ uuid: 1 }, unique: true)
+    @facts.indexes.create_one({ fact_type: 1, retracted: 1 })
+    @facts.indexes.create_one({ session_id: 1 })
 
-    # Messages collection
-    @messages = @db[:messages]
-    @messages.indexes.create_one({ topic: 1, priority: -1, created_at: 1 })
-
-    # Audit log
-    @audit = @db[:audit_log]
-    @audit.indexes.create_one({ fact_id: 1, timestamp: 1 })
-
-    # Rule firings
-    @rule_firings = @db[:rule_firings]
-    @rule_firings.indexes.create_one({ rule_name: 1, timestamp: -1 })
+    @knowledge_sources = @client[:knowledge_sources]
   end
 
   # Fact Operations
 
-  def save_fact(fact)
-    doc = {
-      _id: fact.id,
-      fact_type: fact.type.to_s,
-      attributes: fact.attributes,
-      created_at: Time.now,
-      updated_at: Time.now
-    }
-
-    @facts.insert_one(doc)
-
-    log_fact_change('add', fact, fact.attributes)
-    fact
+  def add_fact(uuid, type, attributes)
+    now = Time.now
+    @facts.insert_one(
+      uuid: uuid,
+      fact_type: type.to_s,
+      attributes: JSON.generate(attributes),
+      session_id: @session_id,
+      retracted: false,
+      created_at: now,
+      updated_at: now
+    )
   end
 
-  def load_facts(type = nil)
-    query = type ? { fact_type: type.to_s } : {}
-
-    @facts.find(query).map do |doc|
-      KBS::Blackboard::Fact.new(
-        doc['fact_type'].to_sym,
-        doc['attributes'].transform_keys(&:to_sym),
-        id: doc['_id'],
-        created_at: doc['created_at']
-      )
-    end
-  end
-
-  def update_fact(fact_id, attributes)
-    @facts.update_one(
-      { _id: fact_id },
-      { '$set' => { attributes: attributes, updated_at: Time.now } }
+  def remove_fact(uuid)
+    doc = @facts.find_one_and_update(
+      { uuid: uuid, retracted: false },
+      { '$set' => { retracted: true, updated_at: Time.now } }
     )
 
-    log_fact_change('update', fact_id, attributes)
+    doc && { type: doc['fact_type'].to_sym, attributes: parse(doc['attributes']) }
   end
 
-  def delete_fact(fact_id)
-    doc = @facts.find_one_and_delete({ _id: fact_id })
-
-    if doc
-      log_fact_change('delete', fact_id, doc['attributes'])
-    end
-  end
-
-  # Message Queue Operations
-
-  def send_message(topic, content, priority:)
-    @messages.insert_one({
-      topic: topic.to_s,
-      content: content,
-      priority: priority,
-      created_at: Time.now
-    })
-  end
-
-  def pop_message(topic)
-    # Find highest priority message
-    doc = @messages.find_one_and_delete(
-      { topic: topic.to_s },
-      sort: { priority: -1, created_at: 1 }
+  def update_fact(uuid, attributes)
+    doc = @facts.find_one_and_update(
+      { uuid: uuid, retracted: false },
+      { '$set' => { attributes: JSON.generate(attributes), updated_at: Time.now } }
     )
 
-    return nil unless doc
+    doc && doc['fact_type'].to_sym
+  end
 
+  def get_fact(uuid)
+    doc = @facts.find(uuid: uuid, retracted: false).first
+    doc && fact_row(doc)
+  end
+
+  def get_facts(type = nil, pattern = {})
+    query = { retracted: false }
+    query[:fact_type] = type.to_s if type
+
+    @facts.find(query).sort(created_at: 1)
+          .map { |doc| fact_row(doc) }
+          .select { |fact| matches_pattern?(fact[:attributes], pattern) }
+  end
+
+  # `conditions` is a MongoDB filter Hash on the stored document.
+  def query_facts(conditions = nil, _params = [])
+    @facts.find({ retracted: false }.merge(conditions || {})).map { |doc| fact_row(doc) }
+  end
+
+  def register_knowledge_source(name, description: nil, topics: [])
+    @knowledge_sources.update_one(
+      { name: name },
+      { '$set' => { description: description, topics: topics, registered_at: Time.now } },
+      upsert: true
+    )
+  end
+
+  def clear_session(session_id)
+    @facts.update_many(
+      { session_id: session_id, retracted: false },
+      { '$set' => { retracted: true, updated_at: Time.now } }
+    )
+  end
+
+  def stats
     {
-      content: doc['content'].transform_keys(&:to_sym),
-      priority: doc['priority']
+      total_facts: @facts.count_documents({}),
+      active_facts: @facts.count_documents(retracted: false),
+      knowledge_sources: @knowledge_sources.count_documents({})
     }
-  end
-
-  # Audit Operations
-
-  def log_fact_change(operation, fact_or_id, attributes)
-    fact_id = fact_or_id.is_a?(String) ? fact_or_id : fact_or_id.id
-
-    @audit.insert_one({
-      fact_id: fact_id,
-      operation: operation,
-      attributes: attributes,
-      timestamp: Time.now
-    })
-  end
-
-  def fact_history(fact_id)
-    @audit.find({ fact_id: fact_id })
-          .sort(timestamp: 1)
-          .map do |doc|
-      {
-        operation: doc['operation'],
-        attributes: doc['attributes'].transform_keys(&:to_sym),
-        timestamp: doc['timestamp']
-      }
-    end
-  end
-
-  def log_rule_firing(rule_name, fact_ids, bindings)
-    @rule_firings.insert_one({
-      rule_name: rule_name,
-      fact_ids: fact_ids,
-      bindings: bindings,
-      timestamp: Time.now
-    })
-  end
-
-  def rule_firings(rule_name: nil, limit: 100)
-    query = rule_name ? { rule_name: rule_name } : {}
-
-    @rule_firings.find(query)
-                 .sort(timestamp: -1)
-                 .limit(limit)
-                 .map do |doc|
-      {
-        rule_name: doc['rule_name'],
-        fact_ids: doc['fact_ids'],
-        bindings: doc['bindings'].transform_keys(&:to_sym),
-        timestamp: doc['timestamp']
-      }
-    end
-  end
-
-  # Transaction Support (MongoDB 4.0+)
-
-  def transaction
-    session = @client.start_session
-
-    session.with_transaction do
-      yield
-    end
-  ensure
-    session.end_session if session
   end
 
   def close
-    @client.close if @client
+    @client.close
+    @db.close unless @db.closed?
+  end
+
+  private
+
+  def parse(json)
+    JSON.parse(json, symbolize_names: true)
+  end
+
+  def fact_row(doc)
+    { uuid: doc['uuid'], type: doc['fact_type'].to_sym, attributes: parse(doc['attributes']) }
+  end
+
+  def matches_pattern?(attributes, pattern)
+    pattern.all? do |key, value|
+      actual = attributes[key]
+      value.is_a?(Proc) ? actual && value.call(actual) : actual == value
+    end
   end
 end
 
@@ -479,127 +419,123 @@ engine = KBS::Blackboard::Engine.new(store: store)
 
 ### Test Suite
 
+The tests call the store the way `Memory` does, then run it under a real engine. Replace `build_store` with your store.
+
 ```ruby
 require 'minitest/autorun'
+require 'securerandom'
+require 'kbs/blackboard'
 
 class TestCustomStore < Minitest::Test
+  def build_store
+    MyCustomStore.new
+  end
+
   def setup
-    @store = MyCustomStore.new
+    @store = build_store
   end
 
   def teardown
     @store.close
   end
 
-  def test_save_and_load_facts
-    fact = KBS::Blackboard::Fact.new(:test, { value: 42 })
-
-    @store.save_fact(fact)
-    loaded = @store.load_facts(:test)
-
-    assert_equal 1, loaded.size
-    assert_equal 42, loaded.first[:value]
+  def new_uuid
+    SecureRandom.uuid
   end
 
-  def test_load_facts_by_type
-    @store.save_fact(KBS::Blackboard::Fact.new(:type_a, { value: 1 }))
-    @store.save_fact(KBS::Blackboard::Fact.new(:type_b, { value: 2 }))
+  def test_add_and_get_fact
+    uuid = new_uuid
+    @store.add_fact(uuid, :test, { value: 42 })
 
-    type_a_facts = @store.load_facts(:type_a)
+    fact = @store.get_fact(uuid)
 
-    assert_equal 1, type_a_facts.size
-    assert_equal :type_a, type_a_facts.first.type
+    assert_equal uuid, fact[:uuid]
+    assert_equal :test, fact[:type]
+    assert_equal({ value: 42 }, fact[:attributes])
+  end
+
+  def test_get_facts_by_type_and_pattern
+    @store.add_fact(new_uuid, :type_a, { value: 1 })
+    @store.add_fact(new_uuid, :type_a, { value: 5 })
+    @store.add_fact(new_uuid, :type_b, { value: 2 })
+
+    assert_equal 2, @store.get_facts(:type_a).size
+    assert_equal 3, @store.get_facts.size
+
+    big = @store.get_facts(:type_a, { value: ->(v) { v > 3 } })
+    assert_equal [5], big.map { |fact| fact[:attributes][:value] }
   end
 
   def test_update_fact
-    fact = KBS::Blackboard::Fact.new(:test, { value: 1 })
-    @store.save_fact(fact)
+    uuid = new_uuid
+    @store.add_fact(uuid, :test, { value: 1 })
 
-    @store.update_fact(fact.id, { value: 2 })
-
-    loaded = @store.load_facts(:test)
-    assert_equal 2, loaded.first[:value]
+    assert_equal :test, @store.update_fact(uuid, { value: 2 })
+    assert_equal 2, @store.get_fact(uuid)[:attributes][:value]
+    assert_nil @store.update_fact(new_uuid, { value: 3 })
   end
 
-  def test_delete_fact
-    fact = KBS::Blackboard::Fact.new(:test, { value: 1 })
-    @store.save_fact(fact)
+  def test_remove_fact
+    uuid = new_uuid
+    @store.add_fact(uuid, :test, { value: 1 })
 
-    @store.delete_fact(fact.id)
+    removed = @store.remove_fact(uuid)
 
-    loaded = @store.load_facts(:test)
-    assert_empty loaded
+    assert_equal({ type: :test, attributes: { value: 1 } }, removed)
+    assert_nil @store.get_fact(uuid)
+    assert_empty @store.get_facts(:test)
+    assert_nil @store.remove_fact(uuid)
   end
 
-  def test_message_queue
-    @store.send_message(:alerts, { text: "High priority" }, priority: 100)
-    @store.send_message(:alerts, { text: "Low priority" }, priority: 10)
+  def test_clear_session
+    @store.add_fact(new_uuid, :test, { value: 1 })
 
-    # Pop should return highest priority
-    msg = @store.pop_message(:alerts)
+    @store.clear_session(@store.session_id)
 
-    assert_equal "High priority", msg[:content][:text]
-    assert_equal 100, msg[:priority]
-
-    # Next pop gets lower priority
-    msg = @store.pop_message(:alerts)
-    assert_equal "Low priority", msg[:content][:text]
+    assert_empty @store.get_facts
   end
 
-  def test_message_queue_empty
-    msg = @store.pop_message(:nonexistent)
-    assert_nil msg
+  def test_stats
+    @store.add_fact(new_uuid, :test, { value: 1 })
+    @store.register_knowledge_source("sensor_agent", description: "Reads sensors", topics: ["temp"])
+
+    stats = @store.stats
+
+    assert_equal 1, stats[:active_facts]
+    assert_equal 1, stats[:knowledge_sources]
   end
 
-  def test_fact_audit_trail
-    fact = KBS::Blackboard::Fact.new(:test, { value: 1 })
+  def test_transaction_rolls_back
+    @store.transaction { @store.add_fact(new_uuid, :test, { value: 1 }) }
 
-    @store.save_fact(fact)
-    @store.update_fact(fact.id, { value: 2 })
-    @store.delete_fact(fact.id)
-
-    history = @store.fact_history(fact.id)
-
-    assert_equal 3, history.size
-    assert_equal "add", history[0][:operation]
-    assert_equal "update", history[1][:operation]
-    assert_equal "delete", history[2][:operation]
-  end
-
-  def test_rule_firing_log
-    @store.log_rule_firing("test_rule", ["fact1", "fact2"], { var: :value })
-
-    firings = @store.rule_firings(rule_name: "test_rule")
-
-    assert_equal 1, firings.size
-    assert_equal "test_rule", firings.first[:rule_name]
-    assert_equal ["fact1", "fact2"], firings.first[:fact_ids]
-  end
-
-  def test_transactions
-    fact1 = KBS::Blackboard::Fact.new(:test, { value: 1 })
-    fact2 = KBS::Blackboard::Fact.new(:test, { value: 2 })
-
-    # Successful transaction
-    @store.transaction do
-      @store.save_fact(fact1)
-      @store.save_fact(fact2)
-    end
-
-    assert_equal 2, @store.load_facts(:test).size
-
-    # Failed transaction
-    begin
+    assert_raises(RuntimeError) do
       @store.transaction do
-        @store.save_fact(KBS::Blackboard::Fact.new(:test, { value: 3 }))
+        @store.add_fact(new_uuid, :test, { value: 2 })
         raise "Rollback!"
       end
-    rescue
-      # Expected
     end
 
-    # Should still be 2 facts (transaction rolled back)
-    assert_equal 2, @store.load_facts(:test).size
+    # Only for stores with real transactions
+    assert_equal 1, @store.get_facts(:test).size
+  end
+
+  def test_works_under_an_engine
+    engine = KBS::Blackboard::Engine.new(store: @store)
+    alerts = []
+    engine.add_rule(KBS::Rule.new("hot",
+      conditions: [KBS::Condition.new(:sensor, { value: ->(v) { v > 30 } })],
+      action: ->(facts) { alerts << facts.first[:value] }))
+
+    fact = engine.add_fact(:sensor, value: 35)
+    engine.run
+    engine.modify(fact, value: 40)
+    engine.run
+    engine.post_message("agent", "alerts", { text: "hot" }, priority: 5)
+
+    assert_equal [35, 40], alerts
+    assert_equal({ value: 40 }, engine.blackboard.find_fact(fact.uuid).attributes)
+    assert_equal "hot", engine.consume_message("alerts", "tester")[:content][:text]
+    assert_equal %w[UPDATE ADD], engine.blackboard.get_history(fact.uuid).map { |entry| entry[:action] }
   end
 end
 ```
@@ -608,70 +544,83 @@ end
 
 ### 1. Connection Pooling
 
+A pool hands each call its own connection, so the statements of one transaction must share the connection the transaction checked out. With the `connection_pool` gem, and `PostgresStore` running all its SQL through `exec`:
+
 ```ruby
+require 'connection_pool'
+
 class PooledPostgresStore < PostgresStore
-  def initialize(connection_string:, pool_size: 10)
-    @pool = ConnectionPool.new(size: pool_size) do
-      PG.connect(connection_string)
-    end
-
-    # Setup using one connection
-    @pool.with { |conn| setup_tables_with_conn(conn) }
+  def initialize(connection_string:, pool_size: 10, **options)
+    @pool = ConnectionPool.new(size: pool_size) { PG.connect(connection_string) }
+    super(connection_string: connection_string, **options)
   end
 
-  def save_fact(fact)
+  def transaction
+    return yield if current_connection
+
     @pool.with do |conn|
-      conn.exec_params(
-        "INSERT INTO facts (id, fact_type, attributes) VALUES ($1, $2, $3)",
-        [fact.id, fact.type.to_s, fact.attributes.to_json]
-      )
+      Thread.current[:kbs_pg_connection] = conn
+      conn.transaction { yield }
+    ensure
+      Thread.current[:kbs_pg_connection] = nil
     end
-
-    fact
   end
 
-  # ... other methods using @pool.with { |conn| ... }
+  def close
+    @pool.shutdown(&:close)
+    super
+  end
+
+  private
+
+  def current_connection
+    Thread.current[:kbs_pg_connection]
+  end
+
+  def exec(sql, params = [])
+    conn = current_connection
+    return conn.exec_params(sql, params) if conn
+
+    @pool.with { |pooled| pooled.exec_params(sql, params) }
+  end
 end
 ```
 
 ### 2. Batch Operations
 
+`Memory#transaction` runs a block in the store's transaction, so many facts can be added with one commit:
+
 ```ruby
-def save_facts(facts)
-  @conn.exec("BEGIN")
-
-  facts.each do |fact|
-    save_fact(fact)
+engine.blackboard.transaction do
+  readings.each do |reading|
+    engine.add_fact(:sensor, reading)
   end
-
-  @conn.exec("COMMIT")
-rescue => e
-  @conn.exec("ROLLBACK")
-  raise e
 end
 ```
 
 ### 3. Indexing
 
+`CREATE INDEX CONCURRENTLY` cannot run inside a transaction, so issue each one on its own:
+
 ```ruby
 def optimize_indexes
   # Add indexes for common queries
   @conn.exec(<<~SQL)
-    CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_facts_created
-      ON facts(created_at DESC);
+    CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_facts_active_type
+      ON facts(fact_type) WHERE NOT retracted
+  SQL
 
-    CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_messages_topic_priority
-      ON messages(topic, priority DESC)
-      WHERE topic IN ('alerts', 'critical');
-
-    -- JSONB indexes for attribute queries
+  # JSONB index for attribute queries
+  @conn.exec(<<~SQL)
     CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_facts_value
-      ON facts((attributes->>'value'));
+      ON facts((attributes->>'value'))
   SQL
 end
 ```
 
 ### 4. Caching
+
+A caching wrapper has to pass through `db`, `connection` and `hybrid?` exactly as the store underneath answers them, since `Memory` picks the message queue and audit log by asking `respond_to?`.
 
 ```ruby
 class CachedStore < KBS::Blackboard::Persistence::Store
@@ -681,14 +630,16 @@ class CachedStore < KBS::Blackboard::Persistence::Store
     @cache_ttl = cache_ttl
   end
 
-  def load_facts(type = nil)
+  def get_facts(type = nil, pattern = {})
+    return @store.get_facts(type, pattern) unless pattern.empty?
+
     cache_key = "facts:#{type}"
 
-    if cached = @cache[cache_key]
+    if (cached = @cache[cache_key])
       return cached[:data] if Time.now - cached[:timestamp] < @cache_ttl
     end
 
-    facts = @store.load_facts(type)
+    facts = @store.get_facts(type)
 
     @cache[cache_key] = {
       data: facts,
@@ -698,21 +649,51 @@ class CachedStore < KBS::Blackboard::Persistence::Store
     facts
   end
 
-  def save_fact(fact)
-    result = @store.save_fact(fact)
-
-    # Invalidate cache
-    @cache.delete("facts:#{fact.type}")
-    @cache.delete("facts:")
-
-    result
+  # Writes invalidate the cache
+  def add_fact(uuid, type, attributes)
+    @cache.clear
+    @store.add_fact(uuid, type, attributes)
   end
 
-  # Delegate other methods
-  def method_missing(method, *args, &block)
-    @store.send(method, *args, &block)
+  def remove_fact(uuid)
+    @cache.clear
+    @store.remove_fact(uuid)
+  end
+
+  def update_fact(uuid, attributes)
+    @cache.clear
+    @store.update_fact(uuid, attributes)
+  end
+
+  def clear_session(session_id)
+    @cache.clear
+    @store.clear_session(session_id)
+  end
+
+  # Delegate everything else
+  %i[get_fact query_facts stats vacuum close session_id].each do |name|
+    define_method(name) { |*args, **kwargs, &block| @store.public_send(name, *args, **kwargs, &block) }
+  end
+
+  def transaction(&)
+    @store.transaction(&)
+  end
+
+  def register_knowledge_source(...)
+    @store.register_knowledge_source(...)
+  end
+
+  def respond_to_missing?(name, include_private = false)
+    @store.respond_to?(name, include_private) || super
+  end
+
+  def method_missing(name, ...)
+    @store.respond_to?(name) ? @store.public_send(name, ...) : super
   end
 end
+
+# Usage
+engine = KBS::Blackboard::Engine.new(store: CachedStore.new(store))
 ```
 
 ## Best Practices
@@ -720,16 +701,19 @@ end
 ### 1. Handle Errors Gracefully
 
 ```ruby
-def save_fact(fact)
+def add_fact(uuid, type, attributes)
   retries = 0
 
   begin
-    @conn.exec_params(...)
+    exec(
+      "INSERT INTO facts (uuid, fact_type, attributes, session_id) VALUES ($1, $2, $3, $4)",
+      [uuid, type.to_s, JSON.generate(attributes), @session_id]
+    )
   rescue PG::ConnectionBad => e
     retries += 1
 
     if retries < 3
-      reconnect
+      @conn.reset
       retry
     else
       raise e
@@ -741,14 +725,14 @@ end
 ### 2. Use Prepared Statements
 
 ```ruby
-def initialize(connection_string:)
+def initialize(connection_string:, **options)
   super
-  @conn.prepare('save_fact',
-    "INSERT INTO facts (id, fact_type, attributes) VALUES ($1, $2, $3)")
+  @conn.prepare('add_fact',
+    "INSERT INTO facts (uuid, fact_type, attributes, session_id) VALUES ($1, $2, $3, $4)")
 end
 
-def save_fact(fact)
-  @conn.exec_prepared('save_fact', [fact.id, fact.type.to_s, fact.attributes.to_json])
+def add_fact(uuid, type, attributes)
+  @conn.exec_prepared('add_fact', [uuid, type.to_s, JSON.generate(attributes), @session_id])
 end
 ```
 
@@ -758,7 +742,7 @@ end
 def healthy?
   @conn.exec("SELECT 1")
   true
-rescue => e
+rescue PG::Error
   false
 end
 ```

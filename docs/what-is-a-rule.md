@@ -27,7 +27,7 @@ rule "high_temperature_alert" do
 
   # 3. ACTION (the THEN part)
   perform do |facts, bindings|
-    send_alert("High temperature: #{bindings[:value?]}°F")
+    send_alert("High temperature: #{facts[0][:value]}°F")
   end
 end
 ```
@@ -77,7 +77,7 @@ rule "high_temperature" do
   on :temperature, value: greater_than(80)
   on :sensor, status: "active"
   perform do |facts, bindings|
-    send_alert("High temp: #{bindings[:value?]}")
+    send_alert("High temp: #{facts[0][:value]}")
   end
 end
 # Fires automatically when facts match!
@@ -122,12 +122,12 @@ As facts are added, the rule's conditions are evaluated:
 ```ruby
 engine.add_fact(:ma_50, value: 52.3)
 engine.add_fact(:ma_200, value: 51.8)
-# Conditions now satisfied - rule activated
+# Conditions now satisfied - rule activated (placed on the agenda)
 ```
 
 ### 4. Firing
 
-During `engine.run`, activated rules fire:
+During `engine.run`, activations fire from the agenda until it is empty:
 
 ```ruby
 engine.run
@@ -139,11 +139,13 @@ engine.run
 Actions execute, potentially creating new facts:
 
 ```ruby
+# kb is the knowledge base; inside perform, self is the rule builder,
+# so knowledge base methods are called through kb
 perform do |facts, bindings|
   # Can add derived facts
-  fact :signal, type: "golden_cross", timestamp: Time.now
+  kb.fact :signal, type: "golden_cross", timestamp: Time.now
   # Can retract facts
-  retract old_signal
+  kb.retract old_signal
   # Can call external code
   execute_trade(bindings[:symbol?])
 end
@@ -177,7 +179,7 @@ end
 
 **Priority**—Execution order (0-100 typical)
 
-- Only affects `KBS::Blackboard::Engine`
+- Used by both `KBS::Engine` and `KBS::Blackboard::Engine`
 - Higher numbers fire first
 - Default: 0
 
@@ -188,7 +190,7 @@ Patterns that must ALL match for the rule to fire:
 ```ruby
 rule "order_fulfillment" do
   # Condition 1: Must have pending order
-  on :order, status: "pending", product_id: :pid?, quantity: :qty?
+  on :order, id: :oid?, status: "pending", product_id: :pid?, quantity: :qty?
 
   # Condition 2: Must have inventory for same product
   on :inventory, product_id: :pid?, available: :avail?
@@ -206,9 +208,11 @@ end
 
 **Condition Types:**
 
-1. **Positive** - Pattern must exist: `on :temperature, value: > 80`
+1. **Positive** - Pattern must exist: `on :temperature, value: greater_than(80)`
 2. **Negative** - Pattern must NOT exist: `without :alert`
-3. **Join** - Variables link conditions: `:pid?` in both conditions above
+3. **Existential** - At least one matching fact must exist; matches once however many do, and adds no fact to the action: `exists :alert`
+4. **Join** - Variables link conditions: `:pid?` in both conditions above
+5. **Logical** - Conditions inside `logical do ... end` (first in the rule) support the facts the action asserts; those facts are retracted when the match goes away. See [Truth Maintenance](guides/truth-maintenance.md)
 
 ### Action (The THEN Part)
 
@@ -216,7 +220,7 @@ Code executed when all conditions match:
 
 ```ruby
 perform do |facts, bindings|
-  # facts - Array of matched facts (in condition order; `without` conditions have no entry)
+  # facts - Array of matched facts (in condition order; `without` and `exists` conditions have no entry)
   # bindings - Hash of variable captures {:pid? => 123, :qty? => 5}
 
   # Can access facts
@@ -235,11 +239,11 @@ perform do |facts, bindings|
     backorder(order)
   end
 
-  # Can add facts
-  fact :shipment, order_id: order[:id], shipped_at: Time.now
+  # Can add facts (through the knowledge base, kb)
+  kb.fact :shipment, order_id: order[:id], shipped_at: Time.now
 
   # Can retract facts
-  retract order
+  kb.retract order
 
   # Can call external code
   notify_customer(order[:customer_id])
@@ -252,7 +256,7 @@ Rules participate in an automatic reasoning loop:
 
 ![Inference Cycle](assets/images/inference-cycle.svg)
 
-*Rules execute within a continuous inference cycle: facts are added, the RETE network matches patterns, activated rules fire and potentially create new facts, triggering another cycle. Inference completes when no new facts are generated.*
+*Rules execute within a continuous inference cycle: facts are added, the RETE network matches patterns, activated rules fire and potentially create new facts, triggering another cycle. Inference completes when the agenda is empty.*
 
 **Example:**
 
@@ -264,7 +268,7 @@ kb = KBS.knowledge_base do
     without :alert, sensor_id: :sid?
     perform do |facts, bindings|
       # Add alert fact (triggers Rule 2)
-      fact :alert, sensor_id: bindings[:sid?], level: "high"
+      kb.fact :alert, sensor_id: bindings[:sid?], level: "high"
     end
   end
 
@@ -276,16 +280,16 @@ kb = KBS.knowledge_base do
       notify_ops(bindings[:sid?])
     end
   end
-
-  # Add facts
-  fact :temperature, value: 85, sensor_id: 42
-  fact :sensor, id: 42, critical: true
-
-  # Run inference
-  run
-  # → Rule 1 fires, creates :alert fact
-  # → Rule 2 fires (activated by new alert), notifies ops
 end
+
+# Add facts
+kb.fact :temperature, value: 85, sensor_id: 42
+kb.fact :sensor, id: 42, critical: true
+
+# Run inference
+kb.run
+# → Rule 1 fires, creates :alert fact
+# → Rule 2 fires (activated by new alert), notifies ops
 ```
 
 ## Types of Rules
@@ -311,7 +315,7 @@ rule "derive_momentum" do
   on :price, current: :curr?, previous: :prev?
   perform do |facts, bindings|
     change_pct = ((bindings[:curr?] - bindings[:prev?]) / bindings[:prev?]) * 100
-    fact :momentum, change_pct: change_pct
+    kb.fact :momentum, change_pct: change_pct
   end
 end
 ```
@@ -338,9 +342,7 @@ rule "pending_to_processing" do
   on :order, id: :oid?, status: "pending"
   on :worker, status: "available", id: :wid?
   perform do |facts, bindings|
-    order = query(:order, id: bindings[:oid?]).first
-    retract order
-    fact :order, id: bindings[:oid?], status: "processing", worker_id: bindings[:wid?]
+    kb.modify(facts[0], status: "processing", worker_id: bindings[:wid?])
   end
 end
 ```
@@ -367,7 +369,7 @@ Remove obsolete facts:
 rule "expire_old_alerts" do
   on :alert, timestamp: ->(ts) { Time.now - ts > 3600 }
   perform do |facts, bindings|
-    retract facts[0]
+    kb.retract facts[0]
   end
 end
 ```
@@ -382,7 +384,7 @@ Rules can trigger other rules:
 # Rule 1 creates fact that activates Rule 2
 rule "detect_anomaly" do
   on :sensor, value: :val?
-  perform { fact :anomaly, value: bindings[:val?] }
+  perform { |_facts, bindings| kb.fact :anomaly, value: bindings[:val?] }
 end
 
 rule "escalate_anomaly" do
@@ -411,7 +413,7 @@ Use negation to ensure preconditions:
 
 ```ruby
 rule "process_payment" do
-  on :order, status: "confirmed"
+  on :order, id: :oid?, status: "confirmed"
   without :payment, order_id: :oid?  # No payment yet
   without :error, order_id: :oid?     # No errors
   perform { charge_customer }
@@ -439,9 +441,9 @@ Collect and analyze multiple facts:
 rule "daily_summary" do
   on :trigger, event: "end_of_day"
   perform do
-    temps = query(:temperature).map { |f| f[:value] }
+    temps = kb.query(:temperature).map { |f| f[:value] }
     avg = temps.sum / temps.size.to_f
-    fact :summary, avg_temp: avg, date: Date.today
+    kb.fact :summary, avg_temp: avg, date: Date.today
   end
 end
 ```
@@ -465,7 +467,7 @@ end
 
 rule "log_reading", priority: 10 do
   on :temperature, value: :val?
-  perform { log(bindings[:val?]) }
+  perform { |_facts, bindings| log(bindings[:val?]) }
 end
 
 # With temp = 125, fires in order:
@@ -474,7 +476,7 @@ end
 # 3. log_reading (priority 10)
 ```
 
-Both `KBS::Engine` and `KBS::Blackboard::Engine` use priority. Rules with the same priority fire in the order they were defined.
+Both `KBS::Engine` and `KBS::Blackboard::Engine` use priority. Rules with the same priority fire in the order they were defined, under the default `:definition` strategy; `KBS::Engine.new(strategy: :depth)` fires the newest activation first and `strategy: :breadth` the oldest.
 
 ### When Priority Matters
 
@@ -503,7 +505,7 @@ rule "alert_on_high_temp" do
 end
 
 # Query - Manual
-temps = query(:temperature, value: greater_than(80))
+temps = kb.query(:temperature, value: ->(v) { v > 80 })
 temps.each { |t| send_alert }  # You must iterate
 ```
 
@@ -526,7 +528,7 @@ temps.each { |t| send_alert }  # You must iterate
 ### Rule Count
 
 - 10-100 rules: Excellent
-- 100-1,000 rules: Very good (network sharing helps)
+- 100-1,000 rules: Very good (identical patterns share an alpha memory)
 - 1,000+ rules: Good (consider grouping by domain)
 
 ### Condition Count
@@ -580,7 +582,7 @@ Keep actions lightweight:
 ```ruby
 # Good - fast action
 perform do |facts, bindings|
-  fact :alert, level: "high"
+  kb.fact :alert, level: "high"
 end
 
 # Acceptable - moderate work
@@ -595,7 +597,7 @@ perform do |facts, bindings|
   database_batch_update()
   api_call_with_retry()
   # Instead, add a fact to trigger async processing
-  fact :work_item, type: "heavy_task", data: bindings
+  kb.fact :work_item, type: "heavy_task", data: bindings
 end
 ```
 
@@ -622,13 +624,13 @@ end
 ### 2. Expecting Sequential Execution
 
 ```ruby
-# Rules don't execute in definition order
+# Definition order only breaks ties between activations of equal priority
 rule "step1" do ... end
-rule "step2" do ... end  # NOT guaranteed to fire after step1
+rule "step2" do ... end  # Does NOT wait for step1's work to happen
 
 # Use fact dependencies instead
 rule "step1" do
-  perform { fact :step1_complete }
+  perform { kb.fact :step1_complete }
 end
 
 rule "step2" do
@@ -645,8 +647,8 @@ rule "loop" do
   on :counter, value: :val?
   perform do |facts, bindings|
     # Retracts and re-adds fact → rule fires again → infinite loop!
-    retract facts[0]
-    fact :counter, value: bindings[:val?] + 1
+    kb.retract facts[0]
+    kb.fact :counter, value: bindings[:val?] + 1
   end
 end
 
@@ -654,8 +656,8 @@ end
 rule "loop" do
   on :counter, value: less_than(10)
   perform do |facts, bindings|
-    retract facts[0]
-    fact :counter, value: bindings[:val?] + 1
+    kb.retract facts[0]
+    kb.fact :counter, value: facts[0][:value] + 1
   end
 end
 ```
@@ -675,16 +677,15 @@ on :stock, price: greater_than(100)
 perform { counter += 1 }
 ```
 
-### 5. Modifying Facts Instead of Retracting
+### 5. Setting Attributes Instead of Using modify
 
 ```ruby
 # Wrong - changes don't trigger rules
 fact = engine.facts.first
 fact[:status] = "processed"  # No rules fire
 
-# Right - retract and re-add
-retract old_fact
-fact :order, status: "processed"  # Rules fire
+# Right - modify retracts and re-asserts the fact
+engine.modify(fact, status: "processed")  # Rules fire
 ```
 
 ## Testing Rules
@@ -698,12 +699,11 @@ def test_high_temp_alert
   kb = KBS.knowledge_base do
     rule "alert" do
       on :temperature, value: greater_than(80)
-      perform { fact :alert, level: "high" }
+      perform { kb.fact :alert, level: "high" }
     end
-
-    fact :temperature, value: 85
-    run
   end
+  kb.fact :temperature, value: 85
+  kb.run
 
   alerts = kb.query(:alert)
   assert_equal 1, alerts.size
@@ -720,19 +720,18 @@ def test_alert_escalation
   kb = KBS.knowledge_base do
     rule "create_alert" do
       on :temperature, value: greater_than(80)
-      perform { fact :alert, level: "high" }
+      perform { kb.fact :alert, level: "high" }
     end
 
     rule "escalate_alert" do
       on :alert, level: "high"
       on :sensor, critical: true
-      perform { fact :escalation, priority: "urgent" }
+      perform { kb.fact :escalation, priority: "urgent" }
     end
-
-    fact :temperature, value: 85
-    fact :sensor, critical: true
-    run
   end
+  kb.fact :temperature, value: 85
+  kb.fact :sensor, critical: true
+  kb.run
 
   assert kb.query(:alert).any?
   assert kb.query(:escalation).any?
@@ -781,7 +780,7 @@ rule "check_customer" do
   on :customer
   perform do |facts|
     if facts[0][:revenue] > 100_000
-      engagement = query(:engagement, customer_id: facts[0][:id]).first
+      engagement = kb.query(:engagement, customer_id: facts[0][:id]).first
       if engagement && engagement[:score] > 80
         create_opportunity
       end

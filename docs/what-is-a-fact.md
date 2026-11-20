@@ -41,7 +41,7 @@ fact[:value]     # => 85
 |--------|------|-----------|--------------|--------|
 | **Type** | Explicit (`:temperature`) | None | Table name | Class |
 | **Pattern Matching** | Built-in | Manual | SQL WHERE | Manual |
-| **Identity** | By content & type | By reference | By primary key | By reference |
+| **Identity** | By object (UUID when persisted) | By reference | By primary key | By reference |
 | **Purpose** | Reasoning & inference | General storage | Persistent storage | Behavior + data |
 | **Lifecycle** | Add/retract from KB | Create/destroy | Insert/delete | New/GC |
 
@@ -81,6 +81,7 @@ kb = KBS.knowledge_base do
 end
 
 # Blackboard (persistent)
+require 'kbs/blackboard'
 engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
 fact = engine.add_fact(:temperature, location: "server_room", value: 85)
 ```
@@ -105,16 +106,18 @@ When all conditions of a rule match, the rule fires:
 kb.run  # → "Alert!" (rule fires because fact matches)
 ```
 
-### 4. Updates (Blackboard Only)
+### 4. Updates
 
-Persistent facts can be updated:
+Use `modify` to change a fact and match it again:
 
 ```ruby
-fact[:value] = 90  # Update persisted immediately
-fact.update(value: 90, timestamp: Time.now)  # Bulk update
+kb.modify(fact, value: 90)       # DSL
+engine.modify(fact, value: 90)   # Engine
 ```
 
-**Note**: Updates do NOT trigger rule re-evaluation. To re-trigger rules, retract and re-add.
+`modify` acts as a retraction followed by an assertion: matches that depended on the old values go away, and rules the new values satisfy are activated again, including rules that already fired for this fact. It returns the fact, or `nil` when the fact is not in working memory.
+
+**Note**: Setting attributes directly (`fact[:value] = 90`, or `fact.update(...)` on a persistent fact) changes the stored values but does NOT trigger rule re-evaluation.
 
 ### 5. Retraction
 
@@ -177,7 +180,7 @@ fact[:value] = 90
 
 # Restart process
 engine2 = KBS::Blackboard::Engine.new(db_path: 'kb.db')
-reloaded = engine2.blackboard.get_facts_by_type(:temperature).first
+reloaded = engine2.blackboard.get_facts(:temperature).first
 puts reloaded[:value]  # => 90 (persisted)
 ```
 
@@ -316,8 +319,8 @@ rule "derive_alert" do
   without :alert, location: :loc?  # No existing alert
 
   perform do |facts, bindings|
-    # Add derived fact
-    fact :alert,
+    # Add derived fact (kb is the knowledge base; inside perform, self is the rule builder)
+    kb.fact :alert,
          location: bindings[:loc?],
          level: "high",
          source: "temperature_monitor"
@@ -372,7 +375,7 @@ rule "momentum_buy" do
 
     if shares > 0
       # Action may create new facts
-      fact :order,
+      kb.fact :order,
            symbol: bindings[:sym?],
            shares: shares,
            type: "market_buy"
@@ -409,7 +412,7 @@ fact = KBS::Fact.new(:stock, symbol: "AAPL", price: 150)
 # No :volume attribute
 
 # Fails - fact missing required :volume
-fact.matches?(type: :stock, volume: greater_than(1000))  # => false
+fact.matches?(type: :stock, volume: ->(v) { v > 1000 })  # => false
 ```
 
 ### Type Safety
@@ -428,24 +431,21 @@ fact.matches?(type: :stock)  # => true
 
 ### Value Immutability (Transient Facts)
 
-Transient facts should be treated as immutable. Changing attributes doesn't trigger re-evaluation:
+Transient facts should be treated as immutable. Changing attributes directly doesn't trigger re-evaluation:
 
 ```ruby
-fact = KBS::Fact.new(:temperature, value: 85)
-engine.add_fact(fact)
+fact = engine.add_fact(:temperature, value: 85)
 
 # Don't do this - change not tracked
 fact[:value] = 90  # Rules won't re-fire
 
-# Instead, retract and re-add
-engine.remove_fact(fact)
-new_fact = KBS::Fact.new(:temperature, value: 90)
-engine.add_fact(new_fact)
+# Instead, modify the fact
+engine.modify(fact, value: 90)
 ```
 
 ### Value Mutability (Persistent Facts)
 
-Persistent facts track updates but don't re-trigger rules:
+Persistent facts track direct updates but don't re-trigger rules:
 
 ```ruby
 fact = engine.add_fact(:temperature, value: 85)
@@ -453,9 +453,8 @@ fact = engine.add_fact(:temperature, value: 85)
 # This persists but doesn't re-fire rules
 fact[:value] = 90
 
-# To re-trigger rules, retract and re-add
-fact.retract
-new_fact = engine.add_fact(:temperature, value: 90)
+# To re-trigger rules, modify the fact (it keeps its UUID; the audit log records an UPDATE)
+engine.modify(fact, value: 90)
 ```
 
 ## Performance Considerations
@@ -463,7 +462,7 @@ new_fact = engine.add_fact(:temperature, value: 90)
 ### Fact Count Impact
 
 - **RETE strength**: Efficient with many facts and stable rules
-- **Alpha memories**: Facts indexed by type
+- **Alpha memories**: Facts routed by type and by constant attribute values
 - **Beta network**: Partial matches cached as tokens
 - **Unlinking**: Empty nodes deactivated automatically
 
@@ -545,12 +544,11 @@ rule "high_temp" do
   perform { puts "High!" }
 end
 
-# Update doesn't re-fire rule
+# Direct update doesn't re-fire rule
 fact[:value] = 90  # Rule doesn't fire again
 
-# Must retract and re-add to re-trigger
-fact.retract
-engine.add_fact(:temperature, value: 90)
+# Use modify to re-trigger
+engine.modify(fact, value: 90)
 engine.run  # Now rule fires
 ```
 

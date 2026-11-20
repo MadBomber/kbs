@@ -4,7 +4,7 @@
 
 A comprehensive Ruby implementation of a Knowledge-Based System featuring the RETE algorithm, Blackboard architecture, and AI integration for building intelligent rule-based applications.
 
-[![Ruby](https://img.shields.io/badge/ruby-%3E%3D%203.2.0-red.svg)](https://www.ruby-lang.org/)
+[![Ruby](https://img.shields.io/badge/ruby-%3E%3D%204.0-red.svg)](https://www.ruby-lang.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 See the [full documentation website](https://madbomber.github.io/kbs/).
@@ -16,13 +16,18 @@ See the [full documentation website](https://madbomber.github.io/kbs/).
 - **Incremental Updates**: Efficient fact addition/removal without full network recomputation
 - **Negation Support**: Built-in handling of NOT conditions and absence patterns
 - **Memory Optimization**: Nodes automatically unlink when empty to reduce computation
-- **Pattern Sharing**: Common sub-patterns shared between rules for maximum efficiency
+- **Pattern Sharing**: Rules with the same pattern share one alpha memory
+- **Indexed Matching**: Alpha memories found by fact type and constant, joins on shared `?variables` hash-indexed, and retraction without scanning
+- **Agenda**: Runs to quiescence, ordered by priority then a conflict resolution strategy (`:definition`, `:depth`, `:breadth`); `run(limit)` and `halt`
+- **Truth Maintenance**: Facts asserted under `logical` conditions are retracted when those conditions stop matching
+- **Fact Lifecycle**: `modify` re-matches a changed fact; `fact_duplication: false` rejects duplicate facts
 
 ### Declarative DSL
 - **Readable Syntax**: Write rules in natural, expressive Ruby syntax
 - **Condition Helpers**: `greater_than`, `less_than`, `range`, `one_of`, `satisfies` and more (see [DSL Helpers](#dsl-helpers))
 - **Rule Metadata**: Descriptions, priorities, and documentation built-in
 - **Negative Patterns**: `without` keyword for absence testing
+- **Existence Tests**: `exists` matches once when at least one fact fits
 
 ### Blackboard Architecture
 - **Multi-Agent Coordination**: Knowledge sources collaborate via shared blackboard
@@ -38,12 +43,12 @@ See the [full documentation website](https://madbomber.github.io/kbs/).
 - **Query Interface**: Powerful fact retrieval with pattern matching and SQL queries
 
 ### Concurrent Execution
-- **Auto-Inference Mode**: Background thread continuously runs inference as facts change
-- **Thread-Safe**: Concurrent fact assertion and rule firing
+- **Auto-Inference Patterns**: `examples/concurrent_inference_demo.rb` subclasses `KBS::Engine` to run inference reactively or in a background thread
+- **Your Own Locking**: The engine has no locks of its own; those examples guard it with a `Mutex`
 - **Real-Time Processing**: Perfect for monitoring systems and event-driven architectures
 
 ### AI Integration
-- **LLM Integration**: Native support for Ollama, OpenAI via RubyLLM gem
+- **LLM Integration**: Call Ollama, OpenAI and others from rule actions with the RubyLLM gem (not a kbs dependency; install it yourself)
 - **Hybrid Reasoning**: Combine symbolic rules with neural AI for enhanced decision-making
 - **Sentiment Analysis**: AI-powered news and text analysis
 - **Strategy Generation**: LLMs create trading strategies based on market conditions
@@ -239,15 +244,15 @@ end
 
 ## 📚 Examples
 
-The `examples/` directory contains 13 comprehensive examples demonstrating all features:
+The `examples/` directory contains 13 comprehensive examples demonstrating all features. Each one except `iot_demo_using_dsl.rb` also has a DSL version (`*_dsl.rb`), and `rule_source_demo.rb` shows rule source introspection:
 
 ### Basic Examples
 - **car_diagnostic.rb** - Simple expert system for car diagnostics
 - **working_demo.rb** - Stock trading signal generator
+- **trading_demo.rb** - Multiple trading strategies
 
 ### DSL Examples
 - **iot_demo_using_dsl.rb** - IoT sensor monitoring with declarative DSL
-- **trading_demo.rb** - Multiple trading strategies
 
 ### Advanced Trading
 - **advanced_example.rb** - Golden cross detection and technical analysis
@@ -397,7 +402,7 @@ See the [DSL guide](docs/guides/dsl.md#pattern-helpers) for examples.
 - Ruby >= 4.0
 - SQLite3 (bundled with most systems)
 - Redis (optional, for Redis storage)
-- Ollama (optional, for AI integration)
+- RubyLLM plus Ollama or LM Studio (optional, for AI integration)
 
 ## 🤝 Contributing
 

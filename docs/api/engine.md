@@ -17,13 +17,17 @@ The core RETE II algorithm engine for in-memory fact processing.
 
 ### Constructor
 
-#### `initialize()`
+#### `initialize(strategy: :definition, fact_duplication: true)`
 
 Creates a new in-memory RETE engine.
 
-**Parameters**: None
+**Parameters**:
+- `strategy` (Symbol, optional) - conflict resolution strategy: `:definition` (default), `:depth` or `:breadth`. See [`run`](#runlimit-nil).
+- `fact_duplication` (Boolean, optional) - whether working memory may hold two facts with the same type and attributes (default: `true`). See [`fact_duplication`](#fact_duplication-fact_duplication).
 
 **Returns**: `KBS::Engine` instance
+
+**Raises**: `ArgumentError` for an unknown strategy
 
 **Example - Low-level API**:
 ```ruby
@@ -31,6 +35,8 @@ require 'kbs'
 
 engine = KBS::Engine.new
 # Engine ready with empty working memory
+
+engine = KBS::Engine.new(strategy: :depth, fact_duplication: false)
 ```
 
 **Using DSL (Recommended)**:
@@ -51,6 +57,7 @@ engine = kb.engine
 - `@rules` - Array of registered rules
 - `@alpha_memories` - Hash of pattern → AlphaMemory
 - `@production_nodes` - Hash of rule name → ProductionNode
+- `@agenda` - Agenda of activations waiting to fire
 - `@root_beta_memory` - Root BetaMemory with dummy token
 
 ---
@@ -64,24 +71,26 @@ Registers a rule and compiles it into the RETE network.
 **Parameters**:
 - `rule` (Rule) - Rule object with conditions and action
 
-**Returns**: `nil`
+**Returns**: no meaningful value
+
+**Raises**: `ArgumentError` when a logical condition follows a non-logical one (logical conditions must come first)
 
 **Side Effects**:
 - Builds alpha memories for each condition pattern
-- Creates join nodes or negation nodes
+- Creates join nodes, negation nodes (`without`) or exists nodes (`exists`)
 - Creates beta memories for partial matches
 - Creates production node for rule
-- Activates existing facts through new network paths
+- Matches facts already in working memory and puts the complete matches on the agenda
 
 **Example**:
 ```ruby
 rule = KBS::Rule.new(
-  name: "high_temperature",
+  "high_temperature",
   priority: 10,
   conditions: [
     KBS::Condition.new(:temperature, { location: "server_room" })
   ],
-  action: ->(bindings) { puts "Alert: High temperature!" }
+  action: ->(facts) { puts "Alert: High temperature!" }
 )
 
 engine.add_rule(rule)
@@ -91,14 +100,15 @@ engine.add_rule(rule)
 ```ruby
 kb = KBS.knowledge_base do
   rule "high_temperature", priority: 10 do
-    on :temperature, location: "server_room", value: greater_than(80)
+    on :temperature, location: :location?, value: :value?
     perform do |facts, bindings|
       puts "Alert: #{bindings[:location?]} is #{bindings[:value?]}°F"
     end
   end
 end
 
-kb.rules.each { |rule| engine.add_rule(rule) }
+# `rule` has already called add_rule on the knowledge base's engine
+kb.engine.rules.size  # => 1
 ```
 
 **Performance Notes**:
@@ -116,7 +126,9 @@ Adds a fact to working memory and activates matching alpha memories.
 - `type` (Symbol) - Fact type (e.g., `:temperature`, `:order`)
 - `attributes` (Hash) - Fact attributes (default: `{}`)
 
-**Returns**: `KBS::Fact` - The created fact
+**Returns**: `KBS::Fact` - The created fact. With `fact_duplication` off, the existing equal fact when there is one. `nil` when called from the action of a rule with logical conditions whose match an earlier step of the same action already removed.
+
+**Raises**: `KBS::MatchInProgressError` when called while a fact is being matched (see below)
 
 **Side Effects**:
 - Creates Fact object
@@ -124,15 +136,17 @@ Adds a fact to working memory and activates matching alpha memories.
 - Activates all matching alpha memories
 - Propagates through join nodes
 - May create new tokens in beta memories
+- Puts each new complete match on the agenda (rules fire on `run`, not here)
+- From the action of a rule with `logical` conditions, records the match as the fact's support (see [Truth Maintenance](#truth-maintenance))
 
 **Example - Low-level API**:
 ```ruby
 fact = engine.add_fact(:temperature, location: "server_room", value: 85)
-# => #<KBS::Fact:0x00... @type=:temperature @attributes={...}>
+# => #<KBS::Fact:0x00... @id=..., @type=:temperature, @attributes={...}>
 
 # Facts without attributes
 marker = engine.add_fact(:system_ready)
-# => #<KBS::Fact:0x00... @type=:system_ready @attributes={}>
+# => #<KBS::Fact:0x00... @id=..., @type=:system_ready, @attributes={}>
 ```
 
 **Using DSL (Recommended)**:
@@ -156,13 +170,16 @@ Removes a fact from working memory and deactivates it in alpha memories.
 **Parameters**:
 - `fact` (KBS::Fact) - Fact object to remove (must be exact object reference)
 
-**Returns**: `nil`
+**Returns**: the fact
+
+**Raises**: `KBS::MatchInProgressError` when called while a fact is being matched
 
 **Side Effects**:
 - Removes from working memory
 - Deactivates fact in all alpha memories
-- Removes tokens containing this fact
+- Removes tokens containing this fact, and takes their activations off the agenda
 - May cause negation nodes to re-evaluate
+- Retracts facts that were logically supported only by matches containing this fact
 
 **Example**:
 ```ruby
@@ -175,7 +192,7 @@ engine.remove_fact(fact)
 engine.remove_fact(@current_alert) if @current_alert
 ```
 
-**Important**: You must keep a reference to the fact object to remove it. Finding facts requires inspecting `engine.working_memory.facts`.
+**Important**: You must keep a reference to the fact object to remove it. Finding facts requires inspecting `engine.facts` (the same as `engine.working_memory.facts`).
 
 **Example - Finding and Removing**:
 ```ruby
@@ -199,7 +216,9 @@ Changes a fact's attributes and matches it against the rules again.
 - `fact` - a fact in working memory (`KBS::Blackboard::Engine` also accepts a uuid)
 - `changes` (Hash) - attributes to merge into the fact's
 
-**Returns**: the fact with its new attributes, or `nil` when the fact is not in working memory. `KBS::Engine` returns the same object; `KBS::Blackboard::Engine` returns a new object with the same uuid and records an `UPDATE` in the audit log.
+**Returns**: the fact with its new attributes, or `nil` when the fact is not in working memory. `KBS::Engine` returns the same object; `KBS::Blackboard::Engine` returns a new object with the same uuid and records an `UPDATE` in the audit log. With `fact_duplication` off, see below.
+
+**Raises**: `KBS::MatchInProgressError` when called while a fact is being matched
 
 ```ruby
 reading = engine.add_fact(:sensor, id: 1, temp: 20)
@@ -231,7 +250,9 @@ With duplication off, `add_fact` returns the existing fact instead of adding an 
 
 #### Changing facts while a fact is being matched
 
-`add_fact`, `remove_fact` and `modify` raise `KBS::MatchInProgressError` when called while the engine is matching another fact. That only happens from code the engine calls during a match: a predicate in a pattern (`temp: ->(t) { ... }`) or a working-memory observer. Change facts from rule actions, which run between matches.
+`add_fact`, `remove_fact` and `modify` raise `KBS::MatchInProgressError` when called while the engine is matching another fact. That only happens from code the engine calls during a match, such as a predicate in a pattern (`temp: ->(t) { ... }`). An observer added with `working_memory.add_observer` is called after the engine has matched the fact, so it does not raise. Change facts from rule actions, which run between matches.
+
+`matching?` tells whether a match is in progress.
 
 ---
 
@@ -289,8 +310,8 @@ end
 ```
 
 **Execution Order**:
-- Production nodes fire in priority order, highest first; rules with equal priority fire in definition order
-- Within a production node, tokens fire in insertion order
+- Activations fire in priority order, highest first
+- Among equal priorities, the strategy decides: with the default `:definition`, rules fire in definition order and each rule's matches oldest first
 
 **Example - Multiple Rule Firings**:
 ```ruby
@@ -308,12 +329,11 @@ kb = KBS.knowledge_base do
   end
 end
 
-kb.rules.each { |r| engine.add_rule(r) }
-engine.add_fact(:temperature, value: 85)
-engine.run
+kb.fact :temperature, value: 85
+kb.run  # => 2
 
 # Both rules fire, higher priority first
-puts fired_rules  # => ["rule_b", "rule_a"]
+fired_rules  # => ["rule_b", "rule_a"]
 ```
 
 **Best Practice**: Call `run` after batch adding facts:
@@ -330,6 +350,112 @@ engine.run  # Rule may fire with incomplete data
 engine.add_fact(:humidity, value: 60)
 engine.run
 ```
+
+---
+
+#### `halt`
+
+Stops the current `run` after the rule that is firing. Call it from a rule action. The activations still on the agenda wait for the next `run`, which clears the halt when it starts.
+
+**Returns**: `true`
+
+```ruby
+kb = KBS.knowledge_base do
+  rule "stop_on_alarm", priority: 100 do
+    on :alarm
+    perform { kb.halt }
+  end
+end
+```
+
+The DSL's `halt` delegates to `engine.halt`.
+
+---
+
+#### `strategy` / `strategy=(strategy)`
+
+Reads or changes the agenda's conflict resolution strategy (`:definition`, `:depth` or `:breadth`). Changing it reorders the activations already on the agenda.
+
+**Raises**: `ArgumentError` for an unknown strategy
+
+```ruby
+engine.strategy           # => :definition
+engine.strategy = :depth
+```
+
+---
+
+#### `reset`
+
+Clears all transient RETE state while keeping the compiled rules: working memory, every alpha and beta memory, every production node's tokens, the agenda and the truth maintenance records. A rule that starts with a `without` condition matches again, since working memory is now empty.
+
+**Returns**: no meaningful value
+
+`KBS::Blackboard::Engine#reset` empties the network but not the store: persisted facts stay on the blackboard.
+
+---
+
+#### `close`
+
+Releases what the engine holds open. A no-op on `KBS::Engine`; `KBS::Blackboard::Engine` closes its store.
+
+**Returns**: `nil` for `KBS::Engine`
+
+---
+
+#### `facts`
+
+**Returns**: `Array<KBS::Fact>` - the facts in working memory, in the order they were added. A copy: changing it does not change working memory.
+
+---
+
+#### Truth Maintenance
+
+A fact asserted from the action of a rule with `logical` conditions is supported by the match of those conditions, and is retracted when every match that supports it is gone. See [Rules API](rules.md#logicalblock) and the [Truth Maintenance guide](../guides/truth-maintenance.md).
+
+- `logically_supported?(fact)` → `Boolean` - whether `fact` was asserted under logical conditions and will be retracted when its supporting matches are gone. Asserting an equal fact (with `fact_duplication` off) from outside a logical rule makes it unconditional.
+- `dependencies(fact)` → `Array<Array<KBS::Fact>>` - the matches that support `fact`, each as the facts that matched the rule's logical conditions. Empty for an unconditional fact.
+- `dependents(fact)` → `Array<KBS::Fact>` - the facts that will lose a support if `fact` is retracted.
+
+```ruby
+kb = KBS.knowledge_base do
+  rule "overheating" do
+    logical do
+      on :sensor, temp: greater_than(90)
+    end
+    perform { kb.assert(:overheating) }
+  end
+end
+
+sensor = kb.fact(:sensor, temp: 95)
+kb.run
+warning = kb.query(:overheating).first
+
+kb.engine.logically_supported?(warning)  # => true
+kb.engine.dependencies(warning)          # => [[sensor]]
+kb.engine.dependents(sensor)             # => [warning]
+
+kb.retract(sensor)
+kb.query(:overheating)                   # => []
+```
+
+---
+
+#### `matching?`
+
+**Returns**: `Boolean` - whether the engine is matching a fact right now. While it is, `add_fact`, `remove_fact` and `modify` raise `KBS::MatchInProgressError`.
+
+---
+
+#### `duplicate_of(type, attributes)`
+
+**Returns**: the fact in working memory with this type and attributes when `fact_duplication` is off; `nil` otherwise (always `nil` while duplication is allowed).
+
+---
+
+#### Internal methods
+
+These are public so that working memory, the network nodes and `KBS::Blackboard::Engine` can call them. They are not meant for application code: `update`, `create_fact`, `fire_activation`, `match_fact`, `unmatch_fact`, `matching_alpha_memories`, `alpha_memories_for`, `prioritized_production_nodes`, `token_removed`, `current_support`, `reinforce`, `attach_support`, `retract_unsupported_facts`, `ensure_not_matching!`.
 
 ---
 
@@ -385,14 +511,14 @@ end
 
 **Read-only**: Yes (via `attr_reader`)
 
-**Description**: Pattern → AlphaMemory mapping.
+**Description**: Pattern → AlphaMemory mapping. Each key is a condition's pattern merged with its `type:`, e.g. `{location: "server_room", type: :temperature}`.
 
 **Example**:
 ```ruby
 # Inspect alpha memories (useful for debugging)
 engine.alpha_memories.each do |pattern, memory|
   puts "Pattern: #{pattern}"
-  puts "  Facts: #{memory.facts.size}"
+  puts "  Facts: #{memory.items.size}"
   puts "  Successors: #{memory.successors.size}"
 end
 ```
@@ -401,19 +527,48 @@ end
 
 #### `production_nodes`
 
-**Type**: `Hash<Symbol, KBS::ProductionNode>`
+**Type**: `Hash<String or Symbol, KBS::ProductionNode>`
 
 **Read-only**: Yes (via `attr_reader`)
 
-**Description**: Rule name → ProductionNode mapping.
+**Description**: Rule name → ProductionNode mapping, keyed by the name exactly as the rule was given it (a DSL `rule "high_temperature"` is keyed by the String). A node's `tokens` are the rule's current matches, fired or not; the ones still waiting to fire are on the `agenda`.
 
 **Example**:
 ```ruby
-# Check if a rule is activated
-prod_node = engine.production_nodes[:high_temperature]
+# Check if a rule is matched
+prod_node = engine.production_nodes["high_temperature"]
 if prod_node && prod_node.tokens.any?
-  puts "Rule 'high_temperature' has #{prod_node.tokens.size} activations"
+  puts "Rule 'high_temperature' has #{prod_node.tokens.size} matches"
 end
+```
+
+---
+
+#### `agenda`
+
+**Type**: `KBS::Agenda`
+
+**Read-only**: Yes (via `attr_reader`)
+
+**Description**: The conflict set: every activation (a rule plus the token that matched it) that has not fired yet, ordered by rule priority and then by the strategy. `run` pops from it.
+
+**`KBS::Agenda` methods**:
+- `size` → `Integer` - pending activations; `empty?` → `Boolean`
+- `to_a` → `Array<KBS::Activation>` - pending activations in firing order
+- `peek` → the next activation to fire, or `nil`
+- `pop` → removes and returns the next activation, or `nil` when empty (`run` does this; popping by hand skips the rule)
+- `clear` - drops every pending activation
+- `strategy` / `strategy=(strategy)` - as on the engine; `KBS::Agenda::STRATEGIES` is `[:definition, :depth, :breadth]`
+- `add(node, token, rule_order: 0)` / `remove(activation)` - called by production nodes
+
+**`KBS::Activation`**: `rule`, `token`, `salience` (the rule's priority), `timetag` (arrival order), `to_s` (`"salience name: facts"`).
+
+```ruby
+engine.add_fact(:temperature, value: 85)
+engine.agenda.size                         # => number of pending activations
+engine.agenda.to_a.map { |a| a.rule.name } # => names in firing order
+engine.run
+engine.agenda.empty?                       # => true
 ```
 
 ---
@@ -428,7 +583,7 @@ The engine implements the observer pattern to watch fact changes.
 - `action` (Symbol) - `:add` or `:remove`
 - `fact` (KBS::Fact) - The fact that changed
 
-**Description**: Called automatically by WorkingMemory when facts change. Activates/deactivates alpha memories.
+**Description**: Called automatically by WorkingMemory when facts change. Activates/deactivates alpha memories. An observer you add is called in the same way, after the engine (observers run in the order they were added).
 
 **Example - Custom Observer**:
 ```ruby
@@ -442,7 +597,7 @@ logger = FactLogger.new
 engine.working_memory.add_observer(logger)
 
 engine.add_fact(:temperature, value: 85)
-# Output: [2025-01-15 10:30:00] ADD: temperature {:value=>85}
+# Output: [2025-01-15 10:30:00 -0600] ADD: temperature {value: 85}
 ```
 
 ---
@@ -465,18 +620,23 @@ Persistent RETE engine with blackboard memory, audit logging, and message queue.
 
 ### Constructor
 
-#### `initialize(db_path: ':memory:', store: nil)`
+#### `initialize(db_path: ':memory:', store: nil, strategy: :definition, fact_duplication: true)`
 
 Creates a persistent RETE engine with blackboard memory.
 
 **Parameters**:
 - `db_path` (String, optional) - Path to SQLite database (default: `:memory:`)
 - `store` (Store, optional) - Custom persistence store (default: `nil`, uses SqliteStore)
+- `strategy`, `fact_duplication` - as for `KBS::Engine.new`
 
 **Returns**: `KBS::Blackboard::Engine` instance
 
+`require 'kbs'` does not load the blackboard; add `require 'kbs/blackboard'`.
+
 **Example - In-Memory**:
 ```ruby
+require 'kbs/blackboard'
+
 engine = KBS::Blackboard::Engine.new
 # Blackboard in RAM (lost on exit)
 ```
@@ -554,7 +714,7 @@ puts fact.uuid  # => "550e8400-e29b-41d4-a716-446655440000"
 
 # Fact persists across restarts
 engine2 = KBS::Blackboard::Engine.new(db_path: 'knowledge_base.db')
-reloaded_facts = engine2.blackboard.get_facts_by_type(:temperature)
+reloaded_facts = engine2.blackboard.get_facts(:temperature)
 puts reloaded_facts.first[:value]  # => 85
 ```
 
@@ -569,7 +729,7 @@ kb.close
 
 # Session 2 - facts still available
 engine2 = KBS::Blackboard::Engine.new(db_path: 'knowledge_base.db')
-temps = engine2.blackboard.get_facts_by_type(:temperature)
+temps = engine2.blackboard.get_facts(:temperature)
 puts temps.first[:value]  # => 85
 ```
 
@@ -584,7 +744,7 @@ Removes a persistent fact from the blackboard.
 **Parameters**:
 - `fact` (KBS::Blackboard::Fact) - Fact to remove
 
-**Returns**: `nil`
+**Returns**: no meaningful value
 
 **Side Effects**:
 - Marks fact as inactive in store
@@ -597,9 +757,10 @@ Removes a persistent fact from the blackboard.
 fact = engine.add_fact(:temperature, value: 85)
 engine.remove_fact(fact)
 
-# Fact marked inactive but remains in audit trail
-audit = engine.blackboard.audit_log.get_fact_history(fact.uuid)
-puts audit.last[:action]  # => "retract"
+# Fact marked inactive but remains in audit trail (newest entry first)
+audit = engine.blackboard.audit_log.fact_history(fact.uuid)
+puts audit.first[:action]  # => "REMOVE"
+puts audit.last[:action]   # => "ADD"
 ```
 
 ---
@@ -623,17 +784,19 @@ engine.add_rule(my_rule)
 engine.add_fact(:temperature, value: 85)
 engine.run
 
-# Check audit log
-engine.blackboard.audit_log.entries.each do |entry|
-  next unless entry[:event_type] == "rule_fired"
+# Check audit log (newest firing first)
+engine.blackboard.get_rule_firings.each do |entry|
   puts "Rule #{entry[:rule_name]} fired with bindings: #{entry[:bindings]}"
 end
 ```
 
+Each entry has `:rule_name`, `:fact_uuids`, `:bindings`, `:fired_at` and `:session_id`. `get_rule_firings(rule_name = nil, limit: 100)` filters by rule.
+
 **Difference from KBS::Engine**:
 - Logs every rule firing
-- Prevents duplicate firing of same token
-- Records variable bindings in audit
+- Records fact UUIDs and variable bindings in audit
+
+**Caution**: With the SQLite store, give rules String names. A rule named with a Symbol (`KBS::Rule.new(:my_rule, ...)`) raises `RuntimeError: can't prepare Symbol` when it fires, because the audit log passes the name straight to SQLite. DSL rule names are usually Strings.
 
 ---
 
@@ -647,7 +810,7 @@ Posts a message to the blackboard message queue.
 - `content` (Hash) - Message payload
 - `priority` (Integer, optional) - Message priority (default: 0, higher = more urgent)
 
-**Returns**: `nil`
+**Returns**: no meaningful value
 
 **Side Effects**:
 - Adds message to queue
@@ -686,7 +849,7 @@ Retrieves and removes the highest priority message from a topic.
 - `topic` (String) - Topic to consume from
 - `consumer` (String) - Consumer identifier (for audit trail)
 
-**Returns**: `Hash` or `nil` - Message hash with `:id`, `:sender`, `:topic`, `:content`, `:priority`, `:timestamp`, or `nil` if queue empty
+**Returns**: `Hash` or `nil` - Message hash with `:id`, `:sender`, `:topic`, `:content`, `:priority`, `:posted_at`, or `nil` if queue empty. Among equal priorities the oldest message comes first.
 
 **Side Effects**:
 - Removes message from queue
@@ -704,7 +867,7 @@ loop do
 end
 ```
 
-**Thread Safety**: Atomic pop operation (PostgreSQL/Redis stores support concurrent consumers)
+**Thread Safety**: Atomic pop operation: the SQLite queue claims a message only if no other consumer took it first, and the Redis queue pops atomically, so concurrent consumers never get the same message
 
 ---
 
@@ -714,17 +877,22 @@ Returns blackboard statistics.
 
 **Parameters**: None
 
-**Returns**: `Hash` with keys:
-- `:facts_count` (Integer) - Number of active facts
-- `:messages_count` (Integer) - Number of queued messages (all topics)
-- `:audit_entries_count` (Integer) - Total audit log entries
+**Returns**: `Hash` with keys (SQLite store):
+- `:total_facts` (Integer) - Facts ever added, including retracted ones
+- `:active_facts` (Integer) - Facts not retracted
+- `:knowledge_sources` (Integer) - Registered knowledge sources
+- `:total_messages` (Integer) - Messages ever posted (all topics)
+- `:unconsumed_messages` (Integer) - Messages still queued
+- `:rules_fired` (Integer) - Rule firings in the audit log
+
+The Redis store reports the same keys; the hybrid store adds `:audit_records`.
 
 **Example**:
 ```ruby
 stats = engine.stats
-puts "Facts: #{stats[:facts_count]}"
-puts "Messages: #{stats[:messages_count]}"
-puts "Audit entries: #{stats[:audit_entries_count]}"
+puts "Facts: #{stats[:active_facts]}"
+puts "Messages: #{stats[:unconsumed_messages]}"
+puts "Rules fired: #{stats[:rules_fired]}"
 ```
 
 **Performance**: May be slow for large databases (counts all rows)
@@ -745,12 +913,20 @@ puts "Audit entries: #{stats[:audit_entries_count]}"
 ```ruby
 # Access blackboard components
 engine.blackboard.message_queue.post("agent1", "alerts", { alert: "critical" })
-engine.blackboard.audit_log.entries.last
+engine.blackboard.audit_log.fact_history.first   # newest fact change
 engine.blackboard.transaction { engine.add_fact(:order, status: "pending") }
 
 # Get facts by type
-temps = engine.blackboard.get_facts_by_type(:temperature)
+temps = engine.blackboard.get_facts(:temperature)
 ```
+
+---
+
+### Other Methods
+
+- `modify(fact, changes)` - see [`KBS::Engine#modify`](#modifyfact-changes); also accepts the fact's uuid
+- `reset` - empties the network but leaves the persisted facts on the blackboard
+- `close` - closes the store
 
 ---
 
@@ -762,16 +938,15 @@ temps = engine.blackboard.get_facts_by_type(:temperature)
 # 1. Create engine
 engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
 
-# 2. Define and register rules
-kb = KBS.knowledge_base do
+# 2. Define and register rules on that engine
+kb = KBS.knowledge_base(engine: engine) do
   rule "high_temp_alert", priority: 10 do
-    on :temperature, value: greater_than(80)
+    on :temperature, value: :value?
     perform do |facts, bindings|
-      puts "Alert! Temperature: #{bindings[:value?]}"
+      puts "Alert! Temperature: #{bindings[:value?]}" if bindings[:value?] > 80
     end
   end
 end
-kb.rules.each { |r| engine.add_rule(r) }
 
 # 3. Add initial facts
 engine.add_fact(:sensor, id: 1, status: "active")
@@ -806,15 +981,15 @@ engine.add_fact(:account, id: 1, balance: 1000)
 
 # Session 2 - Facts still present
 engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
-accounts = engine.blackboard.get_facts_by_type(:account)
+accounts = engine.blackboard.get_facts(:account)
 puts accounts.first[:balance]  # => 1000
 
 # BUT: Rules must be re-registered (not persisted)
-kb = load_rules
-kb.rules.each { |r| engine.add_rule(r) }
+kb = load_rules            # your own method returning a KBS.knowledge_base
+kb.rules.each_value { |r| engine.add_rule(r) }
 ```
 
-**Important**: Only facts persist. Rules, alpha memories, and RETE network must be rebuilt on restart.
+**Important**: Only facts persist. Rules, alpha memories, and RETE network must be rebuilt on restart. A rule added to the new engine is matched against the facts already on the blackboard.
 
 ---
 
@@ -825,12 +1000,14 @@ engine.blackboard.transaction do
   fact1 = engine.add_fact(:order, id: 1, status: "pending")
   fact2 = engine.add_fact(:inventory, item: "ABC", quantity: 100)
 
-  # If error occurs here, both facts are rolled back
+  # If error occurs here, both facts are rolled back in the store
   raise "Validation failed" if invalid_order?(fact1)
 end
 ```
 
-**Database Support**: SQLite and PostgreSQL support ACID transactions. Redis and MongoDB require custom transaction logic.
+**Database Support**: The SQLite store wraps the block in a SQLite transaction (nested calls join the outer one). The Redis and hybrid stores just run the block: there is nothing to roll back.
+
+**Note**: The rollback covers the store only. Facts added inside the block were already matched by the engine, and stay in its network until removed or until `reset`.
 
 ---
 
@@ -838,23 +1015,26 @@ end
 
 ### Network Sharing
 
-Multiple rules sharing condition patterns reuse alpha memories:
+Multiple rules with an equal condition pattern (same type, same attribute values) reuse one alpha memory:
 
 ```ruby
-# Both rules share the :temperature alpha memory
-rule "high_temp_alert" do
-  on :temperature, value: greater_than(80)
-  perform { puts "High temperature!" }
+# Both rules share the {location: "server_room", type: :temperature} alpha memory
+rule "log_server_room" do
+  on :temperature, location: "server_room"
+  perform { puts "Server room reading" }
 end
 
-rule "critical_temp_alert" do
-  on :temperature, value: greater_than(100)
-  perform { puts "CRITICAL temperature!" }
+rule "server_room_alarm" do
+  on :temperature, location: "server_room"
+  on :alarm
+  perform { puts "Alarm with a server room reading!" }
 end
 
-# Only 1 alpha memory created for :temperature
+# Only 1 alpha memory created for the :temperature pattern
 # Pattern matching happens once per fact
 ```
+
+Patterns are compared as hashes, so two separate predicates such as `greater_than(80)` and `greater_than(100)` (or even two calls of `greater_than(80)`, which make two lambdas) give two alpha memories.
 
 ---
 
@@ -864,7 +1044,7 @@ end
 # Dump alpha memories
 engine.alpha_memories.each do |pattern, memory|
   puts "Pattern: #{pattern.inspect}"
-  puts "  Facts in alpha memory: #{memory.facts.size}"
+  puts "  Facts in alpha memory: #{memory.items.size}"
   puts "  Successor nodes: #{memory.successors.size}"
   memory.successors.each do |succ|
     puts "    #{succ.class.name}"
@@ -874,11 +1054,14 @@ end
 # Dump production nodes
 engine.production_nodes.each do |name, node|
   puts "Rule: #{name}"
-  puts "  Tokens (activations): #{node.tokens.size}"
+  puts "  Tokens (matches): #{node.tokens.size}"
   node.tokens.each do |token|
-    puts "    Token with #{token.facts.size} facts"
+    puts "    Token with #{token.facts.size} facts#{' (fired)' if token.fired?}"
   end
 end
+
+# Dump the agenda: activations waiting to fire, in firing order
+engine.agenda.to_a.each { |activation| puts activation }
 ```
 
 **Use Case**: Debugging why a rule didn't fire
@@ -913,7 +1096,7 @@ metrics = MetricsCollector.new
 engine.working_memory.add_observer(metrics)
 
 # Run engine...
-engine.add_fact(:temperature, value: 85)
+fact = engine.add_fact(:temperature, value: 85)
 engine.remove_fact(fact)
 
 metrics.report
@@ -1022,14 +1205,17 @@ old_facts.each { |f| engine.remove_fact(f) }
 **Production Pattern**: Implement fact expiration in a cleanup rule:
 
 ```ruby
-rule "expire_old_facts", priority: 0 do
-  on :temperature, timestamp: ->(ts) { Time.now - ts > 3600 }
-  perform do |facts, bindings|
-    fact = bindings[:matched_fact?]
-    engine.remove_fact(fact)
+kb = KBS.knowledge_base do
+  rule "expire_old_facts", priority: 0 do
+    on :temperature, timestamp: ->(ts) { Time.now - ts > 3600 }
+    perform do |facts|
+      kb.retract(facts.first)
+    end
   end
 end
 ```
+
+A predicate is tested when the fact is matched (added or modified), not again as time passes. This rule catches facts that are already old when they arrive; to expire facts as they age, sweep `engine.facts` periodically as above, or `modify` a clock fact the rule joins with.
 
 ---
 
@@ -1048,7 +1234,7 @@ rule "risky_operation" do
       puts "Error in rule: #{e.message}"
 
       # Add error fact for other rules to handle
-      engine.add_fact(:error, rule: "risky_operation", message: e.message)
+      kb.assert(:error, rule: "risky_operation", message: e.message)
     end
   end
 end
@@ -1061,7 +1247,7 @@ end
 ```ruby
 begin
   engine = KBS::Blackboard::Engine.new(db_path: '/invalid/path/kb.db')
-rescue Errno::EACCES => e
+rescue SQLite3::CantOpenException => e
   puts "Cannot access database: #{e.message}"
   # Fallback to in-memory
   engine = KBS::Blackboard::Engine.new
@@ -1080,13 +1266,13 @@ For multi-threaded access:
 require 'thread'
 
 class ThreadSafeEngine
-  def initialize(*args)
-    @engine = KBS::Blackboard::Engine.new(*args)
+  def initialize(**options)
+    @engine = KBS::Blackboard::Engine.new(**options)
     @mutex = Mutex.new
   end
 
-  def add_fact(*args)
-    @mutex.synchronize { @engine.add_fact(*args) }
+  def add_fact(type, attributes = {})
+    @mutex.synchronize { @engine.add_fact(type, attributes) }
   end
 
   def run

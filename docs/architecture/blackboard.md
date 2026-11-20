@@ -40,15 +40,17 @@ fact = memory.add_fact(:stock, {
   price: 150.50,
   timestamp: Time.now
 })
-# => #<KBS::Blackboard::Fact uuid="abc-123" ...>
+# => #<KBS::Blackboard::Fact @uuid="abc-123..." ...>
 
 # Query facts
-stocks = memory.facts_of_type(:stock)
+stocks = memory.get_facts(:stock)
 # => [#<KBS::Blackboard::Fact ...>, ...]
+memory.get_facts(:stock, symbol: "AAPL")   # filter by attributes too
 
 # Facts survive process restart
+memory.close
 memory2 = KBS::Blackboard::Memory.new(db_path: 'knowledge_base.db')
-memory2.facts_of_type(:stock)
+memory2.get_facts(:stock)
 # => Still there!
 ```
 
@@ -62,16 +64,20 @@ RETE engine with persistent blackboard memory:
 # Create engine with blackboard
 engine = KBS::Blackboard::Engine.new(db_path: 'trading.db')
 
-# Define rules using DSL (persisted in the database)
+# Define rules using DSL (rules live in the engine; only facts,
+# messages and the audit log are persisted)
 kb = KBS.knowledge_base(engine: engine) do
+  kb = self  # the knowledge base, for use inside actions
+
   rule "buy_signal" do
     on :stock, symbol: :sym?, price: :price?
     on :threshold, symbol: :sym?, max: :max?
 
     perform do |facts, bindings|
       if bindings[:price?] < bindings[:max?]
-        # Write new fact to blackboard
-        fact :order,
+        # Write new fact to blackboard. Inside perform, self is the
+        # rule builder, so a bare `fact` would not assert anything.
+        kb.fact :order,
           symbol: bindings[:sym?],
           action: "BUY",
           price: bindings[:price?]
@@ -87,6 +93,8 @@ kb = KBS.knowledge_base(engine: engine) do
 end
 ```
 
+`Blackboard::Engine` also writes each rule firing to the audit log, and `engine.modify(fact, changes)` keeps the fact's uuid and logs an `UPDATE`.
+
 **Implementation**: `lib/kbs/blackboard/engine.rb`
 
 ### Message Queue
@@ -95,24 +103,23 @@ Priority-based communication between agents:
 
 ```ruby
 memory = KBS::Blackboard::Memory.new(db_path: 'system.db')
-queue = memory.message_queue
 
-# Agent 1: Post high-priority message
-queue.post("risk_analysis", {
+# Agent 1: Post high-priority message (sender, topic, content)
+memory.post_message("volatility_monitor", "risk_analysis", {
   alert: "High volatility detected",
   severity: "critical"
 }, priority: 10)
 
-# Agent 2: Read and process messages
-messages = queue.read("risk_analysis", limit: 5)
-messages.each do |msg|
-  puts "Processing: #{msg[:data][:alert]}"
-  queue.acknowledge(msg[:id])
-end
+# Look without consuming: highest priority first, then oldest
+memory.peek_messages("risk_analysis", limit: 5)
 
-# Unacknowledged messages remain in queue
-pending = queue.pending("risk_analysis")
+# Agent 2: Take the next message; each message goes to one consumer
+while (msg = memory.consume_message("risk_analysis", "risk_agent"))
+  puts "Processing: #{msg[:content][:alert]}"
+end
 ```
+
+`memory.message_queue` is the underlying `MessageQueue` (or `RedisMessageQueue`), with `post`, `consume`, `peek` and `stats`. A consumed message is marked consumed and is not handed out again.
 
 **Implementation**: `lib/kbs/blackboard/message_queue.rb`
 
@@ -126,27 +133,29 @@ audit = memory.audit_log
 
 # All fact changes are logged automatically
 fact = memory.add_fact(:stock, symbol: "AAPL", price: 150)
-memory.update_fact(fact.id, price: 155)
+fact.update(price: 155)          # merges and writes through to the store
 memory.remove_fact(fact)
 
-# Query audit trail
-history = audit.fact_history(fact.id)
+# Query audit trail (newest first)
+history = audit.fact_history(fact.uuid)
 # => [
-#   { action: "created", timestamp: ..., data: {price: 150} },
-#   { action: "updated", timestamp: ..., data: {price: 155} },
-#   { action: "deleted", timestamp: ... }
+#   { fact_uuid: ..., fact_type: :stock, action: "REMOVE", attributes: {symbol: "AAPL", price: 155}, timestamp: ..., session_id: ... },
+#   { ..., action: "UPDATE", attributes: {symbol: "AAPL", price: 155}, ... },
+#   { ..., action: "ADD",    attributes: {symbol: "AAPL", price: 150}, ... }
 # ]
 
-# See what rules fired
-rule_log = audit.rules_fired(limit: 10)
+# See what rules fired (logged by Blackboard::Engine)
+rule_log = audit.rule_firings(limit: 10)
 # => [
-#   { rule_name: "buy_signal", timestamp: ..., facts: [...] },
+#   { rule_name: "buy_signal", fact_uuids: [...], bindings: {...}, fired_at: ..., session_id: ... },
 #   ...
 # ]
 
 # Recent changes across all facts
-recent = audit.recent_changes(limit: 20)
+recent = audit.fact_history(limit: 20)
 ```
+
+`memory.get_history(uuid = nil, limit:)` and `memory.get_rule_firings(name = nil, limit:)` are shortcuts for the same queries.
 
 **Implementation**: `lib/kbs/blackboard/audit_log.rb`
 
@@ -165,39 +174,60 @@ engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
 - ✅ ACID transactions
 - ✅ Durable across restarts
 - ✅ Simple backup (copy .db file)
-- ✅ Full-text search capabilities
+- ✅ SQL queries over facts (`memory.query_facts`)
 
 **Cons:**
-- ⚠️ Slower than Redis (still fast for most use cases)
+- ⚠️ Usually slower than Redis for writes
 - ⚠️ Single-writer limitation
 - ⚠️ Not distributed
 
-**Schema:**
+**Schema** (abridged; see `sqlite_store.rb`, `audit_log.rb`, `message_queue.rb`):
 ```sql
 CREATE TABLE facts (
-  id TEXT PRIMARY KEY,
-  fact_type TEXT NOT NULL,
-  attributes TEXT NOT NULL, -- JSON
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE audit_log (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  fact_id TEXT,
-  action TEXT NOT NULL,
-  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-  data TEXT -- JSON
+  uuid TEXT UNIQUE NOT NULL,
+  fact_type TEXT NOT NULL,
+  attributes TEXT NOT NULL,   -- JSON
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  session_id TEXT,
+  retracted BOOLEAN DEFAULT 0, -- removed facts are kept, marked retracted
+  retracted_at TIMESTAMP
+  -- ... plus fact_timestamp, market_timestamp, data_source, market_session
 );
 
-CREATE TABLE messages (
-  id TEXT PRIMARY KEY,
-  topic TEXT NOT NULL,
-  priority INTEGER DEFAULT 0,
-  data TEXT NOT NULL, -- JSON
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  acknowledged BOOLEAN DEFAULT 0
+CREATE TABLE fact_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  fact_uuid TEXT NOT NULL,
+  fact_type TEXT NOT NULL,
+  attributes TEXT NOT NULL,   -- JSON
+  action TEXT NOT NULL,       -- ADD, UPDATE, REMOVE
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  session_id TEXT
 );
+
+CREATE TABLE rules_fired (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  rule_name TEXT NOT NULL,
+  fact_uuids TEXT NOT NULL,   -- JSON
+  bindings TEXT,              -- JSON
+  fired_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  session_id TEXT
+);
+
+CREATE TABLE blackboard_messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  sender TEXT NOT NULL,
+  topic TEXT NOT NULL,
+  content TEXT NOT NULL,      -- JSON
+  priority INTEGER DEFAULT 0,
+  posted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  consumed BOOLEAN DEFAULT 0,
+  consumed_by TEXT,
+  consumed_at TIMESTAMP
+);
+
+CREATE TABLE knowledge_sources (...);
 ```
 
 **Implementation**: `lib/kbs/blackboard/persistence/sqlite_store.rb`
@@ -214,32 +244,34 @@ engine = KBS::Blackboard::Engine.new(store: store)
 ```
 
 **Pros:**
-- ✅ **100x faster** than SQLite for reads/writes
-- ✅ Supports distributed agents (multiple processes, machines)
-- ✅ Built-in pub/sub for real-time notifications
-- ✅ Atomic operations
-- ✅ TTL support for ephemeral facts
+- ✅ In-memory, typically faster than SQLite for reads/writes (measure for your workload)
+- ✅ Several processes can share one store (facts, messages, audit)
+- ✅ Atomic operations (MULTI for fact writes, ZPOPMIN for message consumption)
 
 **Cons:**
-- ⚠️ Requires Redis server
+- ⚠️ Requires Redis server and the `redis` gem
 - ⚠️ Volatile by default (enable RDB/AOF for durability)
 - ⚠️ More complex deployment
+- ⚠️ No SQL: `query_facts` raises `NotImplementedError`
 
 **Data Structures:**
 ```
-# Facts stored as Redis hashes
-fact:{uuid} → { type: "stock", symbol: "AAPL", price: 150 }
+# Facts stored as Redis hashes (attributes as JSON)
+fact:{uuid} → { uuid, type: "stock", attributes: '{"symbol":"AAPL","price":150}',
+                session_id, created_at, updated_at, retracted: "0" }
 
 # Indexes for efficient queries
 facts:type:stock → Set of fact UUIDs
 facts:active → Set of all active fact UUIDs
+facts:all, facts:session:{id} → Sets
 
-# Messages as sorted sets (by priority)
-messages:risk_alerts → ZSet[(msg1, priority), (msg2, priority), ...]
+# Messages: a hash each, ordered per topic in a sorted set (score from priority, then time)
+message:{id} → { sender, topic, content, priority, posted_at, consumed, ... }
+messages:risk_alerts → ZSet of message ids
 
-# Audit as lists
-fact_history:{uuid} → List of change records
-rules_fired:all → List of rule executions
+# Audit as lists (newest first, trimmed)
+fact_history:{uuid}, fact_history:all → List of change records
+rules_fired:{rule}, rules_fired:all → List of rule executions
 ```
 
 **Implementation**: `lib/kbs/blackboard/persistence/redis_store.rb`
@@ -280,14 +312,17 @@ Trading system with four specialized agents:
 engine = KBS::Blackboard::Engine.new(db_path: 'trading.db')
 
 kb = KBS.knowledge_base(engine: engine) do
+  kb = self  # actions assert through the knowledge base
+
   # Agent 1: Market Data Collector
   rule "collect_data", priority: 5 do
     on :market_open, status: true
+    on :watch, symbol: :sym?
     without :stock_data, symbol: :sym?
 
     perform do |facts, bindings|
       price = fetch_current_price(bindings[:sym?])
-      fact :stock_data,
+      kb.fact :stock_data,
         symbol: bindings[:sym?],
         price: price,
         timestamp: Time.now
@@ -301,7 +336,7 @@ kb = KBS.knowledge_base(engine: engine) do
 
     perform do |facts, bindings|
       if bindings[:price?] > bindings[:sma?]
-        fact :signal,
+        kb.fact :signal,
           symbol: bindings[:sym?],
           direction: "BUY",
           strength: (bindings[:price?] / bindings[:sma?]) - 1.0
@@ -316,11 +351,11 @@ kb = KBS.knowledge_base(engine: engine) do
 
     perform do |facts, bindings|
       if bindings[:pos?] > 1000 && bindings[:dir?] == "BUY"
-        fact :risk_alert,
+        kb.fact :risk_alert,
           symbol: bindings[:sym?],
           reason: "Position limit exceeded"
       else
-        fact :approved_signal,
+        kb.fact :approved_signal,
           symbol: bindings[:sym?],
           direction: bindings[:dir?]
       end
@@ -334,7 +369,7 @@ kb = KBS.knowledge_base(engine: engine) do
 
     perform do |facts, bindings|
       execute_trade(bindings[:sym?], bindings[:dir?])
-      fact :execution,
+      kb.fact :execution,
         symbol: bindings[:sym?],
         direction: bindings[:dir?],
         timestamp: Time.now
@@ -344,11 +379,16 @@ kb = KBS.knowledge_base(engine: engine) do
   # Trigger the system
   fact :market_open, status: true
   fact :portfolio, symbol: "AAPL", position: 500
+  fact :watch, symbol: "AAPL"
+  fact :sma_data, symbol: "AAPL", sma: 140.0
 
-  # Agents collaborate through blackboard
+  # Agents collaborate through blackboard: run keeps firing until
+  # no activations are left, so each agent's facts trigger the next
   run
 end
 ```
+
+`fetch_current_price` and `execute_trade` stand for your own code.
 
 ## Transactions
 
@@ -366,18 +406,18 @@ memory.transaction do
   })
 
   execution = memory.add_fact(:execution, {
-    order_id: order.id,
+    order_id: order.uuid,
     price: 150.50,
     timestamp: Time.now
   })
 
-  memory.update_fact(order.id, status: "filled")
+  order.update(status: "filled")  # merges into the order's attributes
 
-  # If any operation fails, entire transaction rolls back
+  # If any operation raises, the SQLite transaction rolls back
 end
 ```
 
-**Nested transactions** are supported via reference counting.
+**Nested transactions** are supported via a depth counter: only the outermost `transaction` opens a database transaction. The rollback covers the store only: observers (a RETE engine) were already told of the facts. `RedisStore#transaction` just runs the block; it does not roll back.
 
 ## Best Practices
 
@@ -389,7 +429,7 @@ Each agent should focus on one aspect of the problem:
 - ✅ Execution
 
 ### 2. Priority-Based Execution
-Use rule priorities to ensure correct agent ordering:
+When several agents' rules are on the agenda at once, the higher priority fires first:
 ```ruby
 data_collector:  priority: 5
 signal_generator: priority: 10
@@ -403,18 +443,16 @@ Include timestamps for temporal reasoning:
 engine.add_fact(:price, {
   symbol: "AAPL",
   value: 150,
-  timestamp: Time.now,
+  timestamp: Time.now,   # stored as JSON: read back from the store as a String
   source: "market_data_feed"
 })
 ```
 
-### 4. Message Acknowledgment
-Always acknowledge processed messages:
+### 4. Consume Messages
+`consume_message` marks a message consumed as it hands it out, so each message is processed by one consumer. Use `peek_messages` to look without consuming:
 ```ruby
-messages = queue.read("alerts", limit: 10)
-messages.each do |msg|
-  process_alert(msg[:data])
-  queue.acknowledge(msg[:id])  # Important!
+while (msg = memory.consume_message("alerts", "alert_agent"))
+  process_alert(msg[:content])
 end
 ```
 
@@ -423,7 +461,7 @@ Use audit log for debugging and compliance:
 ```ruby
 # When something goes wrong, trace back
 audit = memory.audit_log
-changes = audit.recent_changes(limit: 100)
+changes = audit.fact_history(limit: 100)
 changes.each do |change|
   puts "#{change[:timestamp]}: #{change[:action]} on #{change[:fact_type]}"
 end
@@ -441,6 +479,8 @@ end
 
 ### Batch Operations
 
+With SQLite, each `add_fact` outside a transaction commits on its own; one transaction around a batch commits once:
+
 ```ruby
 # Bad: Individual adds (slow)
 1000.times do |i|
@@ -457,22 +497,25 @@ end
 
 ### Index Strategy (SQLite)
 
-```sql
--- Add indexes for frequent queries
-CREATE INDEX idx_facts_type ON facts(fact_type);
-CREATE INDEX idx_facts_created ON facts(created_at);
-CREATE INDEX idx_messages_topic ON messages(topic, priority);
+The store already creates indexes on `facts(fact_type)`, `facts(session_id)`, `facts(retracted)`, the timestamp columns, `fact_history(fact_uuid)`, `rules_fired(session_id)` and `blackboard_messages(topic)` / `(consumed)`. Add your own for other frequent queries, through the store's database handle:
+
+```ruby
+db = engine.blackboard.store.db   # SQLite3::Database
+db.execute("CREATE INDEX IF NOT EXISTS idx_facts_created ON facts(created_at)")
 ```
 
 ### Redis Memory Management
 
+`RedisStore` has no TTL option. Retracted facts stay in Redis (marked `retracted`) until `vacuum` deletes those retracted more than 30 days ago (`RedisStore::RETENTION_SECONDS`):
+
 ```ruby
-# Set TTL for ephemeral facts
-store = KBS::Blackboard::Persistence::RedisStore.new(
-  url: 'redis://localhost:6379/0',
-  ttl: 3600  # Facts expire after 1 hour
-)
+store = KBS::Blackboard::Persistence::RedisStore.new(url: 'redis://localhost:6379/0')
+engine = KBS::Blackboard::Engine.new(store: store)
+# ...
+engine.blackboard.vacuum
 ```
+
+Audit lists are trimmed as they grow (10,000 entries overall, 1,000 per fact or rule).
 
 ## Advanced Patterns
 
@@ -503,8 +546,7 @@ kb = KBS.knowledge_base(engine: engine) do
   rule "analyze_recent" do
     on :stock_data,
       symbol: :sym?,
-      timestamp: :ts?,
-      predicate: lambda { |f| Time.now - f[:timestamp] < 300 }  # Last 5 minutes
+      timestamp: ->(ts) { Time.now - ts < 300 }  # Last 5 minutes
 
     perform do |facts, bindings|
       # Process recent data only
@@ -512,6 +554,8 @@ kb = KBS.knowledge_base(engine: engine) do
   end
 end
 ```
+
+The predicate runs when the fact is asserted, so it selects data that was recent *then*; a fact does not drop out of the match as it ages. Retract old facts (or `modify` them) to change what matches.
 
 ### Conflict Resolution
 

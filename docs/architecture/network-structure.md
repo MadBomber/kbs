@@ -48,27 +48,29 @@ alpha2 = get_or_create_alpha_memory(pattern2)
 
 Connect conditions through join nodes:
 
+Simplified from `Engine#build_network_for_rule` and `#add_condition_node`:
+
 ```ruby
 # Start with root beta memory (contains dummy token)
 current_beta = @root_beta_memory
 
-# For each condition
-rule.conditions.each do |condition|
-  alpha_memory = get_or_create_alpha_memory(condition.pattern)
+# Build join tests for variable consistency, one list per condition
+join_tests = JoinTestBuilder.new(rule.conditions).tests
 
-  # Build join tests for variable consistency
-  tests = extract_join_tests(condition)
+rule.conditions.each_with_index do |condition, index|
+  alpha_memory = get_or_create_alpha_memory(condition.pattern.merge(type: condition.type))
 
-  # Create join or negation node
-  if condition.negated
-    node = NegationNode.new(alpha_memory, current_beta, tests)
-  else
-    node = JoinNode.new(alpha_memory, current_beta, tests)
-  end
+  # Create join, negation or exists node
+  node_class = if condition.negated then NegationNode
+               elsif condition.exists then ExistsNode
+               else JoinNode
+               end
+  node = node_class.new(alpha_memory, current_beta, join_tests[index])
 
   # Create beta memory to store results
   new_beta = BetaMemory.new
   node.successors << new_beta
+  replay_tokens(current_beta, node)  # match tokens that already exist
   current_beta = new_beta
 end
 ```
@@ -76,10 +78,12 @@ end
 ### Step 4: Attach Production Node
 
 ```ruby
-production_node = ProductionNode.new(rule)
+production_node = ProductionNode.new(rule, @agenda, order: @rules.size)
 current_beta.successors << production_node
 @production_nodes[rule.name] = production_node
 ```
+
+The production node puts each complete match on the engine's `Agenda`; `engine.run` fires them.
 
 ## Node Types
 
@@ -90,10 +94,11 @@ current_beta.successors << production_node
 **Structure**:
 ```ruby
 class AlphaMemory
-  attr_accessor :items      # Facts that match pattern
-  attr_accessor :successors # Join nodes using this alpha
+  attr_reader :items        # Facts that match pattern (a copy; a Set inside)
+  attr_accessor :successors # Join/negation/exists nodes using this alpha
   attr_accessor :pattern    # Pattern to match
   attr_reader :linked       # Unlinking state
+  # index_on(fields) → MemoryIndex used by joins on shared variables
 end
 ```
 
@@ -111,9 +116,11 @@ AlphaMemory(stock, symbol: "AAPL")
 **Structure**:
 ```ruby
 class BetaMemory
-  attr_accessor :tokens     # Partial matches
+  attr_reader :tokens       # Partial matches (a copy; a Set inside)
   attr_accessor :successors # Next nodes in network
   attr_reader :linked       # Unlinking state
+  attr_accessor :listener   # Told of removed tokens (truth maintenance)
+  # index_on(specs) → MemoryIndex used by joins on shared variables
 end
 ```
 
@@ -134,12 +141,15 @@ BetaMemory
 **Structure**:
 ```ruby
 class JoinNode
-  attr_accessor :alpha_memory  # Right input
-  attr_accessor :beta_memory   # Left input
-  attr_accessor :tests         # Join tests to perform
+  attr_reader :alpha_memory    # Right input
+  attr_reader :beta_memory     # Left input
+  attr_reader :tests           # Join tests to perform
   attr_accessor :successors    # Beta memory nodes
+  # @tokens_by_fact: tokens built from each fact, for retraction
 end
 ```
+
+Equality tests between a token and a fact are used as hash-index keys on both memories (`KBS::JoinIndexing`), so a join on a shared variable looks up only matching entries; other tests are checked on those candidates.
 
 **Join Tests**:
 ```ruby
@@ -157,31 +167,48 @@ end
 
 **Structure**:
 ```ruby
-class NegationNode
-  attr_accessor :alpha_memory       # Pattern to check
-  attr_accessor :beta_memory        # Tokens to test
-  attr_accessor :tests              # Join tests
-  attr_accessor :tokens_with_matches # Track inhibiting facts
+class NegationNode < QuantifierNode
+  attr_reader :alpha_memory       # Pattern to check
+  attr_reader :beta_memory        # Tokens to test
+  attr_reader :tests              # Join tests
+  # @facts_matching:    token → Set of facts blocking it
+  # @tokens_matched_by: fact  → Set of tokens it blocks
 end
 ```
 
 **Behavior**:
-- Token arrives → check alpha memory for matches
+- Token arrives → link it to the matching facts in alpha memory
 - No matches found → propagate token (condition satisfied)
 - Matches found → block token (condition not satisfied)
-- Match removed → unblock token
+- Last blocking fact removed → unblock token (only the tokens linked to that fact are visited)
+
+### Exists Nodes
+
+**Purpose**: Implement `exists` conditions (match once while at least one fact fits)
+
+`ExistsNode < QuantifierNode` uses the same links as `NegationNode` with the test inverted: a token passes when it gains its first matching fact and is withdrawn when it loses its last. It adds no fact to the token and binds no variables for later conditions.
 
 ### Production Nodes
 
-**Purpose**: Fire rule actions when all conditions match
+**Purpose**: Queue rule actions when all conditions match
 
 **Structure**:
 ```ruby
 class ProductionNode
   attr_accessor :rule   # Rule to fire
-  attr_accessor :tokens # Complete matches ready to fire
+  attr_reader :tokens   # Complete matches, fired or not (a copy)
+  attr_reader :order    # Rule's position, for :definition ordering
+  # @activations: token → its Activation on the agenda
 end
 ```
+
+A complete match becomes an `Activation` on the engine's `Agenda`. If the match is retracted before it fires, the activation is cancelled.
+
+### Agenda
+
+**Purpose**: Hold pending activations in firing order
+
+`KBS::Agenda` is a binary heap ordered by rule priority, then by the conflict resolution strategy (`:definition`, `:depth` or `:breadth`). `engine.run(limit = nil)` pops and fires one activation at a time until the agenda is empty, so facts asserted by an action can fire other rules in the same run.
 
 ## Complete Example
 
@@ -291,6 +318,9 @@ engine.production_nodes.each do |name, node|
   puts "Rule: #{name}"
   puts "  Tokens: #{node.tokens.size}"
 end
+
+# See pending activations in firing order
+engine.agenda.to_a.each { |activation| puts activation }
 ```
 
 ### Visualizing Token Flow
@@ -299,7 +329,7 @@ Enable tracing in actions:
 
 ```ruby
 r.action = lambda do |facts, bindings|
-  puts "Rule '#{rule.name}' fired"
+  puts "Rule 'trading_signal' fired"
   puts "  Facts: #{facts.map(&:to_s).join(', ')}"
   puts "  Bindings: #{bindings.inspect}"
 end
@@ -313,6 +343,8 @@ end
 |-----------|-----------|-------|
 | Add rule | O(C × F) | C = conditions, F = facts |
 | Network sharing lookup | O(1) | Hash-based pattern cache |
+| Alpha memory selection | O(K + U) | K = constant-tested attributes looked up, U = memories of the type with no constant test |
+| Join candidate lookup | O(1) + matches | Hash index when the join has a shared `?variable`; otherwise a scan of the other memory |
 | Join test | O(T) | T = number of tests |
 | Token propagation | O(S) | S = successors |
 
@@ -320,7 +352,7 @@ end
 
 | Structure | Space | Notes |
 |-----------|-------|-------|
-| Alpha memories | O(P) | P = unique patterns across all rules |
+| Alpha memories | O(P) nodes | P = unique patterns across all rules (variable names count: `:p?` and `:price?` make different patterns) |
 | Beta memories | O(R × C) | R = rules, C = avg conditions |
 | Tokens | O(M × C) | M = complete matches |
 | Join nodes | O(R × C) | One per condition |
@@ -329,8 +361,8 @@ end
 
 1. **Maximize network sharing**: Design rules to reuse common patterns
 2. **Order conditions by selectivity**: Specific first, general last
-3. **Minimize negations**: Expensive to maintain
-4. **Use predicates sparingly**: Can't be shared across rules
+3. **Join on shared variables**: Negations and joins with a shared `?variable` use hash indexes; without one they scan the other memory
+4. **Use predicates sparingly**: Can't be shared across rules (each lambda is a different pattern), and a pattern with no constant test is checked for every fact of its type
 5. **Profile your rules**: Use debugging to identify bottlenecks
 
 ## Next Steps

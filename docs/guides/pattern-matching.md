@@ -7,8 +7,8 @@ Deep dive into KBS pattern matching semantics. Learn how the RETE algorithm matc
 Pattern matching determines whether a fact satisfies a condition. A match occurs when:
 
 1. **Type matches** - Fact type equals condition type
-2. **Attributes match** - All pattern constraints satisfied
-3. **Predicate passes** - Custom predicate (if present) returns truthy
+2. **Attributes match** - Every pattern value is satisfied: a literal must be equal, a `?variable` accepts any value, and a predicate (a lambda) must return truthy
+3. **Join tests pass** - A variable already bound by an earlier condition must have the same value
 
 ```ruby
 # Condition pattern
@@ -90,9 +90,9 @@ KBS::Condition.new(:sensor, { error: nil })
 
 # Matches
 { type: :sensor, error: nil }  # ✓
+{ type: :sensor }              # ✓ (a missing key reads as nil)
 
 # Does not match
-{ type: :sensor }  # ✗ (missing key != nil)
 { type: :sensor, error: false }  # ✗ (false != nil)
 ```
 
@@ -112,6 +112,8 @@ fact = { type: :sensor, temp: 28 }
 # After matching:
 bindings = { :t? => 28 }
 ```
+
+A variable accepts any value, so it also matches a fact that lacks the attribute; the variable is then bound to `nil`.
 
 ### Multiple Bindings
 
@@ -225,72 +227,65 @@ r.conditions = [
 
 ## Custom Predicates
 
-Predicates add complex matching beyond equality:
+Predicates add complex matching beyond equality. A predicate is a lambda given as the value of the attribute it tests; there is no separate `predicate:` option. The lambda is called with that attribute's value:
 
 ### Basic Predicate
 
 ```ruby
-KBS::Condition.new(:stock, { price: :price? },
-  predicate: lambda { |fact|
-    fact[:price] > 100
-  }
-)
+KBS::Condition.new(:stock, { price: ->(price) { price > 100 } })
 
 # Matches
 { type: :stock, price: 150 }  # ✓ (150 > 100)
 
 # Does not match
 { type: :stock, price: 50 }   # ✗ (50 <= 100)
+{ type: :stock }              # ✗ (a predicate is not called for a nil value)
 ```
 
-### Predicate Execution Order
+In the DSL, helpers such as `greater_than(100)`, `between(20, 30)` and `one_of(...)` build these lambdas for you.
+
+### Predicate Evaluation
+
+A fact is checked against each entry of the pattern:
 
 1. Type check
-2. Attribute equality checks
-3. Variable binding
-4. **Predicate evaluation** (last)
+2. Each attribute: literal equality, `?variable` (always passes), or predicate call
+3. Join tests on variables bound by earlier conditions (in the beta network)
 
 ```ruby
-KBS::Condition.new(:sensor, { id: "bedroom", temp: :temp? },
-  predicate: lambda { |fact|
-    fact[:temp].between?(20, 30)
-  }
-)
+KBS::Condition.new(:sensor, { id: "bedroom", temp: ->(t) { t.between?(20, 30) } })
 
-# Evaluation order:
+# Evaluation:
 # 1. type == :sensor? ✓
 # 2. id == "bedroom"? ✓
-# 3. temp exists? ✓ → bind :temp?
-# 4. predicate(fact)? ✓
+# 3. temp.between?(20, 30)? ✓
 # MATCH!
 ```
 
+A predicate sees one attribute value and runs when the fact is added (or modified), not again later.
+
 ### Predicate Limitations
 
-**Predicates disable network sharing:**
+**Predicates limit network sharing:**
 
 ```ruby
 # Rule 1
-KBS::Condition.new(:stock, {},
-  predicate: lambda { |f| f[:price] > 100 }
-)
+KBS::Condition.new(:stock, { price: ->(p) { p > 100 } })
 
 # Rule 2 (different predicate)
-KBS::Condition.new(:stock, {},
-  predicate: lambda { |f| f[:price] < 50 }
-)
+KBS::Condition.new(:stock, { price: ->(p) { p < 50 } })
 
 # These create SEPARATE alpha memories
 # Cannot share pattern matching computation
 ```
 
+Alpha memories are keyed by pattern, and two lambda objects are never equal, so even identical-looking predicates in two rules get two memories. Reuse the same lambda object to share one.
+
 **Use pattern matching when possible:**
 
 ```ruby
 # Bad: Predicate for simple equality
-KBS::Condition.new(:stock, {},
-  predicate: lambda { |f| f[:symbol] == "AAPL" }
-)
+KBS::Condition.new(:stock, { symbol: ->(s) { s == "AAPL" } })
 
 # Good: Pattern matching
 KBS::Condition.new(:stock, { symbol: "AAPL" })
@@ -333,11 +328,7 @@ end
 Or use predicates:
 
 ```ruby
-KBS::Condition.new(:event, {},
-  predicate: lambda { |f|
-    f[:type] == "a" || f[:type] == "b"
-  }
-)
+KBS::Condition.new(:event, { kind: ->(k) { k == "a" || k == "b" } })
 ```
 
 ### Negation (NOT)
@@ -361,77 +352,57 @@ See [Negation Guide](negation.md) for details.
 
 ```ruby
 # Temperature in range 20-30
-KBS::Condition.new(:sensor, { temp: :temp? },
-  predicate: lambda { |f|
-    f[:temp].between?(20, 30)
-  }
-)
+KBS::Condition.new(:sensor, { temp: ->(t) { t.between?(20, 30) } })
 ```
 
 ### String Matching
 
 ```ruby
 # Symbol starts with "TECH"
-KBS::Condition.new(:stock, { symbol: :sym? },
-  predicate: lambda { |f|
-    f[:symbol].start_with?("TECH")
-  }
-)
+KBS::Condition.new(:stock, { symbol: ->(sym) { sym.start_with?("TECH") } })
 
 # Regex match
-KBS::Condition.new(:log, { message: :msg? },
-  predicate: lambda { |f|
-    f[:message] =~ /ERROR|FATAL/
-  }
-)
+KBS::Condition.new(:log, { message: ->(msg) { msg =~ /ERROR|FATAL/ } })
 ```
 
 ### Collection Membership
 
 ```ruby
 # Status is one of pending, processing, approved
-KBS::Condition.new(:order, { status: :status? },
-  predicate: lambda { |f|
-    %w[pending processing approved].include?(f[:status])
-  }
-)
+KBS::Condition.new(:order, {
+  status: ->(status) { %w[pending processing approved].include?(status) }
+})
 ```
 
 ### Temporal Conditions
 
 ```ruby
 # Reading older than 5 minutes
-KBS::Condition.new(:sensor, { timestamp: :time? },
-  predicate: lambda { |f|
-    (Time.now - f[:timestamp]) > 300
-  }
-)
+KBS::Condition.new(:sensor, { timestamp: ->(time) { (Time.now - time) > 300 } })
 ```
+
+The predicate is evaluated when the fact is added. A reading that is fresh then does not start matching five minutes later; `modify` the fact or assert a clock fact to have it checked again.
 
 ### Computed Values
 
+A predicate sees only its own attribute, so a test that needs several attributes of the same fact works best on a value computed when the fact is added:
+
 ```ruby
 # Price changed more than 10%
-KBS::Condition.new(:stock, {
-  symbol: :sym?,
-  current_price: :curr?,
-  previous_price: :prev?
-}, predicate: lambda { |f|
-  change = ((f[:current_price] - f[:previous_price]).abs / f[:previous_price].to_f)
-  change > 0.10
-})
+change = (current_price - previous_price).abs / previous_price.to_f
+engine.add_fact(:stock, symbol: "AAPL", current_price: current_price,
+                        previous_price: previous_price, change: change)
+
+KBS::Condition.new(:stock, { symbol: :sym?, change: ->(c) { c > 0.10 } })
 ```
 
 ### Nested Attribute Access
 
 ```ruby
 # Access nested hash
-KBS::Condition.new(:event, { data: :data? },
-  predicate: lambda { |f|
-    f[:data].is_a?(Hash) &&
-    f[:data][:severity] == "critical"
-  }
-)
+KBS::Condition.new(:event, {
+  data: ->(data) { data.is_a?(Hash) && data[:severity] == "critical" }
+})
 ```
 
 ## Performance Implications
@@ -444,9 +415,10 @@ Facts are tested against patterns in alpha memory:
 # Pattern
 { type: :stock, symbol: "AAPL" }
 
-# 10,000 facts tested
-# Only matching facts stored in alpha memory
-# O(N) where N = total facts
+# Alpha memories are grouped by fact type, and a pattern with a
+# literal is filed under its first literal (symbol: "AAPL"), so a
+# new fact reaches it with one hash lookup on its own value.
+# Only matching facts are stored in alpha memory.
 ```
 
 ### Join Network
@@ -459,8 +431,9 @@ r.conditions = [
   KBS::Condition.new(:b, {})   # 200 matches
 ]
 
-# Worst case: 100 × 200 = 20,000 join tests
-# Actual: Usually much fewer (variable bindings reduce combinations)
+# No shared variables: 100 × 200 = 20,000 combinations
+# With a shared ?variable, join memories are hash-indexed on it,
+# so each token only meets the facts with the same value
 ```
 
 ### Optimization Strategies
@@ -489,10 +462,8 @@ r.conditions = [
 # Good: O(1) hash lookup
 KBS::Condition.new(:stock, { exchange: "NASDAQ" })
 
-# Bad: O(N) linear scan
-KBS::Condition.new(:stock, {},
-  predicate: lambda { |f| f[:exchange] == "NASDAQ" }
-)
+# Bad: predicate called for every :stock fact
+KBS::Condition.new(:stock, { exchange: ->(e) { e == "NASDAQ" } })
 ```
 
 **3. Minimize empty patterns:**
@@ -509,19 +480,13 @@ KBS::Condition.new(:log_entry, { level: "ERROR" })  # More selective
 
 ### Trace Matching
 
-```ruby
-class DebugCondition < KBS::Condition
-  def matches?(fact)
-    result = super
-    puts "#{pattern} vs #{fact.attributes}: #{result}"
-    result
-  end
-end
+`Fact#matches?` takes a pattern hash (the condition's pattern plus its `:type`) and tells you whether a fact fits:
 
-# Use for debugging
-r.conditions = [
-  DebugCondition.new(:sensor, { id: "bedroom" })
-]
+```ruby
+pattern = { type: :sensor, id: "bedroom" }
+
+engine.facts.map { |fact| [fact.attributes, fact.matches?(pattern)] }
+# => [[{id: "bedroom", temp: 28}, true], [{id: "kitchen", temp: 22}, false]]
 ```
 
 ### Inspect Alpha Memories
@@ -539,14 +504,12 @@ end
 ### Test Patterns in Isolation
 
 ```ruby
-condition = KBS::Condition.new(:sensor, { temp: :t? },
-  predicate: lambda { |f| f[:temp] > 30 }
-)
+condition = KBS::Condition.new(:sensor, { temp: ->(t) { t > 30 } })
 
 fact = KBS::Fact.new(:sensor, { temp: 35 })
 
 # Manually test
-condition.matches?(fact)  # => true
+fact.matches?(condition.pattern.merge(type: condition.type))  # => true
 ```
 
 ## Next Steps

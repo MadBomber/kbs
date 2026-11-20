@@ -6,6 +6,7 @@ Complete API reference for fact and condition classes in KBS.
 
 - [KBS::Fact](#kbsfact) - Transient in-memory fact
 - [KBS::Blackboard::Fact](#kbsblackboardfact) - Persistent fact with UUID
+- [KBS::WorkingMemory](#kbsworkingmemory) - The set of facts an engine holds
 - [KBS::Condition](#kbscondition) - Pattern matching condition
 - [Fact Patterns](#fact-patterns)
 - [Pattern Matching Semantics](#pattern-matching-semantics)
@@ -15,6 +16,8 @@ Complete API reference for fact and condition classes in KBS.
 ## KBS::Fact
 
 Transient in-memory fact used by the core RETE engine.
+
+Facts are usually created with `engine.add_fact(type, attributes)`, which builds the `KBS::Fact` and matches it against the rules. With `fact_duplication: false` the engine refuses an equal fact and returns the existing one; a fact asserted by a rule with `logical` conditions is retracted automatically when those conditions stop matching. See the [Engine API](engine.md).
 
 ### Constructor
 
@@ -91,16 +94,17 @@ puts fact.type  # => :temperature
 **Example**:
 ```ruby
 fact = KBS::Fact.new(:temperature, location: "server_room", value: 85)
-puts fact.attributes  # => {:location=>"server_room", :value=>85}
+puts fact.attributes  # => {location: "server_room", value: 85}
 ```
 
-**Important**: Direct modification bypasses change tracking:
+**Important**: Changing the hash, directly or with `[]=`, is not seen by the engine. The network keeps matching the values the fact had when it was added. To change a fact so rules see the change, use `engine.modify`:
 ```ruby
-# Don't do this (changes not tracked)
+# Not seen by the rules
 fact.attributes[:value] = 90
-
-# Instead use []= accessor
 fact[:value] = 90
+
+# Retracts and re-matches the fact with its new values
+engine.modify(fact, value: 90)
 ```
 
 ---
@@ -144,10 +148,10 @@ fact = KBS::Fact.new(:temperature, value: 85)
 fact[:value] = 90
 fact[:timestamp] = Time.now
 
-puts fact.attributes  # => {:value=>90, :timestamp=>2025-01-15 10:30:00}
+puts fact.attributes  # => {value: 90, timestamp: 2025-01-15 10:30:00 -0600}
 ```
 
-**Important for KBS::Fact**: Changes are NOT persisted and do NOT trigger re-evaluation. For tracked updates, use `KBS::Blackboard::Fact`.
+**Important for KBS::Fact**: Changes are NOT persisted and do NOT trigger re-evaluation. To have rules see the new values, use `engine.modify(fact, changes)`.
 
 ---
 
@@ -263,6 +267,7 @@ Persistent fact with UUID, used by blackboard memory.
 
 **Key Differences from KBS::Fact**:
 - Has UUID instead of object ID
+- Equality (`==`, `eql?`, `hash`) is by UUID: two `Blackboard::Fact` objects with the same UUID are equal
 - `[]=` and `update()` trigger persistence and audit logging
 - `retract()` method to remove from blackboard
 - Reference to blackboard memory for update tracking
@@ -354,7 +359,7 @@ puts fact.type  # => :temperature
 **Example**:
 ```ruby
 fact = engine.add_fact(:temperature, location: "server_room", value: 85)
-puts fact.attributes  # => {:location=>"server_room", :value=>85}
+puts fact.attributes  # => {location: "server_room", value: 85}
 ```
 
 **Important**: Direct modification bypasses persistence:
@@ -362,10 +367,13 @@ puts fact.attributes  # => {:location=>"server_room", :value=>85}
 # Don't do this (not persisted)
 fact.attributes[:value] = 90
 
-# Instead use []= or update()
+# Persisted, but rules do not see the change
 fact[:value] = 90
 # or
 fact.update(value: 90)
+
+# Persisted and re-matched against the rules
+engine.modify(fact, value: 90)
 ```
 
 ---
@@ -405,8 +413,8 @@ Sets an attribute value with persistence.
 - Updates fact's attributes hash
 - Calls `blackboard.update_fact(self, @attributes)` if blackboard present
 - Persists change to store
-- Logs to audit trail
-- Notifies observers
+- Logs an `UPDATE` to the audit trail
+- Does NOT notify observers
 
 **Example**:
 ```ruby
@@ -415,15 +423,13 @@ fact[:value] = 90  # Immediately persisted
 
 # After restart
 engine2 = KBS::Blackboard::Engine.new(db_path: 'kb.db')
-reloaded = engine2.blackboard.get_facts_by_type(:temperature).first
+reloaded = engine2.blackboard.get_facts(:temperature).first
 puts reloaded[:value]  # => 90
 ```
 
-**Important**: Updates do NOT trigger rule re-evaluation. To trigger rules, retract and re-add:
+**Important**: Updates do NOT trigger rule re-evaluation. To trigger rules, use `engine.modify`, which keeps the fact's UUID, logs an `UPDATE`, and matches the fact again:
 ```ruby
-old_fact = fact
-fact.retract
-new_fact = engine.add_fact(:temperature, value: 90)
+engine.modify(fact, value: 90)
 engine.run
 ```
 
@@ -436,13 +442,13 @@ Bulk update multiple attributes with persistence.
 **Parameters**:
 - `new_attributes` (Hash) - Hash of attributes to merge
 
-**Returns**: `nil`
+**Returns**: No meaningful value (`nil` when the fact has no blackboard)
 
 **Side Effects**:
 - Merges `new_attributes` into `@attributes`
 - Persists changes
-- Logs to audit trail
-- Notifies observers
+- Logs an `UPDATE` to the audit trail
+- Does NOT notify observers or re-match the fact (use `engine.modify` for that)
 
 **Example**:
 ```ruby
@@ -451,7 +457,7 @@ fact = engine.add_fact(:temperature, location: "server_room", value: 85)
 fact.update(value: 90, timestamp: Time.now)
 
 puts fact.attributes
-# => {:location=>"server_room", :value=>90, :timestamp=>2025-01-15 10:30:00}
+# => {location: "server_room", value: 90, timestamp: 2025-01-15 10:30:00 -0600}
 ```
 
 **Difference from `[]=`**: Updates multiple attributes in single persistence operation (more efficient).
@@ -464,14 +470,13 @@ Removes this fact from the blackboard.
 
 **Parameters**: None
 
-**Returns**: `nil`
+**Returns**: No meaningful value
 
 **Side Effects**:
 - Calls `blackboard.remove_fact(self)` if blackboard present
 - Marks fact as inactive in store
-- Logs retraction to audit trail
-- Deactivates in alpha memories
-- Notifies observers
+- Logs a `REMOVE` to the audit trail
+- Notifies observers, so an engine removes the fact from its alpha memories
 
 **Example**:
 ```ruby
@@ -486,9 +491,9 @@ engine.remove_fact(fact)
 ```ruby
 rule "auto_expire_old_alerts" do
   on :alert, timestamp: ->(ts) { Time.now - ts > 3600 }
-  perform do |facts, bindings|
+  perform do |facts|
     # Fact can remove itself
-    alert_fact = bindings[:matched_fact?]
+    alert_fact = facts[0]
     alert_fact.retract
   end
 end
@@ -530,7 +535,7 @@ Returns string representation with UUID prefix.
 ```ruby
 fact = engine.add_fact(:temperature, location: "server_room", value: 85)
 puts fact.to_s
-# => "temperature(550e8400...: location=server_room, value=85)"
+# => temperature(550e8400...: location=server_room, value=85)
 ```
 
 **Note**: Only first 8 characters of UUID shown for brevity.
@@ -551,11 +556,7 @@ fact = engine.add_fact(:temperature, location: "server_room", value: 85)
 hash = fact.to_h
 
 puts hash
-# => {
-#   :uuid => "550e8400-e29b-41d4-a716-446655440000",
-#   :type => :temperature,
-#   :attributes => {:location=>"server_room", :value=>85}
-# }
+# => {uuid: "550e8400-e29b-41d4-a716-446655440000", type: :temperature, attributes: {location: "server_room", value: 85}}
 ```
 
 **Use Cases**:
@@ -565,13 +566,45 @@ puts hash
 
 ---
 
+## KBS::WorkingMemory
+
+The set of facts a `KBS::Engine` holds, available as `engine.working_memory`. It tells its observers (the engine among them) of each fact added or removed. Add and remove facts through the engine (`add_fact`, `remove_fact`, `modify`), not directly, so duplicate checks and truth maintenance apply.
+
+`KBS::Blackboard::Engine` uses a [`KBS::Blackboard::Memory`](blackboard.md#kbsblackboardmemory) in its place.
+
+### Public Methods
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `facts` | `Array<KBS::Fact>` | The facts in the order they were added. A copy: changing it does not change working memory |
+| `each_fact(&block)` | | Yields each fact |
+| `size` | `Integer` | Number of facts |
+| `include?(fact)` | `Boolean` | Whether `fact` is in working memory |
+| `add_fact(fact)` | the fact | Adds a `KBS::Fact` object and notifies observers with `:add` |
+| `remove_fact(fact)` | the fact | Removes it and notifies observers with `:remove` |
+| `clear` | | Forgets every fact without notifying observers (used by `engine.reset`) |
+| `add_observer(observer)` | | Registers an object that responds to `update(action, fact)` |
+| `notify_observers(action, fact)` | | Calls `update(action, fact)` on each observer |
+
+**Example**:
+```ruby
+engine = KBS::Engine.new
+reading = engine.add_fact(:temperature, value: 85)
+
+engine.working_memory.size              # => 1
+engine.working_memory.include?(reading) # => true
+engine.working_memory.facts             # => [reading]
+```
+
+---
+
 ## KBS::Condition
 
 Pattern matching condition used in rule definitions.
 
 ### Constructor
 
-#### `initialize(type, pattern = {}, negated: false)`
+#### `initialize(type, pattern = {}, negated: false, exists: false, logical: false)`
 
 Creates a condition that matches facts.
 
@@ -579,8 +612,18 @@ Creates a condition that matches facts.
 - `type` (Symbol) - Fact type to match
 - `pattern` (Hash, optional) - Attribute constraints (default: `{}`)
 - `negated` (Boolean, optional) - If `true`, condition matches when pattern is absent (default: `false`)
+- `exists` (Boolean, optional) - If `true`, condition matches once when at least one fact fits the pattern, instead of once per fact (default: `false`)
+- `logical` (Boolean, optional) - If `true`, facts the rule's action asserts are retracted when this condition stops matching; logical conditions must come first in a rule (default: `false`)
 
 **Returns**: `KBS::Condition` instance
+
+**Raises**: `ArgumentError` if both `negated` and `exists` are `true`
+
+**Important**: Pass the pattern as a braced Hash. Bare `key: value` arguments are taken as keyword arguments and raise `ArgumentError` (`unknown keyword: :location`):
+```ruby
+KBS::Condition.new(:temperature, { location: "server_room" })  # OK
+KBS::Condition.new(:temperature, location: "server_room")      # ArgumentError
+```
 
 **Example - Positive Condition**:
 ```ruby
@@ -588,10 +631,10 @@ Creates a condition that matches facts.
 condition = KBS::Condition.new(:temperature)
 
 # Match temperature facts with location="server_room"
-condition = KBS::Condition.new(:temperature, location: "server_room")
+condition = KBS::Condition.new(:temperature, { location: "server_room" })
 
 # Match temperature facts with value > 80
-condition = KBS::Condition.new(:temperature, value: ->(v) { v > 80 })
+condition = KBS::Condition.new(:temperature, { value: ->(v) { v > 80 } })
 ```
 
 **Example - Negated Condition**:
@@ -606,14 +649,13 @@ condition = KBS::Condition.new(:alert, { level: "critical" }, negated: true)
 **Example - Variable Binding**:
 ```ruby
 # Capture temperature value in :temp? variable
-condition = KBS::Condition.new(:temperature, value: :temp?)
+condition = KBS::Condition.new(:temperature, { value: :temp? })
 
 # Capture location and value
-condition = KBS::Condition.new(
-  :temperature,
+condition = KBS::Condition.new(:temperature, {
   location: :loc?,
   value: :temp?
-)
+})
 ```
 
 ---
@@ -630,7 +672,7 @@ condition = KBS::Condition.new(
 
 **Example**:
 ```ruby
-condition = KBS::Condition.new(:temperature, value: :temp?)
+condition = KBS::Condition.new(:temperature, { value: :temp? })
 puts condition.type  # => :temperature
 ```
 
@@ -646,8 +688,8 @@ puts condition.type  # => :temperature
 
 **Example**:
 ```ruby
-condition = KBS::Condition.new(:temperature, location: "server_room", value: :temp?)
-puts condition.pattern  # => {:location=>"server_room", :value=>:temp?}
+condition = KBS::Condition.new(:temperature, { location: "server_room", value: :temp? })
+puts condition.pattern  # => {location: "server_room", value: :temp?}
 ```
 
 ---
@@ -662,7 +704,7 @@ puts condition.pattern  # => {:location=>"server_room", :value=>:temp?}
 
 **Example**:
 ```ruby
-pos_condition = KBS::Condition.new(:temperature, value: :temp?)
+pos_condition = KBS::Condition.new(:temperature, { value: :temp? })
 puts pos_condition.negated  # => false
 
 neg_condition = KBS::Condition.new(:alert, {}, negated: true)
@@ -677,18 +719,17 @@ puts neg_condition.negated  # => true
 
 **Read-only**: Yes (via `attr_reader`)
 
-**Description**: Map of variable names to attribute keys (e.g., `{:temp? => :value}`)
+**Description**: Map of variable names to attribute keys (e.g., `{temp?: :value}`)
 
 **Example**:
 ```ruby
-condition = KBS::Condition.new(
-  :temperature,
+condition = KBS::Condition.new(:temperature, {
   location: :loc?,
   value: :temp?
-)
+})
 
 puts condition.variable_bindings
-# => {:loc?=>:location, :temp?=>:value}
+# => {loc?: :location, temp?: :value}
 ```
 
 **Use Case**: RETE engine uses this to extract bindings when condition matches:
@@ -700,7 +741,54 @@ condition.variable_bindings.each do |var, attr|
   bindings[var] = fact[attr]
 end
 
-puts bindings  # => {:loc?=>"server_room", :temp?=>85}
+puts bindings  # => {loc?: "server_room", temp?: 85}
+```
+
+---
+
+#### `exists`, `logical`
+
+**Type**: `Boolean`
+
+**Read-only**: Yes (via `attr_reader`)
+
+**Description**: Whether this is an existential condition, and whether it is a logical condition (see the constructor)
+
+---
+
+### Public Methods
+
+#### `bindings_from(fact)`
+
+Returns the value each of this condition's variables takes from `fact`. Does the same as the loop above.
+
+**Returns**: `Hash` of variable to value
+
+```ruby
+condition.bindings_from(fact)  # => {loc?: "server_room", temp?: 85}
+```
+
+---
+
+#### `binds_fact?`
+
+Returns `true` when the condition adds a fact to the rule's match (a plain condition), `false` for negated and exists conditions.
+
+---
+
+#### `keyword`
+
+Returns the DSL keyword that writes this condition: `"without"` (negated), `"exists"`, or `"on"`.
+
+---
+
+#### `summary`
+
+Returns a one-line description of the condition, marked `NOT` or `EXISTS`.
+
+```ruby
+KBS::Condition.new(:alert, { level: "critical" }, negated: true).summary
+# => "NOT alert(level: \"critical\")"
 ```
 
 ---
@@ -739,11 +827,10 @@ condition = KBS::Condition.new(:temperature)
 Matches facts with exact attribute values.
 
 ```ruby
-condition = KBS::Condition.new(
-  :temperature,
+condition = KBS::Condition.new(:temperature, {
   location: "server_room",
   sensor_id: 42
-)
+})
 
 # Matches:
 KBS::Fact.new(:temperature, location: "server_room", sensor_id: 42, value: 85)
@@ -758,11 +845,10 @@ KBS::Fact.new(:temperature, location: "server_room", sensor_id: 99)
 Matches facts where attribute satisfies lambda.
 
 ```ruby
-condition = KBS::Condition.new(
-  :temperature,
+condition = KBS::Condition.new(:temperature, {
   value: ->(v) { v > 80 && v < 100 },
   location: ->(l) { l.start_with?("server") }
-)
+})
 
 # Matches:
 KBS::Fact.new(:temperature, location: "server_room", value: 85)
@@ -784,11 +870,10 @@ fact.matches?(type: :temperature, value: ->(v) { v > 0 })  # => false (no :value
 Variables (symbols ending with `?`) capture attribute values for use in join tests and action blocks.
 
 ```ruby
-condition = KBS::Condition.new(
-  :temperature,
+condition = KBS::Condition.new(:temperature, {
   location: :loc?,
   value: :temp?
-)
+})
 
 # Matches ANY temperature fact, binding :loc? and :temp?
 fact = KBS::Fact.new(:temperature, location: "server_room", value: 85)
@@ -800,12 +885,11 @@ fact = KBS::Fact.new(:temperature, location: "server_room", value: 85)
 Combine literals, predicates, and variables.
 
 ```ruby
-condition = KBS::Condition.new(
-  :temperature,
+condition = KBS::Condition.new(:temperature, {
   location: "server_room",      # Literal
   value: :temp?,                # Variable
   timestamp: ->(ts) { ts > cutoff_time }  # Predicate
-)
+})
 
 # Only matches temperature facts from server_room with recent timestamp
 # Captures value in :temp? variable
@@ -822,7 +906,7 @@ For `fact.matches?(pattern)`:
 1. **Type Check**: If `pattern[:type]` present, must equal `fact.type`
 2. **Attribute Checks**: For each `key, value` in pattern (except `:type`):
    - **Variable** (`value.is_a?(Symbol) && value.to_s.end_with?('?')`): Always matches (captures `fact[key]`)
-   - **Predicate** (`value.is_a?(Proc)`): Must satisfy `value.call(fact[key])`. **Fails if `fact[key]` is nil.**
+   - **Predicate** (`value.is_a?(Proc)`): Must satisfy `value.call(fact[key])`. **Fails, without calling the lambda, if `fact[key]` is nil or false.**
    - **Literal**: Must equal `fact[key]`
 3. **Result**: `true` if all checks pass, `false` otherwise
 
@@ -860,15 +944,14 @@ fact.matches?(type: :temperature, location: :loc?)  # => true (binds :loc? => ni
 Variables are extracted during condition construction:
 
 ```ruby
-condition = KBS::Condition.new(
-  :order,
+condition = KBS::Condition.new(:order, {
   symbol: :sym?,
   quantity: :qty?,
   price: :price?
-)
+})
 
 puts condition.variable_bindings
-# => {:sym?=>:symbol, :qty?=>:quantity, :price?=>:price}
+# => {sym?: :symbol, qty?: :quantity, price?: :price}
 ```
 
 When a fact matches, bindings are populated:
@@ -882,7 +965,7 @@ condition.variable_bindings.each do |var, attr|
 end
 
 puts bindings
-# => {:sym?=>"AAPL", :qty?=>100, :price?=>150.25}
+# => {sym?: "AAPL", qty?: 100, price?: 150.25}
 ```
 
 ### Predicate Constraints
@@ -901,7 +984,7 @@ fact.matches?(type: :temperature, value: ->(v) { v > 0 })  # => false
 ```ruby
 # This predicate runs every time a fact is checked
 expensive_check = ->(v) { complex_calculation(v) }
-condition = KBS::Condition.new(:temperature, value: expensive_check)
+condition = KBS::Condition.new(:temperature, { value: expensive_check })
 
 # For 1000 temperature facts, expensive_check runs 1000 times
 ```
@@ -910,26 +993,24 @@ condition = KBS::Condition.new(:temperature, value: expensive_check)
 ```ruby
 # Bad - side effects
 counter = 0
-condition = KBS::Condition.new(:temperature, value: ->(v) { counter += 1; v > 80 })
+condition = KBS::Condition.new(:temperature, { value: ->(v) { counter += 1; v > 80 } })
 
 # Good - pure predicate
-condition = KBS::Condition.new(:temperature, value: ->(v) { v > 80 })
+condition = KBS::Condition.new(:temperature, { value: ->(v) { v > 80 } })
 ```
 
 **4. Predicates Can't Access Other Attributes**:
 ```ruby
 # This doesn't work - predicate only receives attribute value
-condition = KBS::Condition.new(
-  :temperature,
+condition = KBS::Condition.new(:temperature, {
   value: ->(v) { v > @threshold }  # @threshold from where?
-)
+})
 
 # Use closures to capture context
 threshold = 80
-condition = KBS::Condition.new(
-  :temperature,
+condition = KBS::Condition.new(:temperature, {
   value: ->(v) { v > threshold }  # Closure captures threshold
-)
+})
 ```
 
 ### Negation Semantics
@@ -939,7 +1020,7 @@ Negated conditions match when NO fact satisfies the pattern:
 ```ruby
 # Rule fires when there's NO critical alert
 rule "all_clear" do
-  negated :alert, level: "critical"  # negated: true
+  without :alert, level: "critical"  # negated: true
   perform { puts "All systems normal" }
 end
 ```
@@ -948,7 +1029,7 @@ end
 
 ```ruby
 # Matches when NO alert with level="critical" exists
-negated :alert, level: "critical"
+without :alert, level: "critical"
 
 # NOT equivalent to: Match when alert with level != "critical" exists
 # To match non-critical alerts, use predicate:
@@ -965,38 +1046,33 @@ See [Negation Guide](../guides/negation.md) for detailed semantics.
 
 ```ruby
 # Between 70 and 90
-condition = KBS::Condition.new(
-  :temperature,
+condition = KBS::Condition.new(:temperature, {
   value: ->(v) { v >= 70 && v <= 90 }
-)
+})
 
 # Outside range
-condition = KBS::Condition.new(
-  :temperature,
+condition = KBS::Condition.new(:temperature, {
   value: ->(v) { v < 70 || v > 90 }
-)
+})
 ```
 
 ### 2. String Matching
 
 ```ruby
 # Starts with
-condition = KBS::Condition.new(
-  :sensor,
+condition = KBS::Condition.new(:sensor, {
   name: ->(n) { n.start_with?("temp_") }
-)
+})
 
 # Regex match
-condition = KBS::Condition.new(
-  :sensor,
+condition = KBS::Condition.new(:sensor, {
   name: ->(n) { n =~ /^sensor_\d+$/ }
-)
+})
 
 # Contains substring
-condition = KBS::Condition.new(
-  :log_entry,
+condition = KBS::Condition.new(:log_entry, {
   message: ->(m) { m.include?("ERROR") }
-)
+})
 ```
 
 ### 3. Collection Membership
@@ -1004,17 +1080,15 @@ condition = KBS::Condition.new(
 ```ruby
 # One of several values
 valid_statuses = ["pending", "processing", "completed"]
-condition = KBS::Condition.new(
-  :order,
+condition = KBS::Condition.new(:order, {
   status: ->(s) { valid_statuses.include?(s) }
-)
+})
 
 # Not in collection
 invalid_statuses = ["cancelled", "failed"]
-condition = KBS::Condition.new(
-  :order,
+condition = KBS::Condition.new(:order, {
   status: ->(s) { !invalid_statuses.include?(s) }
-)
+})
 ```
 
 ### 4. Timestamp Checks
@@ -1022,17 +1096,15 @@ condition = KBS::Condition.new(
 ```ruby
 # Recent facts (last hour)
 cutoff = Time.now - 3600
-condition = KBS::Condition.new(
-  :temperature,
+condition = KBS::Condition.new(:temperature, {
   timestamp: ->(ts) { ts > cutoff }
-)
+})
 
 # Old facts (older than 1 day)
 cutoff = Time.now - 86400
-condition = KBS::Condition.new(
-  :temperature,
+condition = KBS::Condition.new(:temperature, {
   timestamp: ->(ts) { ts < cutoff }
-)
+})
 ```
 
 ### 5. Cross-Attribute Constraints (Using Multiple Conditions)
@@ -1062,17 +1134,16 @@ Variables capture `nil`, predicates fail on `nil`:
 
 ```ruby
 # Match facts with ANY value for :location (including nil)
-condition = KBS::Condition.new(:temperature, location: :loc?)
-# Matches fact.new(:temperature, location: nil)  → binds :loc? => nil
-# Matches fact.new(:temperature)  → binds :loc? => nil
+condition = KBS::Condition.new(:temperature, { location: :loc? })
+# Matches KBS::Fact.new(:temperature, location: nil)  → binds :loc? => nil
+# Matches KBS::Fact.new(:temperature)  → binds :loc? => nil
 
 # Match facts with NON-NIL :location
-condition = KBS::Condition.new(
-  :temperature,
+condition = KBS::Condition.new(:temperature, {
   location: ->(l) { !l.nil? }
-)
-# Fails fact.new(:temperature, location: nil)
-# Fails fact.new(:temperature)  (no :location attribute)
+})
+# Fails KBS::Fact.new(:temperature, location: nil)
+# Fails KBS::Fact.new(:temperature)  (no :location attribute)
 ```
 
 ---
@@ -1083,30 +1154,27 @@ condition = KBS::Condition.new(
 
 ```ruby
 # Good - Most selective predicate first
-condition = KBS::Condition.new(
-  :temperature,
+condition = KBS::Condition.new(:temperature, {
   sensor_id: 42,              # Likely filters to 1 fact
   value: ->(v) { v > 80 }     # Then check value
-)
+})
 
 # Less optimal - Expensive check first
-condition = KBS::Condition.new(
-  :temperature,
+condition = KBS::Condition.new(:temperature, {
   value: ->(v) { expensive_calculation(v) },  # Runs on many facts
   sensor_id: 42               # Could have filtered first
-)
+})
 ```
 
-**Note**: Within a single condition, Ruby evaluates hash in insertion order (Ruby 1.9+), but RETE evaluates all constraints anyway. The real optimization is condition ordering in rules.
+**Note**: `matches?` checks constraints in the pattern's insertion order and stops at the first one that fails. In an engine, the alpha network also files each pattern under its first literal (constant) attribute, so a fact reaches the pattern's predicates only when that literal already matches, wherever the literal appears in the hash. Both conditions above therefore run the predicate only on facts with `sensor_id: 42`. The bigger optimization is condition ordering in rules.
 
 ### 2. Avoid Expensive Predicates
 
 ```ruby
 # Bad - Complex regex on every fact
-condition = KBS::Condition.new(
-  :log_entry,
+condition = KBS::Condition.new(:log_entry, {
   message: ->(m) { m =~ /very.*complex.*regex.*pattern/ }
-)
+})
 
 # Better - Simple check first, complex check in action
 rule "complex_log_analysis" do
@@ -1125,10 +1193,10 @@ Literals are fastest (hash equality check). Predicates are slower (lambda call).
 
 ```ruby
 # Fast
-condition = KBS::Condition.new(:temperature, location: "server_room")
+condition = KBS::Condition.new(:temperature, { location: "server_room" })
 
 # Slower (but necessary for ranges/complex checks)
-condition = KBS::Condition.new(:temperature, value: ->(v) { v > 80 })
+condition = KBS::Condition.new(:temperature, { value: ->(v) { v > 80 } })
 ```
 
 ---
@@ -1183,18 +1251,17 @@ end
 ```ruby
 class TestVariableExtraction < Minitest::Test
   def test_variable_bindings
-    condition = KBS::Condition.new(
-      :temperature,
+    condition = KBS::Condition.new(:temperature, {
       location: :loc?,
       value: :temp?
-    )
+    })
 
     expected = { :loc? => :location, :temp? => :value }
     assert_equal expected, condition.variable_bindings
   end
 
   def test_no_variables
-    condition = KBS::Condition.new(:temperature, location: "server_room")
+    condition = KBS::Condition.new(:temperature, { location: "server_room" })
 
     assert_empty condition.variable_bindings
   end

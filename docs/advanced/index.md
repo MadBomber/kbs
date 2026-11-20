@@ -1,6 +1,6 @@
 # Advanced Topics
 
- techniques and optimizations.
+Advanced techniques and optimizations.
 
 - **[Performance Tuning](performance.md)** - Optimize for production
 - **[Custom Persistence](custom-persistence.md)** - Build your own backend

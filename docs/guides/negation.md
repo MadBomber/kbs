@@ -73,10 +73,10 @@ r.conditions = [
 
 ```
 1. Token arrives with bindings { :id? => "bedroom" }
-2. Check alpha memory for :alert facts
-3. Filter for matches where sensor_id == "bedroom"
-4. If count == 0: propagate token (condition satisfied)
-5. If count > 0: block token (condition not satisfied)
+2. Look up :alert facts with sensor_id == "bedroom" (a hash lookup on the shared variable)
+3. Link the token to each matching fact (its blockers)
+4. If there are none: propagate token (condition satisfied)
+5. If there are some: block token; it propagates when its last blocker is retracted
 ```
 
 ## Use Cases
@@ -143,9 +143,7 @@ KBS::Rule.new("timeout_alert") do |r|
   r.conditions = [
     KBS::Condition.new(:request, {
       id: :req_id?,
-      created_at: :created?
-    }, predicate: lambda { |f|
-      (Time.now - f[:created_at]) > 300  # 5 minutes
+      created_at: ->(created) { (Time.now - created) > 300 }  # 5 minutes
     }),
 
     KBS::Condition.new(:response, { request_id: :req_id? }, negated: true)
@@ -156,6 +154,8 @@ KBS::Rule.new("timeout_alert") do |r|
   end
 end
 ```
+
+The `created_at` predicate is checked when the request is added, not as time passes, so a request has to be added (or modified) after it is already five minutes old to match.
 
 ### 5. Mutual Exclusion
 
@@ -212,7 +212,7 @@ end
 
 ### Negation is Expensive
 
-**Reason**: Must check alpha memory on every token arrival.
+**Reason**: Must find the matching facts on every token arrival: a hash lookup when the negation shares a variable with an earlier condition, a scan of its alpha memory when it does not.
 
 ```ruby
 # Expensive: Large alpha memory to search
@@ -227,24 +227,23 @@ KBS::Condition.new(:error_log, { severity: "critical" }, negated: true)
 ### Negation Node Overhead
 
 ```ruby
-class NegationNode
+class NegationNode < QuantifierNode
   def left_activate(token)
-    # For EVERY token:
-    matching_facts = @alpha_memory.items.select { |fact|
-      perform_join_tests(token, fact)
-    }
+    # For EVERY token: find the facts that block it (hash index on
+    # shared variables, then any remaining tests) and link them
+    matching_facts(token).each { |fact| link(token, fact) }
 
-    if matching_facts.empty?
-      propagate(token)  # No matches = condition satisfied
-    else
-      block(token)      # Matches exist = condition not satisfied
-      track_inhibitors(token, matching_facts)
-    end
+    emit(token) unless matched?(token)  # No blockers = condition satisfied
+  end
+
+  def right_deactivate(fact)
+    # Follow the fact's links to the tokens it blocked; a token whose
+    # last blocker is gone is passed on. No memory is searched.
   end
 end
 ```
 
-**Cost**: O(A × T) where A = alpha memory size, T = join test cost
+**Cost**: one lookup (or one alpha memory scan without a shared variable) per token; retracting a blocker only visits the tokens it blocked
 
 ### Optimization Strategies
 
@@ -317,6 +316,8 @@ r.conditions = [
 
 ### 2. Infinite Loops
 
+An activation fires once, so a rule whose action changes nothing fires once per match and stops. It loops when the action changes a fact the rule matches, because the changed fact is a new match:
+
 ```ruby
 # Bad: Rule fires forever
 KBS::Rule.new("infinite_loop") do |r|
@@ -326,8 +327,8 @@ KBS::Rule.new("infinite_loop") do |r|
   ]
 
   r.action = lambda do |facts, bindings|
-    # Never adds :done fact!
-    do_something()
+    # Modifying :start re-matches it; :done is never added!
+    engine.modify(facts[0], count: facts[0][:count] + 1)
   end
 end
 
@@ -348,7 +349,8 @@ end
 ### 3. Negation of Missing Attributes
 
 ```ruby
-# Doesn't work as expected
+# Doesn't work as expected: a missing key reads as nil, so any
+# :sensor without an :error attribute blocks the rule
 KBS::Condition.new(:sensor, { error: nil }, negated: true)
 
 # Better: Check for absence of error fact
@@ -431,28 +433,34 @@ end
 
 ### Trace Negation Checks
 
+The engine builds its own `KBS::NegationNode`s, so trace them by prepending a module:
+
 ```ruby
-class DebugNegationNode < KBS::NegationNode
+require 'debug_me'
+
+module TraceNegation
+  include DebugMe
+
   def left_activate(token)
-    matches = @alpha_memory.items.select { |f| perform_join_tests(token, f) }
-    puts "Negation check:"
-    puts "  Pattern: #{@alpha_memory.pattern}"
-    puts "  Token: #{token.inspect}"
-    puts "  Matching facts: #{matches.size}"
-    puts "  Result: #{matches.empty? ? 'PASS' : 'BLOCK'}"
     super
+    debug_me { ['@alpha_memory.pattern', 'facts_matching(token).size', 'matched?(token) ? "BLOCK" : "PASS"'] }
   end
 end
+
+KBS::NegationNode.prepend(TraceNegation)
 ```
 
 ### Count Inhibitors
 
 ```ruby
-# Check how many facts are blocking tokens
-engine.production_nodes.each do |name, node|
-  # Find negation nodes in network
-  # Count tokens blocked by each
+# Check how many facts are blocking tokens, per negated pattern
+negations = engine.alpha_memories.each_value.flat_map(&:successors).grep(KBS::NegationNode).uniq
+
+negations.to_h do |node|
+  blockers = node.alpha_memory.items.count { |fact| node.tokens_matched_by(fact).any? }
+  [node.alpha_memory.pattern, blockers]
 end
+# => {{sensor_id: :id?, type: :alert} => 1}
 ```
 
 ### Validate Negation Logic
@@ -521,8 +529,8 @@ KBS::Rule.new("detect_timeout") do |r|
   r.conditions = [
     KBS::Condition.new(:request, {
       id: :id?,
-      created_at: :time?
-    }, predicate: lambda { |f| (Time.now - f[:created_at]) > 300 })
+      created_at: ->(time) { (Time.now - time) > 300 }
+    })
   ]
 
   r.action = lambda do |facts, bindings|
