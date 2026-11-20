@@ -1259,6 +1259,8 @@
       
         
       
+        
+      
     
     
     
@@ -1496,6 +1498,34 @@
     
   
     Negation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/truth-maintenance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Truth Maintenance
   
 
     
@@ -2428,6 +2458,7 @@
 </span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="n">alpha2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">get_or_create_alpha_memory</span><span class="p">(</span><span class="n">pattern2</span><span class="p">)</span>
 </span></code></pre></div>
 <p><strong>Network Sharing</strong>: If another rule has the same pattern, they share the same alpha memory node.</p>
+<p><strong>Finding a fact's memories</strong>: <code>KBS::AlphaNetwork</code> groups the alpha memories by fact type. Within a type, a memory whose pattern tests an attribute against a constant is filed in a hash under that attribute and value. A new fact reaches those memories with one lookup on its own value, and is only tested against the memories of its type that have no constant test. The number of rules on other fact types, or testing other constants, does not affect the cost of asserting a fact.</p>
 <h3 id="step-3-build-join-network">Step 3: Build Join Network<a class="headerlink" href="#step-3-build-join-network" title="Permanent link">&para;</a></h3>
 <p>Connect conditions through join nodes:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Start with root beta memory (contains dummy token)</span>

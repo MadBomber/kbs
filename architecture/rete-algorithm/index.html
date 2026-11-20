@@ -1542,6 +1542,8 @@
       
         
       
+        
+      
     
     
     
@@ -1779,6 +1781,34 @@
     
   
     Negation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guides/truth-maintenance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Truth Maintenance
   
 
     
@@ -3242,21 +3272,22 @@
 <p><em>Complete trace showing how negation works: adding a stock fact fires the rule, adding an alert inhibits it, and removing the alert reactivates the rule.</em></p>
 <h3 id="4-rule-execution">4. Rule Execution<a class="headerlink" href="#4-rule-execution" title="Permanent link">&para;</a></h3>
 <p>The final phase is <code>engine.run()</code>:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">run</span>
-</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="n">prioritized_production_nodes</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">node</span><span class="o">|</span>
-</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">    </span><span class="n">node</span><span class="o">.</span><span class="n">tokens</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">token</span><span class="o">|</span>
-</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="w">      </span><span class="n">node</span><span class="o">.</span><span class="n">fire_rule</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
-</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">    </span><span class="k">end</span>
-</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="k">end</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="n">limit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kp">nil</span><span class="p">)</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="w">  </span><span class="vi">@halted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kp">false</span>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="w">  </span><span class="n">fired</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="w">  </span><span class="k">until</span><span class="w"> </span><span class="vi">@halted</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="p">(</span><span class="n">limit</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">fired</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="n">limit</span><span class="p">)</span>
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="w">    </span><span class="n">activation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="vi">@agenda</span><span class="o">.</span><span class="n">pop</span>
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="w">    </span><span class="k">break</span><span class="w"> </span><span class="k">unless</span><span class="w"> </span><span class="n">activation</span>
 </span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>
-</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="c1"># Production nodes in firing order: higher rule priority first, and</span>
-</span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="c1"># definition order among rules of equal priority.</span>
-</span><span id="__span-12-11"><a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="k">def</span><span class="w"> </span><span class="nf">prioritized_production_nodes</span>
-</span><span id="__span-12-12"><a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a><span class="w">  </span><span class="vi">@production_nodes</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">sort_by</span><span class="o">.</span><span class="n">with_index</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">node</span><span class="p">,</span><span class="w"> </span><span class="n">index</span><span class="o">|</span><span class="w"> </span><span class="o">[-</span><span class="n">node</span><span class="o">.</span><span class="n">rule</span><span class="o">.</span><span class="n">priority</span><span class="p">,</span><span class="w"> </span><span class="n">index</span><span class="o">]</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-12-13"><a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a><span class="k">end</span>
+</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="w">    </span><span class="n">fire_activation</span><span class="p">(</span><span class="n">activation</span><span class="p">)</span>
+</span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="w">    </span><span class="n">fired</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="mi">1</span>
+</span><span id="__span-12-11"><a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-12-12"><a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>
+</span><span id="__span-12-13"><a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a><span class="w">  </span><span class="n">fired</span>
+</span><span id="__span-12-14"><a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a><span class="k">end</span>
 </span></code></pre></div>
-<p>Each production node fires its accumulated tokens. The <code>fired?</code> flag prevents duplicate firing.</p>
+<p>A production node does not fire when a token reaches it. It puts an <em>activation</em> on the agenda (<code>KBS::Agenda</code>), and takes it off again if the token is retracted before it fires. <code>run</code> pops one activation at a time: higher rule priority first, then the agenda's strategy (<code>:definition</code>, <code>:depth</code> or <code>:breadth</code>). Because the agenda is read again after every firing, facts asserted by one rule can fire another in the same run, and the run ends when the agenda is empty. Popping removes the activation, so a match fires once.</p>
 <p><strong>Implementation</strong>: <code>KBS::Engine#run</code> in <code>lib/kbs/engine.rb</code></p>
 <h2 id="rete-optimization-unlinking">RETE Optimization: Unlinking<a class="headerlink" href="#rete-optimization-unlinking" title="Permanent link">&para;</a></h2>
 <h3 id="the-problem">The Problem<a class="headerlink" href="#the-problem" title="Permanent link">&para;</a></h3>
