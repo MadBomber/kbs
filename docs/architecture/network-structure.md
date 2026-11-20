@@ -42,6 +42,8 @@ alpha2 = get_or_create_alpha_memory(pattern2)
 
 **Network Sharing**: If another rule has the same pattern, they share the same alpha memory node.
 
+**Finding a fact's memories**: `KBS::AlphaNetwork` groups the alpha memories by fact type. Within a type, a memory whose pattern tests an attribute against a constant is filed in a hash under that attribute and value. A new fact reaches those memories with one lookup on its own value, and is only tested against the memories of its type that have no constant test. The number of rules on other fact types, or testing other constants, does not affect the cost of asserting a fact.
+
 ### Step 3: Build Join Network
 
 Connect conditions through join nodes:

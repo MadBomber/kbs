@@ -79,6 +79,21 @@ touches only its own matches. Removing `n` joined payments:
 | 1000 | 8,566 facts/sec | 392,311 facts/sec |
 | 2000 | 4,251 facts/sec | 484,848 facts/sec |
 
+Asserting a fact does not test it against every pattern. Alpha memories are
+grouped by fact type, and those that test an attribute against a constant are
+hashed on that value, so the cost does not grow with the number of rules.
+2000 asserts against `n` rules:
+
+| n | Each on its own type, scan | Indexed | Each on its own constant, scan | Indexed |
+|--:|--:|--:|--:|--:|
+| 500 | 32,965 facts/sec | 292,912 facts/sec | 7,877 facts/sec | 315,657 facts/sec |
+| 1000 | 17,316 facts/sec | 336,361 facts/sec | 3,960 facts/sec | 300,661 facts/sec |
+| 2000 | 8,770 facts/sec | 321,492 facts/sec | 1,996 facts/sec | 310,029 facts/sec |
+
+A pattern is hashed on its first attribute compared with a plain value. A
+pattern that only uses predicates or variables is tested for every fact of
+its type, so put a constant test in the pattern when the rule has one.
+
 Only equality between two conditions is indexed. A condition with no shared
 variable, or one that only uses predicates, still scans its memories, so put
 a shared variable on the join where the data allows it.

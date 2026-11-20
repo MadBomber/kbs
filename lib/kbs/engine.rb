@@ -10,7 +10,8 @@ module KBS
       @halted = false
       @working_memory = WorkingMemory.new
       @rules = []
-      @alpha_memories = {}
+      @alpha_network = AlphaNetwork.new
+      @alpha_memories = @alpha_network.memories
       @fact_memories = {}
       @production_nodes = {}
       @root_beta_memory = BetaMemory.new
@@ -68,9 +69,7 @@ module KBS
 
     # The alpha memories whose pattern `fact` matches.
     def matching_alpha_memories(fact)
-      memories = []
-      @alpha_memories.each_value { |memory| memories << memory if fact.matches?(memory.pattern) }
-      memories
+      @alpha_network.memories_for(fact)
     end
 
     # The alpha memories that hold `fact`.
@@ -213,7 +212,7 @@ module KBS
     # Facts go straight into its items: the memory has no successors yet,
     # and existing alpha memories already hold their facts.
     def get_or_create_alpha_memory(pattern)
-      @alpha_memories[pattern] ||= AlphaMemory.new(pattern).tap do |memory|
+      @alpha_network.fetch(pattern) do |memory|
         @working_memory.facts.each do |fact|
           next unless fact.matches?(pattern)
 
