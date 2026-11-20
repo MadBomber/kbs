@@ -44,6 +44,34 @@ other. These are environment-specific baseline observations, not performance
 targets. Re-run the benchmark on the target Ruby/runtime before evaluating a
 regex engine change.
 
+### RETE Scaling
+
+`benchmarks/rete_scaling.rb` measures how the network scales as facts and
+rules are added: a two-condition join on a shared variable, the same join
+negated, retraction, and fact assertion against many alpha memories.
+
+```bash
+ruby -Ilib benchmarks/rete_scaling.rb
+SIZES=500,1000,2000 REPEATS=5 ruby -Ilib benchmarks/rete_scaling.rb
+```
+
+A scenario that scales linearly keeps its rate as the size grows.
+
+Joins on a shared `?variable` are hash joins. The alpha memory is indexed on
+the fact's fields and the beta memory on the token's fields, so a new fact or
+token only visits the entries that share its value. Recorded on Ruby 4.0.9,
+arm64-darwin (median of 3), for `n` orders joined with `n` payments on `?id`:
+
+| n | Memory scan | Hash index |
+|--:|------------:|-----------:|
+| 500 | 15,294 facts/sec | 313,873 facts/sec |
+| 1000 | 7,949 facts/sec | 327,279 facts/sec |
+| 2000 | 4,120 facts/sec | 360,101 facts/sec |
+
+Only equality between two conditions is indexed. A condition with no shared
+variable, or one that only uses predicates, still scans its memories, so put
+a shared variable on the join where the data allows it.
+
 ### Basic Benchmark
 
 ```ruby

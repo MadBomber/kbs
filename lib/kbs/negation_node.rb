@@ -3,8 +3,10 @@
 module KBS
   class NegationNode
     include JoinTests
+    include JoinIndexing
 
-    attr_accessor :alpha_memory, :beta_memory, :successors, :tests
+    attr_accessor :successors
+    attr_reader :alpha_memory, :beta_memory, :tests
 
     def initialize(alpha_memory, beta_memory, tests = [])
       @alpha_memory = alpha_memory
@@ -15,10 +17,26 @@ module KBS
 
       alpha_memory.successors << self if alpha_memory
       beta_memory.successors << self if beta_memory
+      build_join_indexes
+    end
+
+    def tests=(tests)
+      @tests = tests
+      build_join_indexes
+    end
+
+    def alpha_memory=(memory)
+      @alpha_memory = memory
+      build_join_indexes
+    end
+
+    def beta_memory=(memory)
+      @beta_memory = memory
+      build_join_indexes
     end
 
     def left_activate(token)
-      matches = @alpha_memory.items.select { |fact| perform_join_tests(token, fact) }
+      matches = matching_facts(token)
 
       if matches.empty?
         new_token = Token.new(token, nil, self)
@@ -30,13 +48,11 @@ module KBS
     end
 
     def right_activate(fact)
-      @beta_memory.tokens.each do |token|
-        if perform_join_tests(token, fact)
-          if @tokens_with_matches[token].empty?
-            left_deactivate(token)
-          end
-          @tokens_with_matches[token] << fact
+      matching_tokens(fact).each do |token|
+        if @tokens_with_matches[token].empty?
+          left_deactivate(token)
         end
+        @tokens_with_matches[token] << fact
       end
     end
 
