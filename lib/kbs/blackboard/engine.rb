@@ -16,14 +16,10 @@ module KBS
         @blackboard.add_observer(self)
       end
 
-      def add_fact(type, attributes = {})
-        ensure_not_matching!
-        duplicate_of(type, attributes) || @blackboard.add_fact(type, attributes)
-      end
-
-      def remove_fact(fact)
-        ensure_not_matching!
-        @blackboard.remove_fact(fact)
+      # Writes the fact to the blackboard, which tells this engine to
+      # match it.
+      def create_fact(type, attributes)
+        @blackboard.add_fact(type, attributes)
       end
 
       # Changes a fact's attributes in the store and matches it again. The

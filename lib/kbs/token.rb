@@ -12,6 +12,7 @@ module KBS
       @node = node
       @children = nil
       @fired = false
+      @retracted = false
       @slots = build_slots
     end
 
@@ -55,6 +56,16 @@ module KBS
 
     def mark_fired!
       @fired = true
+    end
+
+    # Whether the engine has seen this token leave its beta memory. Only
+    # recorded for tokens that can logically support facts.
+    def retracted?
+      @retracted
+    end
+
+    def mark_retracted!
+      @retracted = true
     end
 
     protected

@@ -14,6 +14,7 @@ module KBS
         @conditions = []
         @action_block = nil
         @negated = false
+        @logical = false
       end
 
       def desc(description)
@@ -32,7 +33,7 @@ module KBS
         if block_given?
           pattern = pattern.merge(evaluate_block(&block))
         end
-        @conditions << Condition.new(type, pattern, negated: @negated)
+        @conditions << Condition.new(type, pattern, negated: @negated, logical: @logical)
         @negated = false
         self
       end
@@ -47,6 +48,25 @@ module KBS
           @negated = true
           self
         end
+      end
+
+      # Marks the conditions in the block as logical: every fact the
+      # rule's action asserts stays only while those conditions are
+      # matched, and is retracted when they stop matching. The block has
+      # to come before the rule's other conditions.
+      #
+      #   rule "overheating" do
+      #     logical do
+      #       on :sensor, temp: greater_than(90)
+      #     end
+      #     perform { assert :overheating }
+      #   end
+      def logical(&block)
+        @logical = true
+        instance_eval(&block)
+        self
+      ensure
+        @logical = false
       end
 
       def perform(&block)
@@ -72,7 +92,7 @@ module KBS
       # variable first used here is not bound for later conditions.
       def exists(type, pattern = {}, &block)
         pattern = pattern.merge(evaluate_block(&block)) if block_given?
-        @conditions << Condition.new(type, pattern, exists: true)
+        @conditions << Condition.new(type, pattern, exists: true, logical: @logical)
         @negated = false
         self
       end
