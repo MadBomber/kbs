@@ -90,8 +90,8 @@ end
 # Facts asserted by a rule with logical conditions follow the match of
 # those conditions. Run against both engines.
 module LogicalSupportTests
-  def logical(type, pattern = {}, **options)
-    KBS::Condition.new(type, pattern, logical: true, **options)
+  def logical(type, pattern = {}, **)
+    KBS::Condition.new(type, pattern, logical: true, **)
   end
 
   def derive_rule(name, conditions, derived_type)
@@ -196,7 +196,10 @@ module LogicalSupportTests
   def test_one_match_supports_several_facts
     engine = @engine
     @engine.add_rule(KBS::Rule.new("two", conditions: [logical(:sensor)],
-                                          action: ->(_facts) { engine.add_fact(:a, {}); engine.add_fact(:b, {}) }))
+                                          action: lambda { |_facts|
+                                            engine.add_fact(:a, {})
+                                            engine.add_fact(:b, {})
+                                          }))
     sensor = @engine.add_fact(:sensor, id: 1)
     @engine.run
 

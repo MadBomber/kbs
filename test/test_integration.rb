@@ -25,7 +25,7 @@ class TestIntegration < Minitest::Test
   def test_dsl_knowledge_base_workflow
     results = []
 
-    kb = KBS.knowledge_base do
+    KBS.knowledge_base do
       rule 'high_temperature' do
         on :sensor, temp: greater_than(25)
         perform { |facts| results << facts.first[:temp] }
@@ -83,11 +83,11 @@ class TestIntegration < Minitest::Test
   def test_dsl_with_negation
     results = []
 
-    kb = KBS.knowledge_base do
+    KBS.knowledge_base do
       rule 'safe_to_proceed' do
         on :car, color: :red
         without :problem
-        perform { |facts| results << :safe }
+        perform { |_facts| results << :safe }
       end
 
       fact :car, color: :red
@@ -122,7 +122,7 @@ class TestIntegration < Minitest::Test
   def test_multi_condition_join
     results = []
 
-    kb = KBS.knowledge_base do
+    KBS.knowledge_base do
       rule 'young_driver_red_car' do
         on :driver, age: between(18, 25)
         on :car, color: :red
@@ -137,7 +137,7 @@ class TestIntegration < Minitest::Test
     end
 
     assert_equal 1, results.size
-    assert_equal [:driver, :car], results.first
+    assert_equal %i[driver car], results.first
   end
 
   def test_pattern_matching_with_helpers
@@ -190,10 +190,10 @@ class TestIntegration < Minitest::Test
 
     history = engine.blackboard.get_history(sensor.uuid)
 
-    # Should have ADD + 3 UPDATEs
+    # Should have ADD + 3 UPDATE entries
     assert history.size >= 4
     assert_equal 'ADD', history.last[:action]
-    assert history.any? { |h| h[:action] == 'UPDATE' && h[:attributes][:temp] == 35 }
+    assert(history.any? { |h| h[:action] == 'UPDATE' && h[:attributes][:temp] == 35 })
 
     engine.blackboard.close
   end
@@ -205,7 +205,7 @@ class TestIntegration < Minitest::Test
     # Define trading rules
     buy_rule = KBS::Rule.new('buy_signal') do |r|
       r.conditions << KBS::Condition.new(:price, { symbol: "AAPL", value: ->(v) { v < 150 } })
-      r.conditions << KBS::Condition.new(:account, { balance: ->(b) { b > 10000 } })
+      r.conditions << KBS::Condition.new(:account, { balance: ->(b) { b > 10_000 } })
       r.action = ->(facts) { orders << { action: :buy, symbol: facts[0][:symbol] } }
     end
 
@@ -213,7 +213,7 @@ class TestIntegration < Minitest::Test
 
     # Add facts
     engine.add_fact(:price, { symbol: "AAPL", value: 145 })
-    engine.add_fact(:account, { balance: 50000 })
+    engine.add_fact(:account, { balance: 50_000 })
 
     engine.run
 
@@ -236,7 +236,7 @@ class TestIntegration < Minitest::Test
     # High temperature alert rule
     alert_rule = KBS::Rule.new('temp_alert') do |r|
       r.conditions << KBS::Condition.new(:sensor, { type: "temperature", value: ->(v) { v > 30 } })
-      r.action = ->(facts) {
+      r.action = lambda { |facts|
         sensor = facts.first
         alerts << { location: sensor[:location], temp: sensor[:value] }
         engine.post_message("AlertSystem", "critical", { sensor_id: sensor.uuid }, priority: 10)

@@ -39,7 +39,7 @@ class TestEngine < Minitest::Test
   def test_add_rule
     rule = KBS::Rule.new('test_rule') do |r|
       r.conditions << KBS::Condition.new(:car, { color: :red })
-      r.action = ->(facts) { :rule_fired }
+      r.action = ->(_facts) { :rule_fired }
     end
 
     @engine.add_rule(rule)
@@ -59,7 +59,7 @@ class TestEngine < Minitest::Test
   def test_rule_compilation_single_condition
     rule = KBS::Rule.new('simple_rule') do |r|
       r.conditions << KBS::Condition.new(:car, { color: :red })
-      r.action = ->(facts) { :fired }
+      r.action = ->(_facts) { :fired }
     end
 
     @engine.add_rule(rule)
@@ -72,7 +72,7 @@ class TestEngine < Minitest::Test
     rule = KBS::Rule.new('complex_rule') do |r|
       r.conditions << KBS::Condition.new(:car, { color: :red })
       r.conditions << KBS::Condition.new(:driver, { age: 25 })
-      r.action = ->(facts) { :fired }
+      r.action = ->(_facts) { :fired }
     end
 
     @engine.add_rule(rule)
@@ -85,7 +85,7 @@ class TestEngine < Minitest::Test
     rule = KBS::Rule.new('negation_rule') do |r|
       r.conditions << KBS::Condition.new(:car, { color: :red })
       r.conditions << KBS::Condition.new(:problem, {}, negated: true)
-      r.action = ->(facts) { :fired }
+      r.action = ->(_facts) { :fired }
     end
 
     @engine.add_rule(rule)
@@ -99,7 +99,7 @@ class TestEngine < Minitest::Test
 
     rule = KBS::Rule.new('red_car_rule') do |r|
       r.conditions << KBS::Condition.new(:car, { color: :red })
-      r.action = ->(facts) { fired = true }
+      r.action = ->(_facts) { fired = true }
     end
 
     @engine.add_rule(rule)
@@ -133,7 +133,7 @@ class TestEngine < Minitest::Test
     rule = KBS::Rule.new('no_problem_rule') do |r|
       r.conditions << KBS::Condition.new(:car, { color: :red })
       r.conditions << KBS::Condition.new(:problem, {}, negated: true)
-      r.action = ->(facts) { result << :fired }
+      r.action = ->(_facts) { result << :fired }
     end
 
     @engine.add_rule(rule)
@@ -149,7 +149,7 @@ class TestEngine < Minitest::Test
     rule = KBS::Rule.new('no_problem_rule') do |r|
       r.conditions << KBS::Condition.new(:car, { color: :red })
       r.conditions << KBS::Condition.new(:problem, {}, negated: true)
-      r.action = ->(facts) { result << :fired }
+      r.action = ->(_facts) { result << :fired }
     end
 
     @engine.add_rule(rule)
@@ -182,12 +182,12 @@ class TestEngine < Minitest::Test
 
     rule1 = KBS::Rule.new('rule1') do |r|
       r.conditions << KBS::Condition.new(:car, { color: :red })
-      r.action = ->(facts) { results << :rule1 }
+      r.action = ->(_facts) { results << :rule1 }
     end
 
     rule2 = KBS::Rule.new('rule2') do |r|
       r.conditions << KBS::Condition.new(:car, { color: :red })
-      r.action = ->(facts) { results << :rule2 }
+      r.action = ->(_facts) { results << :rule2 }
     end
 
     @engine.add_rule(rule1)
@@ -205,7 +205,7 @@ class TestEngine < Minitest::Test
 
     rule = KBS::Rule.new('test_rule') do |r|
       r.conditions << KBS::Condition.new(:car, { color: :red })
-      r.action = ->(facts) { result << :fired }
+      r.action = ->(_facts) { result << :fired }
     end
 
     @engine.add_rule(rule)
@@ -257,7 +257,7 @@ class TestEngine < Minitest::Test
     @engine.run
 
     assert_equal 1, result.size
-    assert_equal [:driver, :car, :license], result.first
+    assert_equal %i[driver car license], result.first
   end
 
   def test_no_matching_facts
@@ -265,7 +265,7 @@ class TestEngine < Minitest::Test
 
     rule = KBS::Rule.new('test_rule') do |r|
       r.conditions << KBS::Condition.new(:car, { color: :red })
-      r.action = ->(facts) { result << :fired }
+      r.action = ->(_facts) { result << :fired }
     end
 
     @engine.add_rule(rule)
@@ -281,7 +281,7 @@ class TestEngine < Minitest::Test
     rule = KBS::Rule.new('two_condition_rule') do |r|
       r.conditions << KBS::Condition.new(:driver, { age: 25 })
       r.conditions << KBS::Condition.new(:car, { color: :red })
-      r.action = ->(facts) { result << :fired }
+      r.action = ->(_facts) { result << :fired }
     end
 
     @engine.add_rule(rule)
@@ -306,7 +306,7 @@ class TestEngine < Minitest::Test
   def test_reset_clears_alpha_memory_items
     rule = KBS::Rule.new('test_rule') do |r|
       r.conditions << KBS::Condition.new(:car, { color: :red })
-      r.action = ->(facts) { }
+      r.action = ->(facts) {}
     end
 
     @engine.add_rule(rule)
@@ -326,7 +326,7 @@ class TestEngine < Minitest::Test
   def test_reset_clears_production_node_tokens
     rule = KBS::Rule.new('test_rule') do |r|
       r.conditions << KBS::Condition.new(:car, { color: :red })
-      r.action = ->(facts) { }
+      r.action = ->(facts) {}
     end
 
     @engine.add_rule(rule)
@@ -344,7 +344,7 @@ class TestEngine < Minitest::Test
 
     rule = KBS::Rule.new('test_rule') do |r|
       r.conditions << KBS::Condition.new(:car, { color: :red })
-      r.action = ->(facts) { result << :fired }
+      r.action = ->(_facts) { result << :fired }
     end
 
     @engine.add_rule(rule)
@@ -366,7 +366,7 @@ class TestEngine < Minitest::Test
 
     rule = KBS::Rule.new('color_rule') do |r|
       r.conditions << KBS::Condition.new(:car, { color: :red })
-      r.action = ->(facts) { result << :fired }
+      r.action = ->(_facts) { result << :fired }
     end
 
     @engine.add_rule(rule)

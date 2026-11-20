@@ -5,6 +5,7 @@ require 'time'
 
 module KBS
   module Blackboard
+    # A priority message queue between knowledge sources, kept in SQLite.
     class MessageQueue
       def initialize(db)
         @db = db
@@ -62,17 +63,19 @@ module KBS
           break if @db.changes == 1
         end
 
-        if result
+        result && message_from(result)
+      end
 
-          {
-            id: result['id'],
-            sender: result['sender'],
-            topic: result['topic'],
-            content: parse_content(result['content']),
-            priority: result['priority'],
-            posted_at: Time.parse("#{result['posted_at']} UTC").localtime
-          }
-        end
+      # A row of blackboard_messages as the Hash handed to consumers.
+      def message_from(row)
+        {
+          id: row['id'],
+          sender: row['sender'],
+          topic: row['topic'],
+          content: parse_content(row['content']),
+          priority: row['priority'],
+          posted_at: Time.parse("#{row['posted_at']} UTC").localtime
+        }
       end
 
       def peek(topic, limit: 10)
@@ -81,16 +84,7 @@ module KBS
           [topic, limit]
         )
 
-        results.map do |row|
-          {
-            id: row['id'],
-            sender: row['sender'],
-            topic: row['topic'],
-            content: parse_content(row['content']),
-            priority: row['priority'],
-            posted_at: Time.parse("#{row['posted_at']} UTC").localtime
-          }
-        end
+        results.map { |row| message_from(row) }
       end
 
       def stats

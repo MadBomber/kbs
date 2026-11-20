@@ -27,8 +27,28 @@ module KBS
       @cancelled
     end
 
+    # Cancels the activation unless it already is.
+    #
+    # @return [Boolean] whether this call cancelled it
+    def withdraw
+      return false if @cancelled
+
+      @cancelled = true
+    end
+
+    # Where the activation sorts on an agenda that uses `strategy`:
+    # lowest first.
+    def key_for(strategy)
+      priority = -@salience
+      case strategy
+      when :depth then [priority, -@timetag, 0]
+      when :breadth then [priority, @timetag, 0]
+      else [priority, @rule_order, @timetag]
+      end
+    end
+
     def to_s
-      "#{@salience} #{rule.name}: #{@token.facts.map(&:to_s).join(', ')}"
+      "#{@salience} #{rule.name}: #{@token.facts.join(', ')}"
     end
   end
 
@@ -47,7 +67,7 @@ module KBS
   class Agenda
     STRATEGIES = %i[definition depth breadth].freeze
 
-    attr_reader :strategy
+    attr_reader :strategy, :size
 
     def initialize(strategy: :definition)
       validate_strategy(strategy)
@@ -74,9 +94,8 @@ module KBS
     end
 
     def remove(activation)
-      return if activation.nil? || activation.cancelled?
+      return unless activation&.withdraw
 
-      activation.cancel!
       @size -= 1
     end
 
@@ -100,8 +119,6 @@ module KBS
       @size.zero?
     end
 
-    attr_reader :size
-
     def clear
       @heap.each(&:cancel!)
       @heap = []
@@ -114,11 +131,7 @@ module KBS
     end
 
     def sort_key_for(activation)
-      case @strategy
-      when :depth then [-activation.salience, -activation.timetag, 0]
-      when :breadth then [-activation.salience, activation.timetag, 0]
-      else [-activation.salience, activation.rule_order, activation.timetag]
-      end
+      activation.key_for(@strategy)
     end
 
     private
@@ -149,8 +162,10 @@ module KBS
       top
     end
 
-    def before?(a, b)
-      (@heap[a].sort_key <=> @heap[b].sort_key).negative?
+    # Whether the activation at heap position `index` sorts before the one
+    # at `other`.
+    def before?(index, other)
+      (@heap[index].sort_key <=> @heap[other].sort_key).negative?
     end
 
     def sift_up(index)
@@ -166,7 +181,7 @@ module KBS
     def sift_down(index)
       loop do
         smallest = index
-        [2 * index + 1, 2 * index + 2].each do |child|
+        [(2 * index) + 1, (2 * index) + 2].each do |child|
           smallest = child if child < @heap.size && before?(child, smallest)
         end
         break if smallest == index

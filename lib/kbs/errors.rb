@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module KBS
+  # Base class of the errors this gem raises.
   class Error < StandardError; end
 
   # Raised when a fact is added, removed or modified while the engine is

@@ -129,13 +129,13 @@ module FactLifecycleTests
   def test_modify_updates_joins
     fired = []
     @engine.add_rule(KBS::Rule.new(
-      "paid",
-      conditions: [
-        KBS::Condition.new(:order, { id: :id? }),
-        KBS::Condition.new(:payment, { order_id: :id? })
-      ],
-      action: ->(facts) { fired << facts.last[:order_id] }
-    ))
+                       "paid",
+                       conditions: [
+                         KBS::Condition.new(:order, { id: :id? }),
+                         KBS::Condition.new(:payment, { order_id: :id? })
+                       ],
+                       action: ->(facts) { fired << facts.last[:order_id] }
+                     ))
     @engine.add_fact(:order, id: 1)
     @engine.add_fact(:order, id: 2)
     payment = @engine.add_fact(:payment, order_id: 9)
@@ -212,7 +212,10 @@ module FactLifecycleTests
   def test_engine_works_again_after_the_guard_raised
     engine = @engine
     armed = true
-    count_rule("bad", :sensor, { temp: ->(_t) { engine.add_fact(:alarm, {}) if armed; true } })
+    count_rule("bad", :sensor, { temp: lambda { |_t|
+      engine.add_fact(:alarm, {}) if armed
+      true
+    } })
     assert_raises(KBS::MatchInProgressError) { @engine.add_fact(:sensor, temp: 1) }
 
     armed = false
@@ -224,7 +227,10 @@ module FactLifecycleTests
   def test_rule_actions_may_change_facts
     engine = @engine
     @engine.add_rule(KBS::Rule.new("react", conditions: [KBS::Condition.new(:sensor, {})],
-                                            action: ->(facts) { engine.add_fact(:alarm, {}); engine.remove_fact(facts.first) }))
+                                            action: lambda { |facts|
+                                              engine.add_fact(:alarm, {})
+                                              engine.remove_fact(facts.first)
+                                            }))
     @engine.add_fact(:sensor, id: 1)
 
     assert_equal 1, @engine.run

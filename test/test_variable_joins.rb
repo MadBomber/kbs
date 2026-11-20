@@ -27,7 +27,7 @@ class TestVariableJoins < Minitest::Test
     @engine.run
 
     assert_equal 3, @fired.size
-    @fired.each { |facts, _| assert_equal facts[0][:id], facts[1][:order_id] }
+    @fired.each { |(facts)| assert_equal facts[0][:id], facts[1][:order_id] }
   end
 
   def test_shared_variable_when_later_condition_facts_arrive_first
@@ -84,7 +84,7 @@ class TestVariableJoins < Minitest::Test
 
     @engine.run
 
-    assert_equal [0, 2], @fired.map { |facts, _| facts[0][:id] }
+    assert_equal([0, 2], @fired.map { |facts, _| facts[0][:id] })
   end
 
   def test_join_after_a_negated_condition

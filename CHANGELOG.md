@@ -26,6 +26,8 @@
 - `KBS::Fact#to_s` and `KBS::Rule#to_s` now render DSL source, such as `fact :sensor, temp: 22` and a `rule "name" do ... end` block (#3).
 - `RedisStore#query_facts` and `HybridStore#query_facts` now raise `NotImplementedError` instead of returning every fact, since Redis cannot run SQL conditions (#16).
 - The gem now ships only the Ruby files under `lib/`, plus `README.md`, `CHANGELOG.md` and `LICENSE.txt`. It used to include `docs/`, `examples/`, `benchmarks/`, `.github/` and other repo files such as `Rakefile` and `mkdocs.yml`, which are still in the repository (#31).
+- The gem now passes the shared `asgard quality` gates. RuboCop is configured (`.rubocop.yml`) and its offenses are corrected; Reek is configured (`.reek.yml`) and reports no smells, with no baseline; `Decompiler#decompile_body` is a dispatch table instead of one long `case`; `Rule#to_s` and `KnowledgeBase#rule_source` share the new `KBS::RuleSource`. Development dependencies moved from the gemspec to the Gemfile. Visible effects: the `between` and `range` helpers decompile as `v.between?(min, max)`; `KnowledgeBase#query` matches like a rule condition, so a pattern value may be a predicate; `KBS::Engine#close` exists and does nothing. Network nodes now share `KBS::NetworkNode`, so a memory calls every successor the same way: an object used as a successor must include it.
+- The Rakefile and the `rake` development dependency are gone. Tests, build, install and release run through [asgard](https://github.com/MadBomber/asgard) tasks defined in `.loki` (`asgard test_check`, `asgard build`, `asgard install`, `asgard release`). CI runs the test command directly.
 
 ### Removed
 - `examples/temp_dsl.txt`, a captured demo output file, is no longer shipped in the gem (#15).

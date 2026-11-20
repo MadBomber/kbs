@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 module KBS
+  # The facts that fit one condition pattern. Shared by every rule that
+  # uses the pattern; tells its join nodes when a fact arrives or leaves.
   class AlphaMemory
     attr_accessor :successors, :pattern
     attr_reader :linked
@@ -19,8 +21,8 @@ module KBS
       @items.to_a
     end
 
-    def each_item(&block)
-      @items.each(&block)
+    def each_item(&)
+      @items.each(&)
     end
 
     def size
@@ -33,24 +35,24 @@ module KBS
 
     def unlink!
       @linked = false
-      @successors.each { |s| s.right_unlink! if s.respond_to?(:right_unlink!) }
+      @successors.each(&:right_unlink!)
     end
 
     def relink!
       @linked = true
-      @successors.each { |s| s.right_relink! if s.respond_to?(:right_relink!) }
+      @successors.each(&:right_relink!)
     end
 
     def activate(fact)
       return unless @linked
       add_item(fact)
-      @successors.each { |s| s.right_activate(fact) }
+      @successors.each { |successor| successor.right_activate(fact) }
     end
 
     def deactivate(fact)
       return unless @linked
       remove_item(fact)
-      @successors.each { |s| s.right_deactivate(fact) if s.respond_to?(:right_deactivate) }
+      @successors.each { |successor| successor.right_deactivate(fact) }
     end
 
     # Stores a fact without telling the successors.

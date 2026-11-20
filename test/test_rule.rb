@@ -5,7 +5,7 @@ require_relative 'test_helper'
 class TestRule < Minitest::Test
   def test_initialization
     condition = KBS::Condition.new(:person, { name: "Alice" })
-    action = ->(facts, bindings) { puts "Hello" }
+    action = ->(_facts, _bindings) { puts "Hello" }
     rule = KBS::Rule.new("greet", conditions: [condition], action: action, priority: 10)
 
     assert_equal "greet", rule.name
@@ -22,7 +22,7 @@ class TestRule < Minitest::Test
 
   def test_to_s
     condition = KBS::Condition.new(:person, { name: "Alice", age: ->(value) { value > 18 } })
-    action = ->(facts) { facts.first }
+    action = ->(facts) { facts.first } # rubocop:disable Style/SymbolProc -- lambda(&:first) has another arity
     rule = KBS::Rule.new("greet", conditions: [condition], action: action, priority: 10)
 
     assert_equal <<~DSL.chomp, rule.to_s
@@ -54,7 +54,7 @@ class TestRule < Minitest::Test
 
   def test_fire_executes_action
     fired = false
-    action = ->(facts, bindings) { fired = true }
+    action = ->(_facts, _bindings) { fired = true }
     rule = KBS::Rule.new("test", conditions: [], action: action)
 
     fact = KBS::Fact.new(:person, name: "Alice")
@@ -65,7 +65,7 @@ class TestRule < Minitest::Test
 
   def test_fire_extracts_bindings
     extracted_bindings = nil
-    action = ->(facts, bindings) { extracted_bindings = bindings }
+    action = ->(_facts, bindings) { extracted_bindings = bindings }
 
     condition = KBS::Condition.new(:person, { name: :name?, age: :age? })
     rule = KBS::Rule.new("test", conditions: [condition], action: action)
@@ -87,7 +87,7 @@ class TestRule < Minitest::Test
   end
 
   def test_fire_with_reassigned_zero_argument_lambda
-    rule = KBS::Rule.new("test", action: ->(facts, bindings) { :original })
+    rule = KBS::Rule.new("test", action: ->(_facts, _bindings) { :original })
     rule.action = -> { :reassigned }
 
     assert_equal :reassigned, rule.fire([])
@@ -122,7 +122,7 @@ class TestRule < Minitest::Test
 
   def test_fire_with_multiple_facts
     extracted_facts = nil
-    action = ->(facts, bindings) { extracted_facts = facts }
+    action = ->(facts, _bindings) { extracted_facts = facts }
 
     condition1 = KBS::Condition.new(:person, {})
     condition2 = KBS::Condition.new(:company, {})
@@ -140,7 +140,7 @@ class TestRule < Minitest::Test
 
   def test_fire_with_negated_condition
     extracted_bindings = nil
-    action = ->(facts, bindings) { extracted_bindings = bindings }
+    action = ->(_facts, bindings) { extracted_bindings = bindings }
 
     condition1 = KBS::Condition.new(:sensor, { temp: :temp? })
     condition2 = KBS::Condition.new(:alarm, { active: true }, negated: true)
@@ -187,7 +187,7 @@ class TestRule < Minitest::Test
     # The fired_count is private, but we can verify the action was called
     # by using a counter in the action itself
     counter = 0
-    rule = KBS::Rule.new("counter", conditions: [], action: ->(f, b) { counter += 1 })
+    rule = KBS::Rule.new("counter", conditions: [], action: ->(_f, _b) { counter += 1 })
 
     3.times { rule.fire([fact]) }
     assert_equal 3, counter
@@ -195,7 +195,7 @@ class TestRule < Minitest::Test
 
   def test_bindings_from_multiple_conditions
     extracted_bindings = nil
-    action = ->(facts, bindings) { extracted_bindings = bindings }
+    action = ->(_facts, bindings) { extracted_bindings = bindings }
 
     condition1 = KBS::Condition.new(:person, { name: :person_name? })
     condition2 = KBS::Condition.new(:company, { name: :company_name? })

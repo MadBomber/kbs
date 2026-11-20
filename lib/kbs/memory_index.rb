@@ -66,7 +66,7 @@ module KBS
     # that are == land in the same bucket.
     def self.normalize(value)
       return value if value.is_a?(Integer) || !value.is_a?(Numeric) || !value.real?
-      return value if value.respond_to?(:finite?) && !value.finite?
+      return value unless value.finite?
       return value.to_i if value == value.to_i
 
       value.is_a?(Rational) ? value.to_f : value

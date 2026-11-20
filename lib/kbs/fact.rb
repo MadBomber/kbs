@@ -1,7 +1,10 @@
 # frozen_string_literal: true
 
 module KBS
+  # A typed set of attributes in working memory.
   class Fact
+    include PatternMatching
+
     attr_reader :id, :type, :attributes
 
     def initialize(type, attributes = {})
@@ -16,24 +19,6 @@ module KBS
 
     def []=(key, value)
       @attributes[key] = value
-    end
-
-    def matches?(pattern)
-      return false if pattern[:type] && pattern[:type] != @type
-
-      pattern.each do |key, value|
-        next if key == :type
-
-        if value.is_a?(Proc)
-          return false unless @attributes[key] && value.call(@attributes[key])
-        elsif value.is_a?(Symbol) && value.to_s.end_with?('?')
-          next
-        else
-          return false unless @attributes[key] == value
-        end
-      end
-
-      true
     end
 
     def to_s

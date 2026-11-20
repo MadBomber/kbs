@@ -29,6 +29,7 @@ Gem::Specification.new do |spec|
   spec.metadata["homepage_uri"] = spec.homepage
   spec.metadata["source_code_uri"] = "https://github.com/madbomber/kbs"
   spec.metadata["changelog_uri"] = "https://github.com/madbomber/kbs/blob/main/CHANGELOG.md"
+  spec.metadata['rubygems_mfa_required'] = 'true'
 
   # Ship only the library and the top-level docs; the docs site, examples,
   # benchmarks and repo plumbing stay in the repository.
@@ -37,9 +38,4 @@ Gem::Specification.new do |spec|
 
   # Runtime dependencies
   spec.add_dependency "sqlite3", ">= 1.6"
-
-  # Development dependencies
-  spec.add_development_dependency "minitest", "~> 5.16"
-  spec.add_development_dependency "simplecov", "~> 0.22"
-  spec.add_development_dependency "redis", "~> 5.0"
 end

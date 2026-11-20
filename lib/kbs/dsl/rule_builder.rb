@@ -2,6 +2,8 @@
 
 module KBS
   module DSL
+    # Collects the conditions and action written inside a `rule do ... end`
+    # block and builds the KBS::Rule.
     class RuleBuilder
       include ConditionHelpers
 
@@ -29,25 +31,19 @@ module KBS
       end
 
       # Primary DSL keywords (avoid Ruby reserved words)
-      def on(type, pattern = {}, &block)
+      def on(type, pattern = {}, &)
         if block_given?
-          pattern = pattern.merge(evaluate_block(&block))
+          pattern = pattern.merge(evaluate_block(&))
         end
         @conditions << Condition.new(type, pattern, negated: @negated, logical: @logical)
         @negated = false
         self
       end
 
-      def without(type = nil, pattern = {}, &block)
-        if type
-          # Direct negation: without(:problem)
-          @negated = true
-          on(type, pattern, &block)
-        else
-          # Chaining: without.on(:problem)
-          @negated = true
-          self
-        end
+      def without(type = nil, pattern = {}, &)
+        @negated = true
+        # Direct negation: without(:problem). Chaining: without.on(:problem).
+        type ? on(type, pattern, &) : self
       end
 
       # Marks the conditions in the block as logical: every fact the
@@ -61,9 +57,9 @@ module KBS
       #     end
       #     perform { assert :overheating }
       #   end
-      def logical(&block)
+      def logical(&)
         @logical = true
-        instance_eval(&block)
+        instance_eval(&)
         self
       ensure
         @logical = false
@@ -75,64 +71,77 @@ module KBS
       end
 
       # Aliases for readability
-      def given(type, pattern = {}, &block)
-        on(type, pattern, &block)
+      def given(type, pattern = {}, &)
+        on(type, pattern, &)
       end
 
-      def matches(type, pattern = {}, &block)
-        on(type, pattern, &block)
+      def matches(type, pattern = {}, &)
+        on(type, pattern, &)
       end
 
-      def fact(type, pattern = {}, &block)
-        on(type, pattern, &block)
+      def fact(type, pattern = {}, &)
+        on(type, pattern, &)
       end
 
       # Matches once when at least one fact fits the pattern, however many
       # do. The rule's action receives no fact for this condition, and a
       # variable first used here is not bound for later conditions.
-      def exists(type, pattern = {}, &block)
-        pattern = pattern.merge(evaluate_block(&block)) if block_given?
+      def exists(type, pattern = {}, &)
+        pattern = pattern.merge(evaluate_block(&)) if block_given?
         @conditions << Condition.new(type, pattern, exists: true, logical: @logical)
         @negated = false
         self
       end
 
-      def absent(type, pattern = {}, &block)
-        without.on(type, pattern, &block)
+      def absent(type, pattern = {}, &)
+        without.on(type, pattern, &)
       end
 
-      def missing(type, pattern = {}, &block)
-        without.on(type, pattern, &block)
+      def missing(type, pattern = {}, &)
+        without.on(type, pattern, &)
       end
 
-      def lacks(type, pattern = {}, &block)
-        without.on(type, pattern, &block)
+      def lacks(type, pattern = {}, &)
+        without.on(type, pattern, &)
       end
 
-      def action(&block)
-        perform(&block)
+      def action(&)
+        perform(&)
       end
 
-      def execute(&block)
-        perform(&block)
+      def execute(&)
+        perform(&)
       end
 
-      def then(&block)
-        perform(&block)
+      def then(&)
+        perform(&)
+      end
+
+      # The rule as DSL source, rebuilt from what was collected.
+      def source
+        RuleSource.new(name: @name, conditions: @conditions, action: @action_block,
+                       priority: @priority, description: @description).to_s
+      end
+
+      # The lines print_rules shows for this rule.
+      def summary_lines
+        conditions = @conditions.each_with_index.map { |condition, index| "    #{index + 1}. #{condition.summary}" }
+        ["Rule: #{@name}", *("  Description: #{@description}" if @description), "  Priority: #{@priority}",
+         "  Conditions: #{@conditions.size}", *conditions, ""]
       end
 
       def build
         Rule.new(@name,
-          conditions: @conditions,
-          action: @action_block,
-          priority: @priority)
+                 conditions: @conditions,
+                 action: @action_block,
+                 priority: @priority)
       end
 
       private
 
-      def evaluate_block(&block)
+      def evaluate_block(&)
         evaluator = PatternEvaluator.new
-        evaluator.instance_eval(&block)
+        evaluator.instance_eval(&)
         evaluator.pattern
       end
     end

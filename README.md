@@ -343,7 +343,13 @@ Facts → Alpha Network → Beta Network → Production Nodes
 Run the comprehensive test suite:
 
 ```bash
-rake test
+asgard test_check
+```
+
+Without [asgard](https://github.com/MadBomber/asgard) installed, run the same command it does:
+
+```bash
+bundle exec ruby -Ilib:test -e 'Dir["test/**/test_*.rb"].each { |f| require File.expand_path(f) }'
 ```
 
 Run a single test file (`test/test_*.rb`):

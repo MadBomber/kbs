@@ -37,7 +37,7 @@ module RulePriorityTests
     @engine.add_rule(ordered_rule('c', 10, fired))
     @engine.add_rule(ordered_rule('d', 0, fired))
 
-    assert_equal %w[c a d b], @engine.prioritized_production_nodes.map { |node| node.rule.name }
+    assert_equal(%w[c a d b], @engine.prioritized_production_nodes.map { |node| node.rule.name })
   end
 end
 

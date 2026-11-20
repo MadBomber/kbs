@@ -7,7 +7,10 @@ class TestProductionNode < Minitest::Test
     @rule = KBS::Rule.new(
       "test_rule",
       conditions: [],
-      action: ->(facts, bindings) { @fired = true; @fired_facts = facts }
+      action: lambda { |facts, _bindings|
+        @fired = true
+        @fired_facts = facts
+      }
     )
     @production_node = KBS::ProductionNode.new(@rule)
   end
@@ -122,7 +125,7 @@ class TestProductionNode < Minitest::Test
     rule = KBS::Rule.new(
       "counting_rule",
       conditions: [],
-      action: ->(facts, bindings) { fired_count += 1 }
+      action: ->(_facts, _bindings) { fired_count += 1 }
     )
     node = KBS::ProductionNode.new(rule)
 

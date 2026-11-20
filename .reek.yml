@@ -1,0 +1,161 @@
+---
+# Reek configuration for kbs.
+#
+# The gate (reek_check in ../dev/quality.loki) fails on a file that is new
+# to, or worse than, the per-file counts in .quality/reek_baseline.txt.
+# Every detector is left at its default except the ones below, each of
+# which describes this gem's API or a deliberate choice rather than a
+# defect.
+detectors:
+
+  # unlink!, relink!, mark_fired!, cancel! and the like are the published
+  # API; the bang marks a state change, not the dangerous twin of a safe
+  # method.
+  MissingSafeMethod:
+    enabled: false
+
+  # nil is meaningful throughout the network: no beta memory on a first
+  # join, no fact for a negated condition, no listener, no run limit.
+  NilCheck:
+    enabled: false
+
+  # Default is 5. Flog is the complexity gate; this catches only outliers.
+  TooManyStatements:
+    max_statements: 10
+
+  # Rule, Condition, Engine and the stores take their options as keyword
+  # arguments.
+  LongParameterList:
+    max_params: 5
+
+  # e for a rescued error, k/v for a hash pair, f for a fact, i for an
+  # index, s for a successor node, c for a child or condition, and the
+  # a/b pair of a comparison are used this way throughout.
+  UncommunicativeVariableName:
+    accept:
+      - e
+      - k
+      - v
+      - f
+      - i
+      - a
+      - b
+      - c
+      - s
+
+  # Store is the abstract interface: each method names the arguments a
+  # store must accept and raises NotImplementedError.
+  UnusedParameters:
+    exclude:
+      - 'KBS::Blackboard::Persistence::Store'
+
+  # successors, rule, action, conditions and the token links are wired up
+  # by the engine after construction, and the docs show users replacing
+  # Rule#action. They are published, writable API.
+  Attribute:
+    exclude:
+      - 'KBS::Activation#sort_key'
+      - 'KBS::AlphaMemory'
+      - 'KBS::BetaMemory'
+      - 'KBS::JoinNode'
+      - 'KBS::QuantifierNode'
+      - 'KBS::ProductionNode'
+      - 'KBS::Rule'
+      - 'KBS::Token'
+
+  # negated:, exists:, logical: and fact_duplication: are keyword options
+  # of the published API; respond_to_missing? has Ruby's own signature.
+  BooleanParameter:
+    exclude:
+      - 'KBS::Condition#initialize'
+      - 'KBS::Engine#initialize'
+      - 'KBS::Blackboard::Engine#initialize'
+      - 'KBS::DSL::PatternEvaluator#respond_to_missing?'
+
+  # Optional arguments with a default built when they are nil (session_id,
+  # redis, engine), the observer protocol's update(action, fact), and an
+  # operation name looked up in a table.
+  ControlParameter:
+    exclude:
+      - 'KBS::Blackboard::Persistence::HybridStore#initialize'
+      - 'KBS::Blackboard::Persistence::RedisStore#initialize'
+      - 'KBS::Blackboard::Persistence::SqliteStore#initialize'
+      - 'KBS::DSL::KnowledgeBase#initialize'
+      - 'KBS::Blackboard::Memory#initialize'
+      - 'KBS::Engine#update'
+      - 'KBS::Activation#key_for'   # the strategy name selects the ordering
+      - 'KBS::Agenda#remove'         # remove(nil) is allowed: a token with no activation
+
+  # The decompiler's handlers share one signature because they are called
+  # through a dispatch table; (type, pattern) is the DSL's condition
+  # syntax, (type, attributes) is a fact, and (token, fact) is a join.
+  DataClump:
+    exclude:
+      - 'KBS::Decompiler'
+      - 'KBS::DSL::RuleBuilder'
+      - 'KBS::Engine'
+      - 'KBS::JoinTests'
+
+  # Default is 4. A network node holds its two memories, its tests, its
+  # successors and its indexes. The engine owns every part of the network.
+  TooManyInstanceVariables:
+    max_instance_variables: 10
+    exclude:
+      - 'KBS::Engine'
+
+  # Each step is kept in its own small method so it can be tested in
+  # isolation; the decompiler has one method per YARV instruction.
+  TooManyMethods:
+    max_methods: 40
+    exclude:
+      - 'KBS::Engine'
+
+  # Reading an attribute twice is clearer than a temporary for it.
+  DuplicateMethodCall:
+    max_calls: 2
+
+  # ConditionHelpers is a mixin of pure predicate builders, and
+  # PatternEvaluator's operators are the DSL: neither has state to use.
+  UtilityFunction:
+    public_methods_only: true
+    exclude:
+      - 'KBS::DSL::ConditionHelpers'
+      - 'KBS::DSL::PatternEvaluator'
+      - 'KBS::JoinTests#compare_join_values' # public so it can be tested on its own
+
+  # Turning a database row or a Redis hash into the Hash callers receive
+  # is about that row, and a driver's row has no class of ours to move
+  # the code to. The decompiler's handlers work on the pass they are
+  # handed. An == compares against the other object by definition.
+  FeatureEnvy:
+    exclude:
+      - 'KBS::Blackboard::AuditLog'
+      - 'KBS::Blackboard::RedisAuditLog'
+      - 'KBS::Blackboard::MessageQueue'
+      - 'KBS::Blackboard::RedisMessageQueue'
+      - 'KBS::Blackboard::Persistence::RedisStore'
+      - 'KBS::Blackboard::Persistence::SqliteStore'
+      - 'KBS::Decompiler'
+      - "KBS::Blackboard::Fact#=="
+      - "KBS::DSL::Variable#=="
+      # Logging or firing a match reads the activation or token it is handed.
+      - "KBS::Blackboard::Engine#log_firing"
+      - "KBS::ProductionNode#fire_rule"
+
+  # A custom store is told apart by what it offers (connection or db), as
+  # docs/advanced/custom-persistence.md describes, so Memory has to ask.
+  ManualDispatch:
+    exclude:
+      - 'KBS::Blackboard::Memory#build_components'
+
+  # Each store method checks that the row or hash it fetched exists and
+  # is not retracted before using it.
+  RepeatedConditional:
+    exclude:
+      - 'KBS::Blackboard::Persistence::RedisStore'
+      - 'KBS::Blackboard::Persistence::SqliteStore'
+
+  # The lambda is the predicate handed back; the block is its body.
+  NestedIterators:
+    exclude:
+      - 'KBS::DSL::PatternEvaluator#all'

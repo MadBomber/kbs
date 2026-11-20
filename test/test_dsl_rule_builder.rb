@@ -43,7 +43,7 @@ class TestDSLRuleBuilder < Minitest::Test
     fired = false
     builder = KBS::DSL::RuleBuilder.new('test_rule')
     builder.on(:car, color: :red)
-    builder.perform { |facts| fired = true }
+    builder.perform { |_facts| fired = true }
 
     rule = builder.build
     assert_instance_of Proc, rule.action
@@ -58,7 +58,7 @@ class TestDSLRuleBuilder < Minitest::Test
       on :car, color: :red
       on :driver, age: 25
       without :problem
-      perform { |facts| :action }
+      perform { |_facts| :action }
     end
 
     rule = builder.build
@@ -87,7 +87,7 @@ class TestDSLRuleBuilder < Minitest::Test
     assert_equal 2, builder.instance_variable_get(:@conditions).size
 
     # Test 'then' alias for 'perform'
-    builder.then { |facts| :action }
+    builder.then { |_facts| :action }
     assert_instance_of Proc, builder.instance_variable_get(:@action_block)
   end
 
@@ -107,6 +107,6 @@ class TestDSLRuleBuilder < Minitest::Test
 
     rule = builder.build
     assert_equal :car, rule.conditions.first.type
-    assert_empty rule.conditions.first.pattern.reject { |k, _| k == :type }
+    assert_empty(rule.conditions.first.pattern.except(:type))
   end
 end

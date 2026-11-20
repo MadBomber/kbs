@@ -45,7 +45,7 @@ module KBS
           # Optional operation - no-op by default
         end
 
-        def transaction(&block)
+        def transaction(&)
           # Default: just execute the block
           yield if block_given?
         end

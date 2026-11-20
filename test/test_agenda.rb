@@ -150,7 +150,7 @@ class TestAgenda < Minitest::Test
     agenda.add(node("high", 5), token)
     agenda.remove(removed)
 
-    assert_equal %w[high low], agenda.to_a.map { |activation| activation.rule.name }
+    assert_equal(%w[high low], agenda.to_a.map { |activation| activation.rule.name })
     assert_equal 2, agenda.size
   end
 

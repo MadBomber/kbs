@@ -23,6 +23,7 @@ module KBS
           db_path: 'audit.db',
           session_id: nil
         )
+          super()
           @session_id = session_id || SecureRandom.uuid
 
           # Redis for hot data (facts, messages)
@@ -88,7 +89,7 @@ module KBS
           @sqlite_store.vacuum
         end
 
-        def transaction(&block)
+        def transaction(&)
           # Redis and SQLite transactions are separate
           # Execute block in context of both
           yield

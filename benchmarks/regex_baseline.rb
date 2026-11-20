@@ -16,8 +16,8 @@ def median(values)
   values.sort[values.length / 2]
 end
 
-def measure(repeats)
-  times = Array.new(repeats) { Benchmark.realtime { yield } }
+def measure(repeats, &)
+  times = Array.new(repeats) { Benchmark.realtime(&) }
   median(times)
 end
 

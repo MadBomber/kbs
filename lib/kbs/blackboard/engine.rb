@@ -49,16 +49,22 @@ module KBS
 
       # Records the firing in the audit log, then fires the rule.
       def fire_activation(activation)
-        unless activation.token.fired?
-          facts = activation.token.facts
-          fact_uuids = facts.map { |f| f.respond_to?(:uuid) ? f.uuid : f.object_id.to_s }
-          bindings = activation.rule.bindings_for(facts)
-
-          @blackboard.log_rule_firing(activation.rule.name, fact_uuids, bindings)
-        end
-
+        log_firing(activation.rule, activation.token)
         super
       end
+
+      # Writes the firing of `rule` for `token` to the audit log, unless
+      # the token has fired already.
+      def log_firing(rule, token)
+        return if token.fired?
+
+        facts = token.facts
+        @blackboard.log_rule_firing(rule.name, facts.map(&:uuid), rule.bindings_for(facts))
+      end
+
+      # A reset empties the network, not the store: the persisted facts
+      # stay on the blackboard.
+      def clear_working_memory; end
 
       def post_message(sender, topic, content, priority: 0)
         @blackboard.post_message(sender, topic, content, priority: priority)

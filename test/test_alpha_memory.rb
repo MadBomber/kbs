@@ -65,6 +65,7 @@ class TestAlphaMemory < Minitest::Test
     def successor.right_activate(fact)
       # No-op for this test
     end
+
     def successor.right_deactivate(fact)
       @deactivations ||= []
       @deactivations << fact
@@ -99,11 +100,11 @@ class TestAlphaMemory < Minitest::Test
   end
 
   def test_unlink_propagates_to_successors
-    unlinked = false
     successor = Object.new
     def successor.right_unlink!
       @unlinked = true
     end
+
     def successor.unlinked?
       @unlinked ||= false
     end

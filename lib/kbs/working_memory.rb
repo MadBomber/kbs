@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module KBS
+  # The set of facts the engine knows, with observers told of each change.
   class WorkingMemory
     def initialize
       @facts = Set.new
@@ -13,8 +14,8 @@ module KBS
       @facts.to_a
     end
 
-    def each_fact(&block)
-      @facts.each(&block)
+    def each_fact(&)
+      @facts.each(&)
     end
 
     def size

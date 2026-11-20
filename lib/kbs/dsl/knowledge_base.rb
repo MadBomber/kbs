@@ -2,10 +2,15 @@
 
 module KBS
   module DSL
+    # The object the DSL block runs in: defines rules, asserts and retracts
+    # facts, and runs the engine.
     class KnowledgeBase
       attr_reader :engine, :rules
 
       # @param engine [KBS::Engine, nil] engine to run on; a new KBS::Engine when nil
+      # Drawn above and below the listings.
+      SEPARATOR = ("-" * 40).freeze
+
       def initialize(engine: nil)
         @engine = engine || Engine.new
         @rules = {}
@@ -26,8 +31,8 @@ module KBS
         builder
       end
 
-      def defrule(name, priority: nil, &block)
-        rule(name, priority: priority, &block)
+      def defrule(name, priority: nil, &)
+        rule(name, priority: priority, &)
       end
 
       def fact(type, attributes = {})
@@ -63,7 +68,7 @@ module KBS
       end
 
       def close
-        @engine.close if @engine.respond_to?(:close)
+        @engine.close
       end
 
       def facts
@@ -71,19 +76,13 @@ module KBS
       end
 
       def query(type, pattern = {})
-        @engine.working_memory.facts.select do |fact|
-          next false unless fact.type == type
-          pattern.all? { |key, value| fact.attributes[key] == value }
-        end
+        typed = pattern.merge(type: type)
+        @engine.working_memory.facts.select { |fact| fact.matches?(typed) }
       end
 
       def print_facts
-        puts "Working Memory Contents:"
-        puts "-" * 40
-        facts.each_with_index do |fact, i|
-          puts "#{i + 1}. #{fact}"
-        end
-        puts "-" * 40
+        numbered = facts.each_with_index.map { |fact, index| "#{index + 1}. #{fact}" }
+        puts ["Working Memory Contents:", SEPARATOR, *numbered, SEPARATOR]
       end
 
       def rule_source(name)
@@ -111,99 +110,37 @@ module KBS
       end
 
       def print_rules
-        puts "Knowledge Base Rules:"
-        puts "-" * 40
-        @rule_builders.each do |name, builder|
-          puts "Rule: #{name}"
-          puts "  Description: #{builder.description}" if builder.description
-          puts "  Priority: #{builder.priority}"
-          puts "  Conditions: #{builder.conditions.size}"
-          builder.conditions.each_with_index do |cond, i|
-            negated = { "without" => "NOT ", "exists" => "EXISTS " }.fetch(cond.keyword, "")
-            puts "    #{i + 1}. #{negated}#{cond.type}(#{reconstruct_pattern(cond.pattern)})"
-          end
-          puts ""
-        end
-        puts "-" * 40
+        puts ["Knowledge Base Rules:", SEPARATOR, *@rule_builders.each_value.flat_map(&:summary_lines), SEPARATOR]
       end
 
       private
 
       def reconstruct_rule_source(name)
-        builder = @rule_builders[name]
-        return nil unless builder
-
-        lines = []
-        lines << "rule #{name.inspect} do"
-        lines << "  desc #{builder.description.inspect}" if builder.description
-        lines << "  priority #{builder.priority}" if builder.priority != 0
-
-        logical = builder.conditions.take_while(&:logical).size
-        lines << "  logical do" if logical.positive?
-        builder.conditions.each_with_index do |cond, index|
-          lines << "  end" if index == logical && logical.positive?
-          indent = index < logical ? "    " : "  "
-          pattern_str = reconstruct_pattern(cond.pattern)
-          if pattern_str.empty?
-            lines << "#{indent}#{cond.keyword} #{cond.type.inspect}"
-          else
-            lines << "#{indent}#{cond.keyword} #{cond.type.inspect}, #{pattern_str}"
-          end
-        end
-        lines << "  end" if logical.positive? && logical == builder.conditions.size
-
-        if builder.action_block
-          block_str = decompile_proc_block(builder.action_block)
-          lines << "  perform #{block_str}"
-        end
-
-        lines << "end"
-        lines.join("\n")
-      end
-
-      def reconstruct_pattern(pattern)
-        return "" if pattern.empty?
-
-        pattern.map do |key, value|
-          val_str = value.is_a?(Proc) ? decompile_proc(value) : value.inspect
-          "#{key}: #{val_str}"
-        end.join(", ")
-      end
-
-      def decompile_proc(proc_obj)
-        Decompiler.new(proc_obj).decompile
-      rescue => e
-        "<decompilation failed: #{e.message}>"
-      end
-
-      def decompile_proc_block(proc_obj)
-        Decompiler.new(proc_obj).decompile_block
-      rescue => e
-        "{ <decompilation failed: #{e.message}> }"
+        @rule_builders[name]&.source
       end
 
       def extract_rule_source(file, start_line)
         lines = File.readlines(file)
         start_idx = start_line - 1
-        return nil if start_idx < 0 || start_idx >= lines.length
+        return nil unless start_idx.between?(0, lines.length - 1)
 
-        # source_location points to the block's `do` line, which is
-        # normally the same line as the `rule` call.  Walk back up to
-        # 2 lines in case they are on separate lines.
-        rule_idx = start_idx.downto([start_idx - 2, 0].max).find do |i|
-          lines[i].match?(/\b(?:rule|defrule)\b/)
-        end || start_idx
+        rule_lines(lines.drop(rule_line_index(lines, start_idx))).join.chomp
+      end
 
-        base_indent = lines[rule_idx][/^\s*/].length
-        end_pattern = /^\s{#{base_indent}}end\b/
+      # source_location points to the block's `do` line, which is normally
+      # the same line as the `rule` call. Walks back up to 2 lines in case
+      # they are on separate lines.
+      def rule_line_index(lines, start_idx)
+        earliest = [start_idx - 2, 0].max
+        start_idx.downto(earliest).find { |index| lines[index].match?(/\b(?:rule|defrule)\b/) } || start_idx
+      end
 
-        result = []
-        (rule_idx...lines.length).each do |i|
-          result << lines[i]
-          break if i > rule_idx && lines[i].match?(end_pattern)
-        end
-
-        result.join.chomp
+      # The rule's first line through the `end` at the same indentation,
+      # or every line when there is no such `end`.
+      def rule_lines(lines)
+        end_pattern = /^\s{#{lines.first[/^\s*/].length}}end\b/
+        last = lines.drop(1).index { |line| line.match?(end_pattern) }
+        last ? lines.first(last + 2) : lines
       end
     end
   end

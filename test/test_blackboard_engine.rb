@@ -33,7 +33,7 @@ class TestBlackboardEngine < Minitest::Test
 
     assert_same @engine, kb.engine
     assert_equal [28], readings
-    assert_equal [22, 28], @engine.blackboard.get_facts(:sensor).map { |fact| fact[:value] }
+    assert_equal([22, 28], @engine.blackboard.get_facts(:sensor).map { |fact| fact[:value] })
     assert_equal 'temperature_monitor', @engine.blackboard.get_rule_firings.first[:rule_name]
   end
 
@@ -71,7 +71,7 @@ class TestBlackboardEngine < Minitest::Test
   def test_rule_firing_logged
     rule = KBS::Rule.new('test_rule') do |r|
       r.conditions << KBS::Condition.new(:sensor, { temp: 22 })
-      r.action = ->(facts) { }
+      r.action = ->(facts) {}
     end
 
     @engine.add_rule(rule)
@@ -116,7 +116,7 @@ class TestBlackboardEngine < Minitest::Test
   # Issue #64: the docs call engine.facts and engine.close.
   def test_facts_and_close
     @engine.add_fact(:sensor, { temp: 22 })
-    assert_equal [22], @engine.facts.map { |f| f[:temp] }
+    assert_equal([22], @engine.facts.map { |f| f[:temp] })
 
     @engine.close
     assert @engine.blackboard.store.db.closed?
@@ -136,7 +136,7 @@ class TestBlackboardEngine < Minitest::Test
 
     rule = KBS::Rule.new('high_temp_rule') do |r|
       r.conditions << KBS::Condition.new(:sensor, { temp: ->(t) { t > 25 } })
-      r.action = ->(facts) { result << :fired }
+      r.action = ->(_facts) { result << :fired }
     end
 
     @engine.add_rule(rule)
@@ -146,7 +146,7 @@ class TestBlackboardEngine < Minitest::Test
 
     # Update triggers re-evaluation
     fact[:temp] = 30
-    # Note: In current implementation, updates don't auto-trigger RETE
+    # NOTE: In current implementation, updates don't auto-trigger RETE
     # This would require re-adding the updated fact or implementing update propagation
   end
 
@@ -155,8 +155,6 @@ class TestBlackboardEngine < Minitest::Test
   end
 
   def test_observer_integration
-    observer_called = false
-
     observer = Object.new
     def observer.update(action, fact)
       @called = true
@@ -177,8 +175,8 @@ class TestBlackboardEngine < Minitest::Test
   def test_remove_fact_retracts_negated_fact_from_network
     fired = 0
     @engine.add_rule(KBS::Rule.new('a_without_b',
-      conditions: [KBS::Condition.new(:a, {}), KBS::Condition.new(:b, {}, negated: true)],
-      action: ->(_facts) { fired += 1 }))
+                                   conditions: [KBS::Condition.new(:a, {}), KBS::Condition.new(:b, {}, negated: true)],
+                                   action: ->(_facts) { fired += 1 }))
     @engine.add_fact(:a, {})
     b = @engine.add_fact(:b, {})
     @engine.remove_fact(b)
@@ -191,8 +189,8 @@ class TestBlackboardEngine < Minitest::Test
   def test_remove_fact_retracts_positive_match
     fired = 0
     @engine.add_rule(KBS::Rule.new('a_and_b',
-      conditions: [KBS::Condition.new(:a, {}), KBS::Condition.new(:b, {})],
-      action: ->(_facts) { fired += 1 }))
+                                   conditions: [KBS::Condition.new(:a, {}), KBS::Condition.new(:b, {})],
+                                   action: ->(_facts) { fired += 1 }))
     @engine.add_fact(:a, {})
     b = @engine.add_fact(:b, {})
     @engine.remove_fact(b)

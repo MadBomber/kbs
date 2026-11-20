@@ -15,6 +15,9 @@ module KBS
     # Classes whose #inspect is Ruby source for an equal value.
     LITERAL_CLASSES = [Integer, Symbol, NilClass, TrueClass, FalseClass].freeze
 
+    # Marks a lookup that has not been tried yet; its result may be nil.
+    UNRESOLVED = Object.new.freeze
+
     def initialize(proc_obj)
       @iseq  = RubyVM::InstructionSequence.of(proc_obj)
       @arr   = @iseq.to_a
@@ -26,6 +29,7 @@ module KBS
       @child_index = 0
       @proc = proc_obj
       @outer_locals = []          # local tables of enclosing blocks
+      @creator_locals = UNRESOLVED
     end
 
     def decompile
@@ -58,145 +62,189 @@ module KBS
       @locals.first(count).join(", ")
     end
 
+    # The state of one pass over a body: the simulated stack, the
+    # statements finished so far, the && / || operators still waiting
+    # for their label, the || expressions built (to parenthesize them
+    # inside &&), how many steps to skip, and whether the pass is over.
+    Pass = Struct.new(:steps, :stack, :statements, :pending, :or_exprs, :skip, :done)
+
+    # Instructions that push a fixed piece of source.
+    FIXED_SOURCES = {
+      putobject_INT2FIX_0_: "0",
+      putobject_INT2FIX_1_: "1",
+      putself: "self",
+      putnil: "nil"
+    }.freeze
+
+    BINARY_OPERATIONS = %i[
+      opt_plus opt_minus opt_mult opt_div opt_mod
+      opt_eq opt_neq opt_lt opt_le opt_gt opt_ge opt_ltlt
+    ].freeze
+
+    # Instruction => the method that translates it.
+    HANDLERS = {
+      dup: :translate_dup,
+      getlocal_WC_0: :translate_getlocal,
+      getlocal_WC_1: :translate_outer_getlocal,
+      setlocal_WC_0: :translate_setlocal,
+      putobject: :translate_literal,
+      putchilledstring: :translate_literal,
+      dupchilledstring: :translate_literal,
+      putstring: :translate_literal,
+      opt_send_without_block: :translate_call,
+      send: :translate_call_with_block,
+      newarray: :translate_newarray,
+      newhash: :translate_newhash,
+      branchunless: :translate_branchunless,
+      pop: :translate_pop,
+      leave: :translate_nothing,
+      nop: :translate_nothing # Ruby 3.x starts a block with nop
+    }.merge(BINARY_OPERATIONS.to_h { |op| [op, :translate_binary] }).freeze
+
+    private_constant :Pass, :FIXED_SOURCES, :BINARY_OPERATIONS, :HANDLERS
+
     def decompile_body(body)
-      stack = []
-      statements = []
-      steps = body.select { |i| i.is_a?(Array) || label?(i) }
-      pending = []        # open && / || operators waiting for their label
-      or_exprs = {}.compare_by_identity
-      skip = 0
+      pass = new_pass(body)
+      pass.steps.each_with_index do |inst, index|
+        break if pass.done
 
-      steps.each_with_index do |inst, index|
-        if skip.positive?
-          skip -= 1
-          next
-        end
-
-        if label?(inst)
-          close_logical_ops(inst, pending, stack, or_exprs)
-          next
-        end
-
-        op = inst[0]
-        case op
-        when :dup
-          logical = logical_op_at(steps, index)
-          if logical
-            pending.push([logical, stack.pop, steps[index + 1][1]])
-            skip = 2
-          else
-            stack.push("/* dup */")
-          end
-
-        when :getlocal_WC_0
-          idx = inst[1]
-          name = slot_to_name(idx)
-          stack.push(name.to_s)
-
-        when :getlocal_WC_1
-          name = if @outer_locals.empty?
-                   captured_value(inst[1])
-                 else
-                   slot_to_name(inst[1], @outer_locals.last).to_s
-                 end
-          stack.push(name || '/* getlocal_WC_1 */')
-
-        when :setlocal_WC_0
-          idx = inst[1]
-          name = slot_to_name(idx)
-          val = stack.pop
-          statements << "#{name} = #{val}"
-
-        when :putobject
-          stack.push(inst[1].inspect)
-
-        when :putobject_INT2FIX_0_
-          stack.push("0")
-
-        when :putobject_INT2FIX_1_
-          stack.push("1")
-
-        when :putself
-          stack.push("self")
-
-        when :putnil
-          stack.push("nil")
-
-        when :putchilledstring, :dupchilledstring, :putstring
-          stack.push(inst[1].inspect)
-
-        when :opt_plus, :opt_minus, :opt_mult, :opt_div, :opt_mod,
-             :opt_eq, :opt_neq, :opt_lt, :opt_le, :opt_gt, :opt_ge,
-             :opt_ltlt
-          op_sym = inst.last[:mid] # opt_neq carries == then !=
-          b = stack.pop
-          a = stack.pop
-          stack.push("#{a} #{op_sym} #{b}")
-
-        when :opt_send_without_block
-          calldata = inst[1]
-          method   = calldata[:mid]
-          argc     = calldata[:orig_argc]
-          args = stack.pop(argc)
-          receiver = stack.pop
-          call_str = format_call(receiver, method, args)
-          stack.push(call_str)
-
-        when :send
-          calldata = inst[1]
-          method   = calldata[:mid]
-          argc     = calldata[:orig_argc]
-          args     = stack.pop(argc)
-          receiver = stack.pop
-
-          child_iseq = @children[@child_index]
-          @child_index += 1
-          child_src = decompile_child(child_iseq)
-
-          base = format_call(receiver, method, args)
-          stack.push("#{base} { #{child_src} }")
-
-        when :newarray
-          count = inst[1]
-          items = stack.pop(count)
-          stack.push("[#{items.join(', ')}]")
-
-        when :newhash
-          count = inst[1]
-          pairs = stack.pop(count)
-          entries = pairs.each_slice(2).map { |k, v| "#{k} => #{v}" }
-          stack.push("{ #{entries.join(', ')} }")
-
-        when :branchunless
-          # Anything else on the stack, such as from a bare branchif, would be lost.
-          lone = stack.size == 1
-          stack.push(lone ? ternary(stack.pop, steps[index + 1..], inst[1]) : '/* branchunless */')
-          break
-
-        when :leave, :nop
-          # ignore; Ruby 3.x starts a block with nop
-
-        when :pop
-          val = stack.pop
-          statements << val if val
-
-        else
-          stack.push("/* #{op} */")
-        end
+        translate_step(pass, inst, index)
       end
+      body_source(pass)
+    end
 
-      # An operator whose label lies outside these steps never closed.
+    def new_pass(body)
+      steps = body.select { |item| item.is_a?(Array) || label?(item) }
+      Pass.new(steps, [], [], [], {}.compare_by_identity, 0, false)
+    end
+
+    # Translates one step, unless an earlier step already consumed it.
+    def translate_step(pass, inst, index)
+      if pass.skip.positive?
+        pass.skip -= 1
+      elsif label?(inst)
+        close_logical_ops(inst, pass.pending, pass.stack, pass.or_exprs)
+      else
+        translate_instruction(pass, inst, index)
+      end
+    end
+
+    def translate_instruction(pass, inst, index)
+      op = inst[0]
+      fixed = FIXED_SOURCES[op]
+      handler = HANDLERS[op]
+      if fixed
+        pass.stack.push(fixed)
+      elsif handler
+        send(handler, pass, inst, index)
+      else
+        pass.stack.push("/* #{op} */")
+      end
+    end
+
+    # The source of a finished pass: its statements, then the value left
+    # on the stack. An operator whose label lies outside the steps never
+    # closed, and becomes a placeholder.
+    def body_source(pass)
+      pending = pass.pending
       return "/* #{pending.last[0]} */" if pending.any?
 
-      all = statements + [stack.last].compact
-      all.join("; ")
+      (pass.statements + [pass.stack.last].compact).join("; ")
     end
+
+    def translate_dup(pass, _inst, index)
+      steps = pass.steps
+      stack = pass.stack
+      logical = logical_op_at(steps, index)
+      if logical
+        pass.pending.push([logical, stack.pop, steps[index + 1][1]])
+        pass.skip = 2
+      else
+        stack.push("/* dup */")
+      end
+    end
+
+    def translate_getlocal(pass, inst, _index)
+      pass.stack.push(slot_to_name(inst[1]).to_s)
+    end
+
+    def translate_outer_getlocal(pass, inst, _index)
+      slot = inst[1]
+      name = if @outer_locals.empty?
+               captured_value(slot)
+             else
+               slot_to_name(slot, @outer_locals.last).to_s
+             end
+      pass.stack.push(name || '/* getlocal_WC_1 */')
+    end
+
+    def translate_setlocal(pass, inst, _index)
+      pass.statements << "#{slot_to_name(inst[1])} = #{pass.stack.pop}"
+    end
+
+    def translate_literal(pass, inst, _index)
+      pass.stack.push(inst[1].inspect)
+    end
+
+    def translate_binary(pass, inst, _index)
+      stack = pass.stack
+      right = stack.pop
+      left = stack.pop
+      stack.push("#{left} #{inst.last[:mid]} #{right}") # opt_neq carries == then !=
+    end
+
+    def translate_call(pass, inst, _index)
+      pass.stack.push(pop_call(pass.stack, inst[1]))
+    end
+
+    def translate_call_with_block(pass, inst, _index)
+      call = pop_call(pass.stack, inst[1])
+      child_iseq = @children[@child_index]
+      @child_index += 1
+      pass.stack.push("#{call} { #{decompile_child(child_iseq)} }")
+    end
+
+    # Takes a call's arguments and receiver off the stack and returns the
+    # call as source.
+    def pop_call(stack, calldata)
+      args = stack.pop(calldata[:orig_argc])
+      format_call(stack.pop, calldata[:mid], args)
+    end
+
+    def translate_newarray(pass, inst, _index)
+      stack = pass.stack
+      stack.push("[#{stack.pop(inst[1]).join(', ')}]")
+    end
+
+    def translate_newhash(pass, inst, _index)
+      stack = pass.stack
+      entries = stack.pop(inst[1]).each_slice(2).map { |key, value| "#{key} => #{value}" }
+      stack.push("{ #{entries.join(', ')} }")
+    end
+
+    # Ends the pass: what follows is the two branches of a ternary.
+    # Anything else on the stack, such as from a bare branchif, would be
+    # lost, so that case becomes a placeholder.
+    def translate_branchunless(pass, inst, index)
+      stack = pass.stack
+      lone = stack.size == 1
+      stack.push(lone ? ternary(stack.pop, pass.steps[(index + 1)..], inst[1]) : '/* branchunless */')
+      pass.done = true
+    end
+
+    def translate_pop(pass, _inst, _index)
+      value = pass.stack.pop
+      pass.statements << value if value
+    end
+
+    def translate_nothing(_pass, _inst, _index); end
 
     # Ruby compiles `a && b` as `a; dup; branchunless L; pop; b; L:`, and
     # `a || b` the same way with branchif. Returns "&&" or "||" when the
     # dup at index starts that sequence, else nil.
     def logical_op_at(steps, index)
-      branch, pop = steps[index + 1], steps[index + 2]
+      branch = steps[index + 1]
+      pop = steps[index + 2]
       return unless pop.is_a?(Array) && pop[0] == :pop && branch.is_a?(Array)
 
       { branchunless: "&&", branchif: "||" }[branch[0]]
@@ -221,7 +269,7 @@ module KBS
     end
 
     def format_call(receiver, method, args)
-      prefix = (receiver == "self") ? "" : "#{receiver}."
+      prefix = receiver == "self" ? "" : "#{receiver}."
       if args.empty?
         "#{prefix}#{method}"
       else
@@ -230,25 +278,27 @@ module KBS
     end
 
     def decompile_child(child_iseq)
-      child_arr = child_iseq.to_a
-      child_locals = child_arr[10]
-      child_params = child_arr[11]
-      child_body   = child_arr[13]
-      count = child_params[:lead_num] || 0
-      param_names = child_locals.first(count).join(", ")
+      child = child_iseq.to_a
+      locals = child[10]
+      params = child[11]
+      count = params[:lead_num] || 0
+      expr = in_scope(locals, params, child[13]) { decompile_body(@body) }
 
+      count.positive? ? "|#{locals.first(count).join(', ')}| #{expr}" : expr
+    end
+
+    # Runs the block with a nested block's locals, parameters and body in
+    # place of the current ones.
+    def in_scope(locals, params, body)
       saved = [@locals, @params, @body]
       @outer_locals.push(@locals)
-      @locals, @params, @body = child_locals, child_params, child_body
-      expr = decompile_body(child_body)
+      @locals = locals
+      @params = params
+      @body = body
+      yield
+    ensure
       @locals, @params, @body = saved
       @outer_locals.pop
-
-      if count > 0
-        "|#{param_names}| #{expr}"
-      else
-        expr
-      end
     end
 
     # `cond ? a : b` compiles to `branchunless L; a; leave; L: b; leave`.
@@ -256,7 +306,7 @@ module KBS
     # silently dropped.
     def ternary(condition, rest, else_label)
       split = rest.index(else_label)
-      sources = split && [rest[0...split], rest[split + 1..]].map { |steps| branch_source(steps) }
+      sources = split && [rest[0...split], rest[(split + 1)..]].map { |steps| branch_source(steps) }
       return '/* branchunless */' unless sources&.all?
 
       "#{condition} ? #{sources.join(' : ')}"
@@ -295,7 +345,7 @@ module KBS
     # the proc was made anywhere else (a nested block, a class body, the
     # top level), where the slot would index some other scope.
     def creator_locals
-      return @creator_locals if defined?(@creator_locals)
+      return @creator_locals unless @creator_locals.equal?(UNRESOLVED)
 
       @creator_locals = begin
         scope = @proc.binding

@@ -2,12 +2,12 @@
 
 module KBS
   module DSL
+    # A ?variable written as a bare name in a pattern block.
     class Variable
       attr_reader :name
 
       def initialize(name)
-        name_str = name.to_s
-        @name = name_str.end_with?('?') ? name_str.to_sym : "#{name_str}?".to_sym
+        @name = :"#{name.to_s.delete_suffix('?')}?"
       end
 
       def to_sym

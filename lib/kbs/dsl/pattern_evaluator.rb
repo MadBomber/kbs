@@ -2,6 +2,8 @@
 
 module KBS
   module DSL
+    # Evaluates the block form of a condition, where each method call names
+    # a pattern key and a bare name is a variable.
     class PatternEvaluator
       # The block form of `on` runs here, so helpers such as greater_than
       # must resolve to the helper, not fall into method_missing as keys.
@@ -15,6 +17,9 @@ module KBS
         @pattern = {}
       end
 
+      # Every name is a variable or a pattern key.
+      def respond_to_missing?(_method, _include_private = false) = true
+
       def method_missing(method, *args, &block)
         if args.empty? && !block_given?
           Variable.new(method)
@@ -27,32 +32,32 @@ module KBS
         end
       end
 
-      def >(value)
-        ->(v) { v > value }
+      def >(other)
+        ->(v) { v > other }
       end
 
-      def <(value)
-        ->(v) { v < value }
+      def <(other)
+        ->(v) { v < other }
       end
 
-      def >=(value)
-        ->(v) { v >= value }
+      def >=(other)
+        ->(v) { v >= other }
       end
 
-      def <=(value)
-        ->(v) { v <= value }
+      def <=(other)
+        ->(v) { v <= other }
       end
 
-      def ==(value)
-        value
+      def ==(other)
+        other
       end
 
-      def !=(value)
-        ->(v) { v != value }
+      def !=(other)
+        ->(v) { v != other }
       end
 
       def between(min, max)
-        ->(v) { v >= min && v <= max }
+        ->(v) { v.between?(min, max) }
       end
 
       def in(collection)

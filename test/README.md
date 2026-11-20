@@ -38,7 +38,7 @@ not the Redis you use day to day:
 
 ```bash
 redis-server --port 6399 --bind 127.0.0.1 --save '' --appendonly no --daemonize yes
-KBS_TEST_REDIS_URL=redis://127.0.0.1:6399/15 bundle exec rake test
+KBS_TEST_REDIS_URL=redis://127.0.0.1:6399/15 asgard test_check
 redis-cli -p 6399 shutdown nosave
 ```
 
@@ -185,7 +185,7 @@ assert_equal 1, results.size
 
 ## Continuous Integration
 
-CI runs `bundle exec rake test` with a Redis service and `KBS_TEST_REDIS_URL` set; see `.github/workflows/test.yml`.
+CI runs the same command as `asgard test_check` (see `.loki`) with a Redis service and `KBS_TEST_REDIS_URL` set; see `.github/workflows/test.yml`.
 
 ## Development Workflow
 

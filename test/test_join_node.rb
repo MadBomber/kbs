@@ -171,7 +171,7 @@ class TestJoinNode < Minitest::Test
 
     @join_node.left_unlink!
 
-    fact = KBS::Fact.new(:person, name: "Alice")
+    KBS::Fact.new(:person, name: "Alice")
     token = KBS::Token.new(nil, nil, nil)
     @join_node.left_activate(token)
 

@@ -1,7 +1,10 @@
 # frozen_string_literal: true
 
 module KBS
+  # Joins the partial matches of the conditions before it with the facts
+  # of one more positive condition.
   class JoinNode
+    include NetworkNode
     include JoinTests
     include JoinIndexing
 
@@ -76,7 +79,7 @@ module KBS
       token.children.select { |child| child.node.equal?(self) }.each do |child|
         token.remove_child(child)
         forget(child)
-        retract(child)
+        deactivate_successors(child)
       end
     end
 
@@ -86,7 +89,7 @@ module KBS
     def right_deactivate(fact)
       tokens_for(@tokens_by_fact.delete(fact)).each do |child|
         child.parent&.remove_child(child)
-        retract(child)
+        deactivate_successors(child)
       end
     end
 
@@ -107,33 +110,36 @@ module KBS
       new_token = Token.new(token, fact, self)
       token.add_child(new_token)
       remember(new_token)
-      @successors.each { |s| s.activate(new_token) }
-    end
-
-    def retract(child)
-      @successors.each { |s| s.deactivate(child) if s.respond_to?(:deactivate) }
+      activate_successors(new_token)
     end
 
     # @tokens_by_fact maps a fact to the tokens built from it: the token
     # itself while there is one, which is the common case, and a Set once
     # there are more.
     def remember(token)
-      entry = @tokens_by_fact[token.fact]
+      fact = token.fact
+      entry = @tokens_by_fact[fact]
       case entry
-      when nil then @tokens_by_fact[token.fact] = token
+      when nil then @tokens_by_fact[fact] = token
       when Set then entry << token
-      else @tokens_by_fact[token.fact] = Set[entry, token]
+      else @tokens_by_fact[fact] = Set[entry, token]
       end
     end
 
     def forget(token)
-      entry = @tokens_by_fact[token.fact]
-      if entry.is_a?(Set)
-        entry.delete(token)
-        @tokens_by_fact.delete(token.fact) if entry.empty?
-      elsif entry.equal?(token)
-        @tokens_by_fact.delete(token.fact)
+      fact = token.fact
+      entry = @tokens_by_fact[fact]
+      if entry.equal?(token)
+        @tokens_by_fact.delete(fact)
+      elsif entry.is_a?(Set)
+        forget_one_of(entry, token, fact)
       end
+    end
+
+    # Takes `token` out of the Set of tokens built from `fact`, and drops
+    # the Set when it was the last.
+    def forget_one_of(tokens, token, fact)
+      @tokens_by_fact.delete(fact) if tokens.delete(token).empty?
     end
 
     def tokens_for(entry)

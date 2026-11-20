@@ -34,7 +34,8 @@ bundle install
 git clone https://github.com/madbomber/kbs.git
 cd kbs
 bundle install
-rake install
+gem build kbs.gemspec
+gem install kbs-*.gem
 ```
 
 ## Optional Dependencies
@@ -106,7 +107,7 @@ cd kbs
 bundle install
 
 # Run tests
-bundle exec rake test
+bundle exec ruby -Ilib:test -e 'Dir["test/**/test_*.rb"].each { |f| require File.expand_path(f) }'
 
 # Run examples
 bundle exec ruby examples/working_demo.rb

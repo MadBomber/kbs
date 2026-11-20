@@ -35,7 +35,7 @@ class TestBlackboardMemory < Minitest::Test
 
     sensors = @memory.get_facts(:sensor)
     assert_equal 2, sensors.size
-    assert sensors.all? { |f| f.type == :sensor }
+    assert(sensors.all? { |f| f.type == :sensor })
   end
 
   def test_get_facts_with_pattern
@@ -83,7 +83,7 @@ class TestBlackboardMemory < Minitest::Test
     @memory.post_message("s", "q", "plain text")
     @memory.post_message("s", "q", { ok: true })
 
-    assert_equal ["plain text", { ok: true }], @memory.peek_messages("q").map { |m| m[:content] }
+    assert_equal(["plain text", { ok: true }], @memory.peek_messages("q").map { |m| m[:content] })
     assert_equal "plain text", @memory.consume_message("q", "c")[:content]
     assert_equal({ ok: true }, @memory.consume_message("q", "c")[:content])
   end
@@ -91,7 +91,7 @@ class TestBlackboardMemory < Minitest::Test
   # Issue #62: SQLite stores CURRENT_TIMESTAMP as UTC text, which used to be
   # read back as local time.
   def test_timestamps_read_back_in_utc
-    original_tz = ENV['TZ']
+    original_tz = ENV.fetch('TZ', nil)
     ENV['TZ'] = 'America/Chicago'
 
     @memory.post_message("s", "t", { a: 1 })
@@ -150,19 +150,18 @@ class TestBlackboardMemory < Minitest::Test
   end
 
   def test_rule_firing_log
-    @memory.log_rule_firing("test_rule", ["uuid1", "uuid2"], { price: 150 })
+    @memory.log_rule_firing("test_rule", %w[uuid1 uuid2], { price: 150 })
 
     firings = @memory.get_rule_firings
     assert_equal 1, firings.size
     assert_equal "test_rule", firings.first[:rule_name]
-    assert_equal ["uuid1", "uuid2"], firings.first[:fact_uuids]
+    assert_equal %w[uuid1 uuid2], firings.first[:fact_uuids]
     assert_equal 150, firings.first[:bindings][:price]
   end
 
   def test_observer_pattern
-    observer_called = false
-    action_received = nil
-    fact_received = nil
+    nil
+    nil
 
     observer = Object.new
     def observer.update(action, fact)
@@ -227,7 +226,7 @@ class TestBlackboardMemory < Minitest::Test
     @memory.register_knowledge_source(
       "TemperatureMonitor",
       description: "Monitors temperature sensors",
-      topics: ["readings", "alerts"]
+      topics: %w[readings alerts]
     )
 
     stats = @memory.stats

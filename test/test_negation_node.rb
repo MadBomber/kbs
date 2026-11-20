@@ -69,6 +69,7 @@ class TestNegationNode < Minitest::Test
       @tokens ||= []
       @tokens << token
     end
+
     def successor.deactivate(token)
       @deactivations ||= []
       @deactivations << token

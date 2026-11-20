@@ -32,7 +32,7 @@ class TestDSLKnowledgeBase < Minitest::Test
     kb = KBS.knowledge_base do
       rule 'hot' do
         on :temperature, value: greater_than(80), location: "lab"
-        perform { }
+        perform {}
       end
     end
 
@@ -122,7 +122,7 @@ class TestDSLKnowledgeBase < Minitest::Test
 
     kb.rule 'test_rule' do
       on :car, color: :red
-      perform { |facts| fired = true }
+      perform { |_facts| fired = true }
     end
 
     kb.fact(:car, color: :red)
@@ -137,12 +137,12 @@ class TestDSLKnowledgeBase < Minitest::Test
 
     kb.rule 'rule1' do
       on :car, color: :red
-      perform { |facts| results << :rule1 }
+      perform { |_facts| results << :rule1 }
     end
 
     kb.rule 'rule2' do
       on :car, color: :red
-      perform { |facts| results << :rule2 }
+      perform { |_facts| results << :rule2 }
     end
 
     kb.fact(:car, color: :red)
@@ -305,7 +305,7 @@ class TestDSLKnowledgeBase < Minitest::Test
     end
 
     kb.run
-    assert_equal [:signal, :no_problem], results
+    assert_equal %i[signal no_problem], results
 
     kb.retract(kb.query(:signal).first)
     assert_empty kb.engine.production_nodes['has_signal'].tokens
@@ -313,7 +313,7 @@ class TestDSLKnowledgeBase < Minitest::Test
     results.clear
     kb.reset
     kb.run
-    assert_equal [:no_critical, :no_problem], results
+    assert_equal %i[no_critical no_problem], results
   end
 
   def test_dsl_entry_point
@@ -328,10 +328,10 @@ class TestDSLKnowledgeBase < Minitest::Test
   def test_block_dsl
     result = []
 
-    kb = KBS.knowledge_base do
+    KBS.knowledge_base do
       rule 'test' do
         on :car, color: :red
-        perform { |facts| result << :fired }
+        perform { |_facts| result << :fired }
       end
 
       fact :car, color: :red
@@ -361,7 +361,7 @@ class TestDSLKnowledgeBase < Minitest::Test
     kb = KBS::DSL::KnowledgeBase.new
     kb.rule 'test_rule' do
       on :car, color: :red
-      perform { |facts| result << :fired }
+      perform { |_facts| result << :fired }
     end
 
     kb.fact(:car, color: :red)
@@ -442,7 +442,7 @@ class TestDSLKnowledgeBase < Minitest::Test
     kb = KBS::DSL::KnowledgeBase.new
     kb.rule 'nested' do
       on :car, color: :red
-      perform do |facts|
+      perform do |_facts|
         puts "fired"
       end
     end
@@ -494,7 +494,7 @@ class TestDSLKnowledgeBase < Minitest::Test
     # Build a rule programmatically (simulating dynamic creation)
     builder = KBS::DSL::RuleBuilder.new("dynamic_rule")
     builder.on :sensor, temp: :high
-    builder.perform { |facts| puts "alert" }
+    builder.perform { |_facts| puts "alert" }
     rule = builder.build
     kb.instance_variable_get(:@rule_builders)["dynamic_rule"] = builder
     kb.instance_variable_get(:@rules)["dynamic_rule"] = rule
@@ -567,10 +567,23 @@ class TestDSLKnowledgeBase < Minitest::Test
   def test_helper_and_variable_on_type_attribute
     fired = []
     KBS.knowledge_base do
-      rule('helper') { on :sensor, type: one_of('temperature'); perform { |f| fired << [:helper, f.first[:type]] } }
-      rule('variable') { on :sensor, type: :t?; perform { |_f, b| fired << [:variable, b[:t?]] } }
-      rule('blocked') { on :go; without :sensor, type: one_of('temperature'); perform { fired << :blocked } }
-      rule('literal') { on :sensor, type: 'humidity'; perform { fired << :literal } }
+      rule('helper') do
+        on :sensor, type: one_of('temperature')
+        perform { |f| fired << [:helper, f.first[:type]] }
+      end
+      rule('variable') do
+        on :sensor, type: :t?
+        perform { |_f, b| fired << [:variable, b[:t?]] }
+      end
+      rule('blocked') do
+        on :go
+        without :sensor, type: one_of('temperature')
+        perform { fired << :blocked }
+      end
+      rule('literal') do
+        on :sensor, type: 'humidity'
+        perform { fired << :literal }
+      end
       fact :go
       fact :sensor, type: 'temperature'
       run
