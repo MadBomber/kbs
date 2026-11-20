@@ -2,7 +2,7 @@
 
 module KBS
   class Engine
-    attr_reader :working_memory, :rules, :alpha_memories, :production_nodes, :agenda
+    attr_reader :working_memory, :rules, :alpha_memories, :production_nodes, :agenda, :tracer
 
     # @param strategy [Symbol] conflict resolution strategy; see KBS::Agenda
     # @param fact_duplication [Boolean] whether working memory may hold two
@@ -16,6 +16,8 @@ module KBS
       @retracting = false
       @firing = nil
       @agenda = Agenda.new(strategy: strategy)
+      @tracer = Tracer.new
+      @rule_paths = {}
       @halted = false
       @working_memory = WorkingMemory.new
       @rules = []
@@ -202,6 +204,93 @@ module KBS
       end
     end
 
+    # Starts writing a line for each change to the watched items, or to
+    # every item when none is given: :facts, :activations, :rules. Lines
+    # go to #trace_output, $stdout by default. See KBS::Tracer.
+    def watch(*items)
+      @tracer.watch(*items)
+      listen_to_agenda
+      self
+    end
+
+    def unwatch(*items)
+      @tracer.unwatch(*items)
+      listen_to_agenda
+      self
+    end
+
+    # The agenda reports to the tracer only while activations are
+    # watched, so an unwatched engine pays nothing for it.
+    def listen_to_agenda
+      @agenda.listener = @tracer.watching?(:activations) ? @tracer : nil
+    end
+
+    def trace_output
+      @tracer.output
+    end
+
+    def trace_output=(output)
+      @tracer.output = output
+    end
+
+    # How far each condition of a rule has matched: the facts that fit
+    # the condition on its own, and the partial matches of the rule up to
+    # and including it. The first condition whose partial_matches is zero
+    # is the one that keeps the rule from firing.
+    #
+    # @return [Hash, nil] { rule:, conditions: [{ keyword:, type:,
+    #   alpha_matches:, partial_matches: }], matches:, activations: };
+    #   nil for an unknown rule
+    def matches(rule_name)
+      path = @rule_paths[rule_name]
+      return nil unless path
+
+      node = @production_nodes[rule_name]
+      tokens = node.tokens
+      {
+        rule: rule_name,
+        conditions: path.map do |step|
+          { keyword: step[:condition].keyword, type: step[:condition].type,
+            alpha_matches: step[:alpha_memory].size, partial_matches: step[:beta_memory].size }
+        end,
+        matches: tokens.size,
+        activations: tokens.count { |token| !node.fired?(token) }
+      }
+    end
+
+    # The work each condition of a rule has cost so far. See
+    # KBS::JoinIndexing::Activity. Rules that share a node report the
+    # same counts for it.
+    #
+    # @return [Array<Hash>, nil] one Hash per condition; nil for an
+    #   unknown rule
+    def join_activity(rule_name)
+      path = @rule_paths[rule_name]
+      return nil unless path
+
+      path.map do |step|
+        { keyword: step[:condition].keyword, type: step[:condition].type,
+          indexed: step[:node].indexed?, **step[:node].activity.to_h }
+      end
+    end
+
+    def reset_join_activity
+      @beta_nodes.each(&:reset_activity)
+    end
+
+    # The size of the network and of what it holds.
+    def network_stats
+      {
+        rules: @rules.size,
+        facts: @working_memory.facts.size,
+        alpha_memories: @alpha_memories.size,
+        beta_nodes: @beta_nodes.size,
+        conditions: @rules.sum { |rule| rule.conditions.size },
+        partial_matches: @beta_nodes.sum { |node| node.successors.grep(BetaMemory).sum(&:size) },
+        activations: @agenda.size
+      }
+    end
+
     # Every join, negation and exists node in the network. Rules that
     # start with the same conditions share nodes, so there can be fewer
     # nodes than conditions.
@@ -228,9 +317,11 @@ module KBS
       @matching = true
       begin
         if action == :add
+          @tracer.fact_added(fact)
           @fact_registry.add(fact) unless @fact_duplication
           match_fact(fact)
         elsif action == :remove
+          @tracer.fact_removed(fact)
           @fact_registry.remove(fact)
           @truth_maintenance.release(fact)
           unmatch_fact(fact)
@@ -283,6 +374,7 @@ module KBS
         activation = @agenda.pop
         break unless activation
 
+        @tracer.rule_fired(activation)
         fire_activation(activation)
         fired += 1
       end
@@ -377,6 +469,8 @@ module KBS
       join_tests = JoinTestBuilder.new(rule.conditions).tests
       logical_count = rule.logical_count
 
+      path = @rule_paths[rule.name] = []
+
       rule.conditions.each_with_index do |condition, index|
         # Build alpha memory pattern - merge condition type
         pattern = condition.pattern.merge(type: condition.type)
@@ -387,6 +481,7 @@ module KBS
                build_node(current_beta, node_class_for(condition), alpha_memory, tests)
         current_beta = node.successors.grep(BetaMemory).first
         current_beta.listener = self if index == logical_count - 1
+        path << { condition: condition, alpha_memory: alpha_memory, node: node, beta_memory: current_beta }
       end
 
       production_node = ProductionNode.new(rule, @agenda, order: @rules.size)

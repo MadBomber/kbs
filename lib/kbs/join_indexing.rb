@@ -13,10 +13,30 @@ module KBS
   # The including class supplies `tests`, `alpha_memory` and
   # `beta_memory` readers and includes KBS::JoinTests.
   module JoinIndexing
+    # Counts of the work a node has done, to find the expensive
+    # condition of a rule:
+    #
+    #   left_activations   tokens that arrived from the conditions before
+    #   right_activations  facts that arrived for this condition
+    #   comparisons        candidates looked at; a hash join keeps this
+    #                      close to matches
+    #   matches            candidates that passed
+    Activity = Struct.new(:left_activations, :right_activations, :comparisons, :matches)
+
     attr_reader :residual_tests
+
+    # The counts so far, as a snapshot.
+    def activity
+      Activity.new(@left_activations, @right_activations, @comparisons, @matches)
+    end
+
+    def reset_activity
+      @left_activations = @right_activations = @comparisons = @matches = 0
+    end
 
     # Call when the tests or memories are set.
     def build_join_indexes
+      reset_activity unless @matches
       keyed, @residual_tests = (tests || []).partition { |test| JoinIndexing.indexable?(test) }
       @right_index = @left_index = nil
       return if keyed.empty? || alpha_memory.nil? || beta_memory.nil?
@@ -48,17 +68,24 @@ module KBS
     # Facts that join with `token`.
     def matching_facts(token)
       candidates = candidate_facts(token)
-      return candidates.to_a if @residual_tests.empty?
-
-      candidates.select { |fact| join_tests_pass?(@residual_tests, token, fact) }
+      matches = @residual_tests.empty? ? candidates.to_a : candidates.select { |fact| join_tests_pass?(@residual_tests, token, fact) }
+      @left_activations += 1
+      count(candidates, matches)
     end
 
     # Tokens that join with `fact`.
     def matching_tokens(fact)
       candidates = candidate_tokens(fact)
-      return candidates.to_a if @residual_tests.empty?
+      matches = @residual_tests.empty? ? candidates.to_a : candidates.select { |token| join_tests_pass?(@residual_tests, token, fact) }
+      @right_activations += 1
+      count(candidates, matches)
+    end
 
-      candidates.select { |token| join_tests_pass?(@residual_tests, token, fact) }
+    # Adds to the activity counts and returns the matches.
+    def count(candidates, matches)
+      @comparisons += candidates.size
+      @matches += matches.size
+      matches
     end
 
     # An equality test between a token field and a fact field.
