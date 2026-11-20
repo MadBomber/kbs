@@ -1,0 +1,186 @@
+AllCops:
+  NewCops: enable
+  SuggestExtensions: false
+  TargetRubyVersion: 4.0
+  Exclude:
+    - 'examples/**/*'
+    - 'vendor/**/*'
+
+# ── Style: disabled cops ───────────────────────────────────────────────────
+Style/StringLiterals:
+  Enabled: false
+
+Style/StringLiteralsInInterpolation:
+  Enabled: false
+
+Style/Documentation:
+  Enabled: false
+
+Style/IfUnlessModifier:
+  Enabled: false
+
+Style/RescueModifier:
+  Enabled: false
+
+Style/TrivialAccessors:
+  Enabled: false
+
+Style/MultilineTernaryOperator:
+  Enabled: false
+
+Style/SafeNavigation:
+  Enabled: false
+
+Style/ClassAndModuleChildren:
+  Enabled: false
+
+Style/RescueStandardError:
+  Enabled: false
+
+# Both % and format/sprintf are acceptable
+Style/FormatString:
+  Enabled: false
+
+# String concatenation and interpolation are both acceptable
+Style/StringConcatenation:
+  Enabled: false
+
+# ── Layout ─────────────────────────────────────────────────────────────────
+Layout/LineLength:
+  Max: 140
+
+Layout/ExtraSpacing:
+  Enabled: false
+
+Layout/HashAlignment:
+  Enabled: false
+
+Layout/FirstHashElementIndentation:
+  Enabled: false
+
+Layout/EmptyLineAfterGuardClause:
+  Enabled: false
+
+# ── Naming ─────────────────────────────────────────────────────────────────
+# Single-char params (e, t) are acceptable throughout
+Naming/MethodParameterName:
+  Enabled: false
+
+Naming/VariableNumber:
+  Exclude:
+    - 'test/**/*'
+
+Naming/RescuedExceptionsVariableName:
+  Enabled: false
+
+Naming/AccessorMethodName:
+  Enabled: false
+
+Naming/PredicatePrefix:
+  Enabled: false
+
+Naming/PredicateMethod:
+  Exclude:
+    - 'test/**/*'
+
+# ── Lint ───────────────────────────────────────────────────────────────────
+Lint/EmptyBlock:
+  Exclude:
+    - 'test/**/*'
+
+Lint/UnusedMethodArgument:
+  Enabled: false
+
+Lint/ConstantDefinitionInBlock:
+  Exclude:
+    - 'test/**/*'
+
+# ── Gemspec ────────────────────────────────────────────────────────────────
+Gemspec/DevelopmentDependencies:
+  EnforcedStyle: Gemfile
+
+Gemspec/RequiredRubyVersion:
+  Enabled: false
+
+Gemspec/OrderedDependencies:
+  Enabled: false
+
+# ── Metrics ────────────────────────────────────────────────────────────────
+# Flog is the primary complexity gate — these thresholds catch only
+# egregious outliers without false-positiving every dispatch method.
+
+Metrics/MethodLength:
+  Max: 35
+  CountAsOne:
+    - heredoc
+    - array
+    - hash
+  Exclude:
+    - 'test/**/*'
+
+Metrics/AbcSize:
+  Max: 40
+  Exclude:
+    - 'test/**/*'
+
+Metrics/ClassLength:
+  Max: 300
+  Exclude:
+    - 'test/**/*'
+
+Metrics/ModuleLength:
+  Max: 200
+  Exclude:
+    - 'test/**/*'
+
+Metrics/CyclomaticComplexity:
+  Max: 20
+  Exclude:
+    - 'test/**/*'
+
+Metrics/PerceivedComplexity:
+  Max: 20
+  Exclude:
+    - 'test/**/*'
+
+Metrics/ParameterLists:
+  Enabled: false
+
+Metrics/BlockLength:
+  Max: 60
+  Exclude:
+    - '*.gemspec'
+    - 'test/**/*'
+
+# ── kbs ────────────────────────────────────────────────────────────────────
+# Tests evaluate DSL source with no file on purpose: rule_source then has
+# no file to read and must rebuild the rule from its procs.
+Style/EvalWithLocation:
+  Exclude:
+    - 'test/**/*'
+
+# YARV instruction names (getlocal_WC_0) are not ours to rename.
+Naming/VariableNumber:
+  Exclude:
+    - 'test/**/*'
+    - 'lib/kbs/decompiler.rb'
+
+# add, perform_join_tests and compare_join_values return booleans and are
+# published API; a ? suffix would break callers.
+Naming/PredicateMethod:
+  Exclude:
+    - 'test/**/*'
+  AllowedMethods:
+    - call
+    - add
+    - perform_join_tests
+    - compare_join_values
+
+# Benchmark report lines are positional printf templates.
+Style/FormatStringToken:
+  Enabled: false
+
+# Tests assert that normalize returns a Float eql? to another.
+Lint/FloatComparison:
+  Exclude:
+    - 'test/**/*'

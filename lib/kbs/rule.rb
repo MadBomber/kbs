@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module KBS
+  # A named set of conditions and the action to run for each match.
   class Rule
     attr_reader :name, :priority
     attr_accessor :conditions, :action
@@ -22,61 +23,37 @@ module KBS
       bindings = bindings_for(facts)
 
       # Support 0-parameter, 1-parameter and 2-parameter actions
-      if @action.arity == 0
+      if @action.arity.zero?
         @action.call
-      elsif @action.arity == 1 || @action.arity == -1
+      elsif [1, -1].include?(@action.arity)
         @action.call(facts)
       else
         @action.call(facts, bindings)
       end
     end
 
-    # Maps each variable to its value in the matched facts. The facts
-    # line up with the positive conditions only; negated conditions
-    # match no fact.
-    def bindings_for(facts)
-      @conditions.reject(&:negated).zip(facts).each_with_object({}) do |(condition, fact), bindings|
-        next unless fact
+    # The number of leading conditions that are logical. Facts the rule
+    # asserts are supported by the match of those conditions.
+    def logical_count
+      @conditions.take_while(&:logical).size
+    end
 
-        condition.variable_bindings.each { |var, field| bindings[var] = fact.attributes[field] }
+    # Logical conditions have to come before every other condition.
+    def logical_conditions_first?
+      @conditions.drop(logical_count).none?(&:logical)
+    end
+
+    # Maps each variable to its value in the matched facts. The facts
+    # line up with the conditions that bind a fact; negated and exists
+    # conditions contribute none.
+    def bindings_for(facts)
+      @conditions.select(&:binds_fact?).zip(facts).each_with_object({}) do |(condition, fact), bindings|
+        bindings.merge!(condition.bindings_from(fact)) if fact
       end
     end
 
     def to_s
-      lines = ["rule #{@name.inspect} do"]
-      lines << "  priority #{@priority}" unless @priority.zero?
-
-      @conditions.each do |condition|
-        keyword = condition.negated ? "without" : "on"
-        pattern = condition.pattern.map do |key, value|
-          "#{key}: #{pattern_value_source(value)}"
-        end.join(", ")
-        line = "  #{keyword} #{condition.type.inspect}"
-        line += ", #{pattern}" unless pattern.empty?
-        lines << line
-      end
-
-      if @action
-        action = begin
-          KBS::Decompiler.new(@action).decompile_block
-        rescue StandardError => e
-          "{ <decompilation failed: #{e.message}> }"
-        end
-        lines << "  perform #{action}"
-      end
-
-      lines << "end"
-      lines.join("\n")
-    end
-
-    private
-
-    def pattern_value_source(value)
-      return value.inspect unless value.is_a?(Proc)
-
-      KBS::Decompiler.new(value).decompile
-    rescue StandardError => e
-      "<decompilation failed: #{e.message}>"
+      RuleSource.new(name: @name, conditions: @conditions, action: @action, priority: @priority).to_s
     end
   end
 end

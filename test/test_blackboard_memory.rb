@@ -35,7 +35,7 @@ class TestBlackboardMemory < Minitest::Test
 
     sensors = @memory.get_facts(:sensor)
     assert_equal 2, sensors.size
-    assert sensors.all? { |f| f.type == :sensor }
+    assert(sensors.all? { |f| f.type == :sensor })
   end
 
   def test_get_facts_with_pattern
@@ -83,7 +83,7 @@ class TestBlackboardMemory < Minitest::Test
     @memory.post_message("s", "q", "plain text")
     @memory.post_message("s", "q", { ok: true })
 
-    assert_equal ["plain text", { ok: true }], @memory.peek_messages("q").map { |m| m[:content] }
+    assert_equal(["plain text", { ok: true }], @memory.peek_messages("q").map { |m| m[:content] })
     assert_equal "plain text", @memory.consume_message("q", "c")[:content]
     assert_equal({ ok: true }, @memory.consume_message("q", "c")[:content])
   end
@@ -91,7 +91,7 @@ class TestBlackboardMemory < Minitest::Test
   # Issue #62: SQLite stores CURRENT_TIMESTAMP as UTC text, which used to be
   # read back as local time.
   def test_timestamps_read_back_in_utc
-    original_tz = ENV['TZ']
+    original_tz = ENV.fetch('TZ', nil)
     ENV['TZ'] = 'America/Chicago'
 
     @memory.post_message("s", "t", { a: 1 })
@@ -150,19 +150,18 @@ class TestBlackboardMemory < Minitest::Test
   end
 
   def test_rule_firing_log
-    @memory.log_rule_firing("test_rule", ["uuid1", "uuid2"], { price: 150 })
+    @memory.log_rule_firing("test_rule", %w[uuid1 uuid2], { price: 150 })
 
     firings = @memory.get_rule_firings
     assert_equal 1, firings.size
     assert_equal "test_rule", firings.first[:rule_name]
-    assert_equal ["uuid1", "uuid2"], firings.first[:fact_uuids]
+    assert_equal %w[uuid1 uuid2], firings.first[:fact_uuids]
     assert_equal 150, firings.first[:bindings][:price]
   end
 
   def test_observer_pattern
-    observer_called = false
-    action_received = nil
-    fact_received = nil
+    nil
+    nil
 
     observer = Object.new
     def observer.update(action, fact)
@@ -227,10 +226,77 @@ class TestBlackboardMemory < Minitest::Test
     @memory.register_knowledge_source(
       "TemperatureMonitor",
       description: "Monitors temperature sensors",
-      topics: ["readings", "alerts"]
+      topics: %w[readings alerts]
     )
 
     stats = @memory.stats
     assert_equal 1, stats[:knowledge_sources]
+  end
+
+  # Contract: blackboard/sqlite-message-queue-accepts-symbols
+  # Bug: the SQLite MessageQueue rejected Symbol topics and senders, which RedisMessageQueue accepts
+  def test_message_queue_accepts_symbol_topic_and_sender
+    @memory.post_message(:sensor, :readings, { temp: 22 })
+
+    assert_equal 1, @memory.peek_messages(:readings).size
+    message = @memory.consume_message(:readings, :consumer)
+    assert_equal 'sensor', message[:sender]
+    assert_equal 'readings', message[:topic]
+  end
+
+  # Contract: blackboard/store-base-interface
+  # Bug: the Store base class lacked session_id and register_knowledge_source, which Memory calls
+  def test_store_base_class_declares_session_id_and_register_knowledge_source
+    store = KBS::Blackboard::Persistence::Store.new
+
+    assert_nil store.session_id
+    assert_raises(NotImplementedError) { store.register_knowledge_source('ks') }
+  end
+
+  # Contract: blackboard/memory-rejects-unsuitable-store
+  # Bug: Memory.new(store: obj) raised NoMethodError for session_id before its own ArgumentError
+  def test_unsuitable_store_raises_argument_error
+    error = assert_raises(ArgumentError) { KBS::Blackboard::Memory.new(store: Object.new) }
+    assert_match(/:connection .* :db/, error.message)
+  end
+
+  # Contract: blackboard/memory-remove-fact-returns-fact
+  # Bug: Memory#remove_fact returned the observer array instead of the fact
+  def test_remove_fact_returns_the_removed_fact_or_nil
+    fact = @memory.add_fact(:sensor, { temp: 22 })
+
+    assert_equal fact, @memory.remove_fact(fact)
+    assert_nil @memory.remove_fact(fact)
+  end
+
+  def test_rolled_back_transaction_tells_observers_the_added_fact_is_gone
+    events = []
+    observer = Object.new
+    observer.define_singleton_method(:update) { |action, fact| events << [action, fact.uuid] }
+    @memory.add_observer(observer)
+    added = nil
+
+    assert_raises(RuntimeError) do
+      @memory.transaction do
+        added = @memory.add_fact(:sensor, { temp: 22 })
+        raise 'boom'
+      end
+    end
+
+    assert_equal [[:add, added.uuid], [:remove, added.uuid]], events
+    assert_empty @memory.get_facts(:sensor)
+  end
+
+  def test_withdraw_rolled_back_skips_facts_the_store_still_holds
+    stored = @memory.add_fact(:sensor, { temp: 22 })
+    gone = KBS::Blackboard::Fact.new('not-stored', :sensor, {})
+    removed = []
+    observer = Object.new
+    observer.define_singleton_method(:update) { |action, fact| removed << fact.uuid if action == :remove }
+    @memory.add_observer(observer)
+
+    @memory.withdraw_rolled_back([stored, gone])
+
+    assert_equal ['not-stored'], removed
   end
 end

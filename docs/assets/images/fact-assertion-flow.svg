@@ -34,8 +34,8 @@
   <!-- Step 2: Engine.update -->
   <rect x="50" y="200" width="280" height="80" class="highlight-box" rx="5"/>
   <text x="190" y="225" class="step-label" text-anchor="middle">2. Engine.update(:add, fact)</text>
-  <text x="190" y="250" class="code-label" text-anchor="middle">For each alpha_memory:</text>
-  <text x="190" y="267" class="code-label" text-anchor="middle">if fact.matches?(pattern)</text>
+  <text x="190" y="250" class="code-label" text-anchor="middle">@alpha_network.memories_for(fact)</text>
+  <text x="190" y="267" class="code-label" text-anchor="middle">(looked up by type + constants)</text>
 
   <!-- Arrow to Step 3 -->
   <path d="M 190 280 L 190 320" class="flow-arrow"/>
@@ -54,9 +54,9 @@
   <rect x="50" y="460" width="280" height="120" class="highlight-box" rx="5"/>
   <text x="190" y="485" class="step-label" text-anchor="middle">4. JoinNode.right_activate(fact)</text>
   <text x="190" y="510" class="code-label" text-anchor="middle">return unless @left_linked &amp;&amp; @right_linked</text>
-  <text x="190" y="527" class="code-label" text-anchor="middle">For each token in beta_memory:</text>
-  <text x="190" y="544" class="code-label" text-anchor="middle">if perform_join_tests(token, fact)</text>
-  <text x="190" y="561" class="code-label" text-anchor="middle">new_token = Token.new(token, fact, self)</text>
+  <text x="190" y="527" class="code-label" text-anchor="middle">matching_tokens(fact)</text>
+  <text x="190" y="544" class="code-label" text-anchor="middle">(hash-index lookup, no scan)</text>
+  <text x="190" y="561" class="code-label" text-anchor="middle">emit: Token.new(token, fact, self)</text>
 
   <!-- Arrow to Step 5 -->
   <path d="M 190 580 L 190 620" class="flow-arrow"/>
@@ -64,7 +64,7 @@
   <!-- Step 5: Token Propagation -->
   <rect x="50" y="620" width="280" height="60" class="highlight-box" rx="5"/>
   <text x="190" y="645" class="step-label" text-anchor="middle">5. Propagate Token</text>
-  <text x="190" y="667" class="code-label" text-anchor="middle">@successors.each { |s| s.activate(new_token) }</text>
+  <text x="190" y="667" class="code-label" text-anchor="middle">activate_successors(new_token)</text>
 
   <!-- Right side: Data structures -->
   <text x="550" y="105" class="step-label">Data Structures Updated:</text>
@@ -104,9 +104,9 @@
   <rect x="450" y="500" width="400" height="100" class="box" rx="5"/>
   <text x="650" y="525" class="step-label" text-anchor="middle">Production Node (if fully matched)</text>
   <text x="650" y="550" class="node-label" text-anchor="middle">@tokens = [</text>
-  <text x="650" y="567" class="code-label" text-anchor="middle">Token(...) // ready to fire</text>
+  <text x="650" y="567" class="code-label" text-anchor="middle">Token(...)  → @agenda.add(self, token)</text>
   <text x="650" y="584" class="node-label" text-anchor="middle">]</text>
-  <text x="650" y="592" class="code-label" text-anchor="middle">Call engine.run() to execute rule actions</text>
+  <text x="650" y="597" class="code-label" text-anchor="middle">engine.run fires activations from the agenda</text>
 
   <!-- Data flow arrow from step 5 -->
   <path d="M 330 650 L 450 550" class="data-arrow"/>

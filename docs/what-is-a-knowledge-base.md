@@ -50,7 +50,7 @@ Working memory holds the current set of active facts. As facts are added/removed
 
 - Matches facts against rule conditions
 - Tracks partial matches
-- Fires rules when all conditions are satisfied
+- Places a rule on the agenda when all its conditions are satisfied; `run` fires the agenda until it is empty
 
 ## How Knowledge Bases Work
 
@@ -124,6 +124,8 @@ end
 
 **Example:**
 ```ruby
+require 'kbs/blackboard'
+
 engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
 
 engine.add_rule(rule)
@@ -156,7 +158,7 @@ end
 
 # Knowledge base approach (declarative rules)
 kb.rule "momentum_alert" do
-  on :stock, price_change: greater_than(5), volume: greater_than(1_000_000)
+  on :stock, symbol: :symbol?, price_change: greater_than(5), volume: greater_than(1_000_000)
   perform { |facts, b| send_alert(b[:symbol?]) }
 end
 kb.run  # Automatically fires for all matching facts
@@ -230,9 +232,8 @@ kb = KBS.knowledge_base do
     on :inventory, available: greater_than(0)
 
     perform do |facts, b|
-      order = query(:order, id: b[:oid?]).first
-      retract order
-      fact :order, id: b[:oid?], status: "shipping"
+      order = facts.first
+      kb.modify(order, status: "shipping")   # a bare modify(...) works here too
     end
   end
 end
@@ -320,7 +321,7 @@ Knowledge bases excel when:
 
 - Rules are stable (compiled once)
 - Facts change frequently (efficient incremental matching)
-- Multiple rules share patterns (network node sharing)
+- Multiple rules share patterns (identical patterns share one alpha memory)
 
 **Optimization Tips:**
 

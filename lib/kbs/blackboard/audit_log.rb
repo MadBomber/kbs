@@ -5,6 +5,7 @@ require 'time'
 
 module KBS
   module Blackboard
+    # Records every fact change and rule firing of a blackboard in SQLite.
     class AuditLog
       def initialize(db, session_id)
         @db = db
@@ -52,22 +53,22 @@ module KBS
       def log_rule_firing(rule_name, fact_uuids, bindings = {})
         @db.execute(
           "INSERT INTO rules_fired (rule_name, fact_uuids, bindings, session_id) VALUES (?, ?, ?, ?)",
-          [rule_name, JSON.generate(fact_uuids), JSON.generate(bindings), @session_id]
+          [rule_name.to_s, JSON.generate(fact_uuids), JSON.generate(bindings), @session_id]
         )
       end
 
       def fact_history(fact_uuid = nil, limit: 100)
-        if fact_uuid
-          results = @db.execute(
-            "SELECT * FROM fact_history WHERE fact_uuid = ? ORDER BY timestamp DESC, id DESC LIMIT ?",
-            [fact_uuid, limit]
-          )
-        else
-          results = @db.execute(
-            "SELECT * FROM fact_history ORDER BY timestamp DESC, id DESC LIMIT ?",
-            [limit]
-          )
-        end
+        results = if fact_uuid
+                    @db.execute(
+                      "SELECT * FROM fact_history WHERE fact_uuid = ? ORDER BY timestamp DESC, id DESC LIMIT ?",
+                      [fact_uuid, limit]
+                    )
+                  else
+                    @db.execute(
+                      "SELECT * FROM fact_history ORDER BY timestamp DESC, id DESC LIMIT ?",
+                      [limit]
+                    )
+                  end
 
         results.map do |row|
           {
@@ -82,17 +83,17 @@ module KBS
       end
 
       def rule_firings(rule_name = nil, limit: 100)
-        if rule_name
-          results = @db.execute(
-            "SELECT * FROM rules_fired WHERE rule_name = ? ORDER BY fired_at DESC LIMIT ?",
-            [rule_name, limit]
-          )
-        else
-          results = @db.execute(
-            "SELECT * FROM rules_fired ORDER BY fired_at DESC LIMIT ?",
-            [limit]
-          )
-        end
+        results = if rule_name
+                    @db.execute(
+                      "SELECT * FROM rules_fired WHERE rule_name = ? ORDER BY fired_at DESC LIMIT ?",
+                      [rule_name.to_s, limit]
+                    )
+                  else
+                    @db.execute(
+                      "SELECT * FROM rules_fired ORDER BY fired_at DESC LIMIT ?",
+                      [limit]
+                    )
+                  end
 
         results.map do |row|
           {

@@ -14,7 +14,7 @@ class TestToken < Minitest::Test
     assert_nil token.parent
     assert_equal @fact1, token.fact
     assert_nil token.node
-    assert_equal [], token.children
+    assert_empty token.children
   end
 
   def test_facts_with_single_fact
@@ -45,15 +45,63 @@ class TestToken < Minitest::Test
     assert_equal @fact1, facts[0]
   end
 
+  def test_fact_at_returns_the_fact_for_a_condition_position
+    token1 = KBS::Token.new(nil, @fact1, nil)
+    token2 = KBS::Token.new(token1, @fact2, nil)
+
+    assert_equal @fact1, token2.fact_at(0)
+    assert_equal @fact2, token2.fact_at(1)
+    assert_nil token2.fact_at(2)
+  end
+
+  def test_fact_at_skips_the_root_dummy_token
+    dummy = KBS::Token.new(nil, nil, nil)
+    token = KBS::Token.new(dummy, @fact1, nil)
+
+    assert_equal @fact1, token.fact_at(0)
+  end
+
+  def test_fact_at_keeps_the_position_of_a_negated_condition
+    token1 = KBS::Token.new(KBS::Token.new(nil, nil, nil), @fact1, nil)
+    negated = KBS::Token.new(token1, nil, :negation_node)
+    token3 = KBS::Token.new(negated, @fact2, nil)
+
+    assert_equal @fact1, token3.fact_at(0)
+    assert_nil token3.fact_at(1)
+    assert_equal @fact2, token3.fact_at(2)
+    assert_equal [@fact1, @fact2], token3.facts
+  end
+
   def test_children_management
     parent = KBS::Token.new(nil, @fact1, nil)
     child = KBS::Token.new(parent, @fact2, nil)
 
-    assert_equal [], parent.children
+    assert_empty parent.children
 
-    parent.children << child
-    assert_equal 1, parent.children.length
-    assert_equal child, parent.children[0]
+    parent.add_child(child)
+    assert_equal 1, parent.children.size
+    assert_equal child, parent.children.first
+  end
+
+  def test_children_are_empty_and_frozen_until_a_child_is_added
+    token = KBS::Token.new(nil, @fact1, nil)
+
+    assert_empty token.children
+    assert_predicate token.children, :frozen?
+  end
+
+  def test_remove_child_and_clear_children
+    parent = KBS::Token.new(nil, @fact1, nil)
+    first = KBS::Token.new(parent, @fact2, nil)
+    second = KBS::Token.new(parent, @fact2, nil)
+    parent.remove_child(first)
+    [first, second].each { |child| parent.add_child(child) }
+
+    parent.remove_child(first)
+    assert_equal [second], parent.children.to_a
+
+    parent.clear_children
+    assert_empty parent.children
   end
 
   def test_to_s

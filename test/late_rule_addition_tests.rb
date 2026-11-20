@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-
 # Regression tests for issue #34: adding a rule after facts exist must not
 # replay those facts into alpha memories that already hold them.
 module LateRuleAdditionTests

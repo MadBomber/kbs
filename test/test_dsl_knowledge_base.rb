@@ -32,7 +32,7 @@ class TestDSLKnowledgeBase < Minitest::Test
     kb = KBS.knowledge_base do
       rule 'hot' do
         on :temperature, value: greater_than(80), location: "lab"
-        perform { }
+        perform {}
       end
     end
 
@@ -122,7 +122,7 @@ class TestDSLKnowledgeBase < Minitest::Test
 
     kb.rule 'test_rule' do
       on :car, color: :red
-      perform { |facts| fired = true }
+      perform { |_facts| fired = true }
     end
 
     kb.fact(:car, color: :red)
@@ -137,12 +137,12 @@ class TestDSLKnowledgeBase < Minitest::Test
 
     kb.rule 'rule1' do
       on :car, color: :red
-      perform { |facts| results << :rule1 }
+      perform { |_facts| results << :rule1 }
     end
 
     kb.rule 'rule2' do
       on :car, color: :red
-      perform { |facts| results << :rule2 }
+      perform { |_facts| results << :rule2 }
     end
 
     kb.fact(:car, color: :red)
@@ -305,7 +305,7 @@ class TestDSLKnowledgeBase < Minitest::Test
     end
 
     kb.run
-    assert_equal [:signal, :no_problem], results
+    assert_equal %i[signal no_problem], results
 
     kb.retract(kb.query(:signal).first)
     assert_empty kb.engine.production_nodes['has_signal'].tokens
@@ -313,7 +313,7 @@ class TestDSLKnowledgeBase < Minitest::Test
     results.clear
     kb.reset
     kb.run
-    assert_equal [:no_critical, :no_problem], results
+    assert_equal %i[no_critical no_problem], results
   end
 
   def test_dsl_entry_point
@@ -328,10 +328,10 @@ class TestDSLKnowledgeBase < Minitest::Test
   def test_block_dsl
     result = []
 
-    kb = KBS.knowledge_base do
+    KBS.knowledge_base do
       rule 'test' do
         on :car, color: :red
-        perform { |facts| result << :fired }
+        perform { |_facts| result << :fired }
       end
 
       fact :car, color: :red
@@ -361,7 +361,7 @@ class TestDSLKnowledgeBase < Minitest::Test
     kb = KBS::DSL::KnowledgeBase.new
     kb.rule 'test_rule' do
       on :car, color: :red
-      perform { |facts| result << :fired }
+      perform { |_facts| result << :fired }
     end
 
     kb.fact(:car, color: :red)
@@ -442,7 +442,7 @@ class TestDSLKnowledgeBase < Minitest::Test
     kb = KBS::DSL::KnowledgeBase.new
     kb.rule 'nested' do
       on :car, color: :red
-      perform do |facts|
+      perform do |_facts|
         puts "fired"
       end
     end
@@ -494,7 +494,7 @@ class TestDSLKnowledgeBase < Minitest::Test
     # Build a rule programmatically (simulating dynamic creation)
     builder = KBS::DSL::RuleBuilder.new("dynamic_rule")
     builder.on :sensor, temp: :high
-    builder.perform { |facts| puts "alert" }
+    builder.perform { |_facts| puts "alert" }
     rule = builder.build
     kb.instance_variable_get(:@rule_builders)["dynamic_rule"] = builder
     kb.instance_variable_get(:@rules)["dynamic_rule"] = rule
@@ -567,16 +567,168 @@ class TestDSLKnowledgeBase < Minitest::Test
   def test_helper_and_variable_on_type_attribute
     fired = []
     KBS.knowledge_base do
-      rule('helper') { on :sensor, type: one_of('temperature'); perform { |f| fired << [:helper, f.first[:type]] } }
-      rule('variable') { on :sensor, type: :t?; perform { |_f, b| fired << [:variable, b[:t?]] } }
-      rule('blocked') { on :go; without :sensor, type: one_of('temperature'); perform { fired << :blocked } }
-      rule('literal') { on :sensor, type: 'humidity'; perform { fired << :literal } }
+      rule('helper') do
+        on :sensor, type: one_of('temperature')
+        perform { |f| fired << [:helper, f.first[:type]] }
+      end
+      rule('variable') do
+        on :sensor, type: :t?
+        perform { |_f, b| fired << [:variable, b[:t?]] }
+      end
+      rule('blocked') do
+        on :go
+        without :sensor, type: one_of('temperature')
+        perform { fired << :blocked }
+      end
+      rule('literal') do
+        on :sensor, type: 'humidity'
+        perform { fired << :literal }
+      end
       fact :go
       fact :sensor, type: 'temperature'
       run
     end
 
     assert_equal [[:helper, 'temperature'], [:variable, 'temperature']], fired.sort
+  end
+
+  # Contract: dsl/perform-working-memory-calls
+  # Bug: bare `fact`/`retract`/`modify` in perform added a condition or raised NoMethodError, not changing working memory
+  def test_bare_working_memory_calls_in_perform_change_working_memory
+    kb = KBS.knowledge_base do
+      rule "triage" do
+        on :reading, value: :v?
+        on :stale
+        perform do |facts|
+          reading, stale = facts
+          fact :alert, level: reading[:value]
+          modify reading, value: 0
+          retract stale
+        end
+      end
+      fact :reading, value: 99
+      fact :stale
+    end
+
+    kb.run
+
+    assert_equal [[:alert, { level: 99 }], [:reading, { value: 0 }]], kb.facts.map { [it.type, it.attributes] }.sort_by(&:first)
+    assert_equal 2, kb.rules["triage"].conditions.size
+  end
+
+  # Contract: dsl/perform-working-memory-calls
+  # Bug: a bare `assert` or `query` in a perform block raised NoMethodError
+  def test_bare_assert_and_query_in_perform_reach_the_knowledge_base
+    kb = KBS.knowledge_base do
+      rule "count" do
+        on :go
+        perform { assert :counted, n: query(:item).size }
+      end
+      fact :item
+      fact :item
+      fact :go
+    end
+
+    kb.run
+
+    assert_equal [{ n: 2 }], kb.query(:counted).map(&:attributes)
+  end
+
+  # Contract: dsl/perform-working-memory-calls
+  # Bug: a bare `assert` in a logical rule's perform block raised NoMethodError, so it got no logical support
+  def test_bare_assert_in_perform_gets_logical_support
+    kb = KBS.knowledge_base do
+      rule "overheating" do
+        logical { on :sensor, temp: greater_than(90) }
+        perform { assert :overheating }
+      end
+    end
+    sensor = kb.fact(:sensor, temp: 95)
+    kb.run
+    overheating = kb.query(:overheating).first
+
+    assert kb.engine.logically_supported?(overheating)
+    kb.retract(sensor)
+    assert_empty kb.query(:overheating)
+  end
+
+  # Contract: dsl/perform-working-memory-calls
+  # Bug: `kb.fact` from an action must keep working alongside the bare forms
+  def test_kb_fact_from_perform_still_works
+    kb = KBS.knowledge_base do
+      kb = self
+      rule("derive") do
+        on(:a)
+        perform { kb.fact :b }
+      end
+      fact :a
+    end
+
+    kb.run
+
+    assert_equal 1, kb.query(:b).size
+  end
+
+  # Contract: dsl/rule-built-guard
+  # Bug: a condition keyword called after the rule was built silently changed the builder and never the rule
+  def test_condition_keywords_after_build_raise
+    kb = KBS::DSL::KnowledgeBase.new
+    builder = kb.rule("r") { on :a }
+
+    %i[on given matches without exists absent missing lacks].each do |keyword|
+      assert_raises(KBS::RuleBuiltError, keyword.to_s) { builder.public_send(keyword, :b) }
+    end
+    assert_raises(KBS::RuleBuiltError) { builder.logical { on :b } }
+    assert_raises(KBS::RuleBuiltError) { builder.perform { nil } }
+    assert_equal 1, kb.rules["r"].conditions.size
+  end
+
+  # Contract: dsl/rule-built-guard
+  # Bug: `on` inside a perform block silently added a condition to the built rule
+  def test_condition_keyword_inside_perform_raises_during_run
+    kb = KBS.knowledge_base do
+      rule("r") do
+        on(:a)
+        perform { on :b }
+      end
+      fact :a
+    end
+
+    error = assert_raises(KBS::RuleBuiltError) { kb.run }
+    assert_match(/"r"/, error.message)
+  end
+
+  # Contract: dsl/perform-working-memory-calls
+  # Bug: a working-memory call on a builder with no knowledge base raised NoMethodError
+  def test_working_memory_call_without_knowledge_base_raises_clear_error
+    builder = KBS::DSL::RuleBuilder.new("r")
+    builder.on(:a)
+    builder.build
+
+    assert_raises(KBS::NoKnowledgeBaseError) { builder.fact(:b) }
+    assert_raises(KBS::NoKnowledgeBaseError) { builder.assert(:b) }
+  end
+
+  # Contract: dsl/knowledge-base-condition-helpers
+  # Bug: KnowledgeBase did not include ConditionHelpers, so kb.query(:t, value: greater_than(80)) raised NoMethodError
+  def test_query_accepts_condition_helpers
+    kb = KBS.knowledge_base do
+      fact :t, value: 95
+      fact :t, value: 50
+    end
+
+    assert_equal([95], kb.query(:t, value: kb.greater_than(80)).map { it[:value] })
+    assert_equal([50], kb.instance_eval { query(:t, value: between(40, 60)) }.map { it[:value] })
+  end
+
+  # Contract: dsl/knowledge-base-condition-helpers
+  # Bug: query must apply a lambda pattern value as a predicate
+  def test_query_applies_lambda_values
+    kb = KBS::DSL::KnowledgeBase.new
+    kb.fact(:t, value: 95)
+    kb.fact(:t, value: 50)
+
+    assert_equal([50], kb.query(:t, value: ->(v) { v < 60 }).map { it[:value] })
   end
 
   private

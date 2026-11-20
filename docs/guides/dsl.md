@@ -10,6 +10,8 @@ Complete reference for the KBS Domain-Specific Language for defining knowledge b
 - [Condition Syntax](#condition-syntax)
 - [Pattern Helpers](#pattern-helpers)
 - [Variable Binding](#variable-binding)
+- [Exists](#exists)
+- [Logical Conditions](#logical-conditions)
 - [Negation](#negation)
 - [Actions](#actions)
 - [Working with Facts](#working-with-facts)
@@ -56,7 +58,7 @@ end
 Creates a new knowledge base and evaluates the block in its context.
 
 **Parameters**:
-- `engine` - Engine to run on, such as `KBS::Blackboard::Engine.new(db_path: "knowledge.db")` for persistence (optional; a new `KBS::Engine` when omitted)
+- `engine` - Engine to run on, such as `KBS::Blackboard::Engine.new(db_path: "knowledge.db")` for persistence (needs `require "kbs/blackboard"`; optional, a new `KBS::Engine` when omitted)
 
 **Returns**: `KBS::DSL::KnowledgeBase` instance
 
@@ -77,12 +79,13 @@ kb.rules   # => Hash of rule_name => KBS::Rule
 
 ### Knowledge Base Methods
 
-#### `rule(name, &block)` / `defrule(name, &block)`
+#### `rule(name, priority: nil, &block)` / `defrule(name, priority: nil, &block)`
 
-Defines a new rule.
+Defines a new rule and adds it to the engine.
 
 **Parameters**:
 - `name` (String or Symbol) - Rule name
+- `priority` (Integer, optional) - Rule priority; a `priority` call inside the block wins
 - `&block` - Block containing rule definition
 
 **Returns**: `KBS::DSL::RuleBuilder`
@@ -111,7 +114,7 @@ Adds a fact to working memory.
 - `type` (Symbol) - Fact type
 - `attributes` (Hash) - Fact attributes
 
-**Returns**: `KBS::Fact`
+**Returns**: `KBS::Fact`. When the engine's fact duplication is off (`kb.engine.fact_duplication = false`), asserting a fact equal to one already in working memory returns that existing fact instead of adding another.
 
 **Example**:
 ```ruby
@@ -132,7 +135,7 @@ Removes a fact from working memory.
 **Parameters**:
 - `fact` (KBS::Fact) - Fact to remove
 
-**Returns**: `nil`
+**Returns**: the removed `KBS::Fact`
 
 **Example**:
 ```ruby
@@ -146,11 +149,14 @@ end
 
 ---
 
-#### `run()`
+#### `run(limit = nil)`
 
-Executes all activated rules.
+Fires activations from the agenda, highest priority first, until the agenda is empty. Facts that an action asserts or retracts update the agenda before the next firing, so rules chain within one run. Each activation fires once.
 
-**Returns**: `nil`
+**Parameters**:
+- `limit` (Integer, optional) - Stop after this many firings
+
+**Returns**: `Integer` - the number of rules fired
 
 **Example**:
 ```ruby
@@ -168,11 +174,30 @@ end
 
 ---
 
+#### `modify(fact, changes)`
+
+Merges `changes` into the fact's attributes and matches it again (a retraction followed by an assertion), so rules that already fired for the fact can fire again for its new values. Assigning `fact[:key] = value` does not re-match the fact.
+
+**Returns**: the fact; `nil` when the fact is not in working memory
+
+```ruby
+kb = KBS.knowledge_base do
+  order = fact :order, id: 1, status: "pending"
+  modify order, status: "shipped"
+end
+```
+
+---
+
+#### `halt()`
+
+Stops the current `run` after the rule that is firing. Call it from an action, as `kb.halt` (see [Actions](#actions) for why the receiver is needed).
+
+---
+
 #### `reset()`
 
-Clears all facts from working memory.
-
-**Returns**: `nil`
+Clears all facts from working memory and every pending activation. Rules stay defined.
 
 **Example**:
 ```ruby
@@ -216,7 +241,7 @@ Queries facts by type and attributes.
 
 **Parameters**:
 - `type` (Symbol) - Fact type to match
-- `pattern` (Hash) - Attribute key-value pairs to match
+- `pattern` (Hash) - Attribute key-value pairs to match. A value can be a literal, a lambda (called with the attribute's value) or a [pattern helper](#pattern-helpers) such as `greater_than(80)`
 
 **Returns**: `Array<KBS::Fact>`
 
@@ -235,6 +260,10 @@ kb = KBS.knowledge_base do
   server_temps = query(:temperature, location: "server_room")
   puts server_temps.size  # => 1
   puts server_temps.first[:value]  # => 85
+
+  # Find hot temperature facts with a pattern helper
+  hot = query(:temperature, value: greater_than(80))
+  puts hot.size  # => 1
 end
 ```
 
@@ -358,7 +387,7 @@ Sets the rule priority (higher priority rules fire first).
 
 **Returns**: `self` (chainable)
 
-**Note**: Both `KBS::Engine` and `KBS::Blackboard::Engine` honor priority. Rules with equal priority fire in definition order.
+**Note**: Both `KBS::Engine` and `KBS::Blackboard::Engine` honor priority. Rules with equal priority fire in definition order under the default `:definition` conflict-resolution strategy (`KBS::Engine.new(strategy: :depth)` or `:breadth` order them by activation age instead).
 
 **Example**:
 ```ruby
@@ -389,7 +418,8 @@ All of these are **aliases** - use whichever reads best for your domain:
 - **`given(type, pattern = {})`** - Alias for `on`
 - **`matches(type, pattern = {})`** - Alias for `on`
 - **`fact(type, pattern = {})`** - Alias for `on`
-- **`exists(type, pattern = {})`** - Alias for `on`
+
+`exists` is not an alias; see [Exists](#exists).
 
 **Parameters**:
 - `type` (Symbol) - Fact type to match
@@ -475,13 +505,13 @@ on :status, code: one_of("pending", "processing", "completed")
 
 ### Block-Style Patterns
 
-Define patterns using a block with method-missing magic:
+Define patterns using a block. Each call `name value` sets the pattern for attribute `name`. A variable can be written as a `:name?` symbol or as a bare name (`location loc` is `location :loc?`). Comparing a bare name with a value sets that attribute's predicate: `value > 80`, `value < 80`, `value >= 80`, `value <= 80`, `code != 3`, and `code == 3` (a literal match):
 
 ```ruby
 on :temperature do
-  value > 80        # Creates lambda: ->(v) { v > 80 }
-  location :loc?    # Binds variable
-  sensor_id 42      # Literal match
+  value > 80              # Predicate (same as: value greater_than(80))
+  location loc            # Binds variable (same as: location :loc?)
+  sensor_id 42            # Literal match
 end
 
 # Equivalent to:
@@ -491,21 +521,22 @@ on :temperature,
    sensor_id: 42
 ```
 
-**Available operators in blocks**:
-- `>`, `<`, `>=`, `<=` - Comparison operators
-- `==` - Equality (same as literal value)
-- `!=` - Inequality
+A block pattern is merged over a hash pattern given in the same call.
+
+**Available in blocks**: every [pattern helper](#pattern-helpers), plus:
 - `between(min, max)` - Range check
-- `in(collection)` - Membership check
+- `self.in(collection)` - Membership check (`in` is a Ruby keyword, so it needs the explicit receiver; `one_of` reads better)
 - `matches(pattern)` - Regex match
 - `any(*values)` - Match any of the values
-- `all(*conditions)` - All conditions must be true
+- `all(*predicates)` - Every predicate (or literal) must hold
+
+`status in [...]` does **not** work: it is parsed as Ruby pattern matching and silently adds nothing. Use `status one_of(...)` instead.
 
 **Example**:
 ```ruby
 on :order do
-  total > 1000
-  status in ["pending", "processing"]
+  total greater_than(1000)
+  status one_of("pending", "processing")
   customer_email matches(/@example\.com$/)
   priority any(1, 2, 3)
 end
@@ -515,7 +546,7 @@ end
 
 ## Pattern Helpers
 
-Helper methods available in rule conditions (from `ConditionHelpers` module).
+Helper methods available in rule conditions and in `query` patterns (from the `ConditionHelpers` module, which both `RuleBuilder` and `KnowledgeBase` include).
 
 ### Comparison Helpers
 
@@ -719,6 +750,52 @@ end
 
 ---
 
+## Exists
+
+`exists(type, pattern = {}, &block)` matches when **at least one** fact fits the pattern, and matches once however many do.
+
+```ruby
+rule "sound the horn" do
+  exists :alarm, level: "critical"
+  perform { sound_horn }
+end
+```
+
+With three critical alarms in working memory, `on :alarm` fires the rule three times and `exists :alarm` fires it once. The rule stays matched until the last such alarm is retracted, and matches again when a new one arrives.
+
+An `exists` condition tests for facts but adds none to the match:
+
+- the action's `facts` has no entry for it
+- a variable first used in it is not bound for later conditions or for the action
+- a variable bound by an earlier condition does join, so `on :order, id: :id?` followed by `exists :payment, order_id: :id?` matches each order that has at least one payment, once
+
+`exists` is the opposite of `without`: `without` matches while no fact fits, `exists` while at least one does.
+
+---
+
+## Logical Conditions
+
+`logical do ... end` marks the conditions inside it as logical: every fact the rule's action asserts stays in working memory only while those conditions are matched, and is retracted automatically when they stop matching. The `logical` block must come before the rule's other conditions (`add_rule` raises `ArgumentError` otherwise).
+
+```ruby
+kb = KBS.knowledge_base do
+  rule "overheating" do
+    logical do
+      on :sensor, temp: greater_than(90)
+    end
+    perform { kb.fact :overheating }
+  end
+end
+
+sensor = kb.fact :sensor, temp: 95
+kb.run              # asserts :overheating
+kb.retract sensor   # :overheating is retracted with it
+```
+
+See the [Truth Maintenance Guide](truth-maintenance.md) for details.
+
+---
+
 ## Negation
 
 Negation matches when a pattern is **absent** from working memory.
@@ -831,13 +908,13 @@ All of these are **aliases**:
 - **`perform(&block)`** - Primary action keyword
 - **`action(&block)`** - Alias
 - **`execute(&block)`** - Alias
-- **`then(&block)`** - Alias  - TODO: isn't "then" a ruby keyword?
+- **`then(&block)`** - Alias. `then` is a Ruby keyword, so it must be called with an explicit receiver: `self.then { ... }`
 
 ---
 
 ### Action Block
 
-Actions receive a `bindings` hash containing all variable bindings:
+An action can take no arguments, one (`facts`) or two (`facts, bindings`). `facts` holds one fact per positive condition, in condition order (`without` and `exists` conditions add none); `bindings` maps each `?variable` to its value:
 
 ```ruby
 rule "example" do
@@ -864,16 +941,31 @@ perform do |facts, bindings|
 end
 ```
 
-2. **Access the knowledge base** (via closure):
+2. **Change working memory**:
+
+The action runs with the rule builder as `self`. Once the rule is built, the builder forwards `fact`, `assert`, `retract`, `modify`, `query`, `facts`, `halt` and `engine` to the knowledge base, so they work bare inside `perform` (facts asserted from a rule with `logical` conditions get logical support either way). Condition keywords such as `on` or `without` raise `KBS::RuleBuiltError` there. A builder made with `RuleBuilder.new` and no knowledge base raises `KBS::NoKnowledgeBaseError` for these calls.
+
+```ruby
+perform do |facts|
+  fact :process, status: "running"
+  retract facts.first
+end
+```
+
+Calling the knowledge base through a local works too:
+
 ```ruby
 kb = KBS.knowledge_base do
   rule "add_fact_from_action" do
     on :trigger, event: "start"
     perform do
-      fact :process, status: "running"  # Add new fact
+      kb.fact :process, status: "running"  # Add new fact
     end
   end
 end
+
+kb.fact :trigger, event: "start"
+kb.run  # call run once `kb` is assigned
 ```
 
 3. **Call external methods**:
@@ -889,11 +981,11 @@ end
 ```ruby
 perform do |facts, bindings|
   # Add derived fact
-  fact :alert, level: "high", source: bindings[:sensor_id?]
+  kb.fact :alert, level: "high", source: bindings[:sensor_id?]
 
   # Remove triggering fact
-  old_fact = query(:trigger, event: "start").first
-  retract old_fact if old_fact
+  old_fact = kb.query(:trigger, event: "start").first
+  kb.retract old_fact if old_fact
 end
 ```
 
@@ -914,17 +1006,13 @@ rule "pending_to_processing" do
   on :worker, status: "available", id: :worker_id?
 
   perform do |facts, bindings|
+    order, worker = facts
+
     # Update order status
-    order = query(:order, id: bindings[:order_id?]).first
-    retract order
-    fact :order, id: bindings[:order_id?],
-                 status: "processing",
-                 worker_id: bindings[:worker_id?]
+    kb.modify order, status: "processing", worker_id: bindings[:worker_id?]
 
     # Update worker status
-    worker = query(:worker, id: bindings[:worker_id?]).first
-    retract worker
-    fact :worker, id: bindings[:worker_id?], status: "busy"
+    kb.modify worker, status: "busy"
   end
 end
 
@@ -933,10 +1021,10 @@ rule "daily_summary" do
   on :trigger, event: "end_of_day"
 
   perform do
-    temps = query(:temperature).map { |f| f[:value] }
+    temps = kb.query(:temperature).map { |f| f[:value] }
     avg = temps.sum / temps.size.to_f
 
-    fact :daily_summary,
+    kb.fact :daily_summary,
          date: Date.today,
          avg_temp: avg,
          max_temp: temps.max,
@@ -961,7 +1049,7 @@ kb = KBS.knowledge_base do
   rule "add_derived_fact" do
     on :temperature, value: greater_than(80)
     perform do
-      fact :alert, level: "high", timestamp: Time.now
+      kb.fact :alert, level: "high", timestamp: Time.now
     end
   end
 end
@@ -984,11 +1072,11 @@ kb = KBS.knowledge_base do
 
   # Remove from action
   rule "cleanup" do
-    on :temperature, timestamp: less_than(Time.now - 3600)
+    on :trigger, event: "cleanup"
     perform do
-      old_facts = query(:temperature)
-                   .select { |f| f[:timestamp] < Time.now - 3600 }
-      old_facts.each { |f| retract f }
+      old_facts = kb.query(:temperature)
+                    .select { |f| f[:timestamp] && f[:timestamp] < Time.now - 3600 }
+      old_facts.each { |f| kb.retract f }
     end
   end
 end
@@ -1018,7 +1106,7 @@ kb = KBS.knowledge_base do
     on :trigger, event: "calculate_average"
 
     perform do
-      temps = query(:temperature).map { |f| f[:value] }
+      temps = kb.query(:temperature).map { |f| f[:value] }
       avg = temps.sum / temps.size.to_f
       puts "Average temperature: #{avg.round(1)}°F"
     end
@@ -1120,10 +1208,10 @@ kb = KBS.knowledge_base do
     perform do |facts, bindings|
       puts "⚠️  HIGH TEMPERATURE ALERT"
       puts "Sensor: #{bindings[:sensor_id?]}"
-      puts "Temperature: #{bindings[:value?]}°F"
+      puts "Temperature: #{facts[1][:value]}°F"
 
       # Create alert fact
-      fact :alert,
+      kb.fact :alert,
            sensor_id: bindings[:sensor_id?],
            level: "high",
            timestamp: Time.now
@@ -1141,8 +1229,8 @@ kb = KBS.knowledge_base do
       puts "✓ Temperature normal for sensor #{bindings[:sensor_id?]}"
 
       # Remove alert
-      alerts = query(:alert, sensor_id: bindings[:sensor_id?])
-      alerts.each { |a| retract a }
+      alerts = kb.query(:alert, sensor_id: bindings[:sensor_id?])
+      alerts.each { |a| kb.retract a }
     end
   end
 
@@ -1153,11 +1241,10 @@ kb = KBS.knowledge_base do
   # Simulate readings
   fact :temperature, sensor_id: 1, value: 85  # Will trigger alert
   fact :temperature, sensor_id: 2, value: 72  # Normal
-
-  run
-
-  print_facts
 end
+
+kb.run
+kb.print_facts
 ```
 
 ---
@@ -1174,15 +1261,15 @@ kb = KBS.knowledge_base do
 
     perform do |facts, bindings|
       if bindings[:available?] >= bindings[:qty?]
-        order = query(:order, id: bindings[:order_id?]).first
-        retract order
-        fact :order,
+        order = kb.query(:order, id: bindings[:order_id?]).first
+        kb.retract order
+        kb.fact :order,
              id: bindings[:order_id?],
              status: "validated",
              product_id: bindings[:pid?],
              quantity: bindings[:qty?]
       else
-        fact :alert,
+        kb.fact :alert,
              type: "insufficient_inventory",
              order_id: bindings[:order_id?]
       end
@@ -1198,16 +1285,16 @@ kb = KBS.knowledge_base do
 
     perform do |facts, bindings|
       # Deduct inventory
-      inventory = query(:inventory, product_id: bindings[:pid?]).first
-      retract inventory
-      fact :inventory,
+      inventory = kb.query(:inventory, product_id: bindings[:pid?]).first
+      kb.retract inventory
+      kb.fact :inventory,
            product_id: bindings[:pid?],
            quantity: bindings[:available?] - bindings[:qty?]
 
       # Update order status
-      order = query(:order, id: bindings[:order_id?]).first
-      retract order
-      fact :order,
+      order = kb.query(:order, id: bindings[:order_id?]).first
+      kb.retract order
+      kb.fact :order,
            id: bindings[:order_id?],
            status: "fulfilled",
            product_id: bindings[:pid?],
@@ -1223,10 +1310,10 @@ kb = KBS.knowledge_base do
 
   fact :order, id: 1, status: "new", product_id: "ABC", quantity: 10
   fact :order, id: 2, status: "new", product_id: "XYZ", quantity: 60  # Insufficient!
-
-  run
-  print_facts
 end
+
+kb.run
+kb.print_facts
 ```
 
 ---

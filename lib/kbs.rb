@@ -1,22 +1,35 @@
 # frozen_string_literal: true
 
 require_relative 'kbs/version'
+require_relative 'kbs/errors'
 
 # Core RETE classes
+require_relative 'kbs/pattern_matching'
 require_relative 'kbs/fact'
 require_relative 'kbs/working_memory'
+require_relative 'kbs/fact_registry'
+require_relative 'kbs/truth_maintenance'
 require_relative 'kbs/token'
+require_relative 'kbs/memory_index'
 require_relative 'kbs/alpha_memory'
+require_relative 'kbs/alpha_network'
 require_relative 'kbs/beta_memory'
+require_relative 'kbs/network_node'
+require_relative 'kbs/join_tests'
+require_relative 'kbs/join_test_builder'
+require_relative 'kbs/join_indexing'
 require_relative 'kbs/join_node'
+require_relative 'kbs/quantifier_node'
 require_relative 'kbs/negation_node'
+require_relative 'kbs/exists_node'
+require_relative 'kbs/tracer'
+require_relative 'kbs/agenda'
 require_relative 'kbs/production_node'
 require_relative 'kbs/condition'
 require_relative 'kbs/rule'
+require_relative 'kbs/rule_step'
+require_relative 'kbs/introspection'
 require_relative 'kbs/engine'
 require_relative 'kbs/decompiler'
+require_relative 'kbs/rule_source'
 require_relative 'kbs/dsl'
-
-module KBS
-  class Error < StandardError; end
-end

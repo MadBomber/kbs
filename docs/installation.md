@@ -2,8 +2,8 @@
 
 ## Requirements
 
-- **Ruby**: 2.7 or higher
-- **SQLite3**: For persistent blackboard memory (optional)
+- **Ruby**: 4.0 or higher
+- **SQLite3**: For persistent blackboard memory (the `sqlite3` gem is a runtime dependency, installed with kbs)
 - **Redis**: For high-performance persistence (optional)
 
 ## Installing the Gem
@@ -34,22 +34,15 @@ bundle install
 git clone https://github.com/madbomber/kbs.git
 cd kbs
 bundle install
-rake install
+gem build kbs.gemspec
+gem install kbs-*.gem
 ```
 
 ## Optional Dependencies
 
 ### SQLite3 (Default Blackboard Backend)
 
-```bash
-gem install sqlite3
-```
-
-Or in your `Gemfile`:
-
-```ruby
-gem 'sqlite3'
-```
+The `sqlite3` gem (>= 1.6) is installed with kbs, so the SQLite blackboard needs nothing more. If its native extension fails to build, see [Troubleshooting](#sqlite3-installation-issues).
 
 ### Redis (High-Performance Backend)
 
@@ -68,7 +61,7 @@ sudo systemctl start redis
 docker run -d -p 6379:6379 redis:latest
 ```
 
-Install Ruby Redis gem:
+`RedisStore` and `HybridStore` need the redis gem, which kbs does not install. Install it:
 
 ```bash
 gem install redis
@@ -88,7 +81,7 @@ Verify the installation:
 require 'kbs'
 
 puts "KBS version: #{KBS::VERSION}"
-# => KBS version: 0.1.0
+# => KBS version: 0.3.0
 
 # Test basic functionality
 engine = KBS::Engine.new
@@ -105,8 +98,8 @@ git clone https://github.com/madbomber/kbs.git
 cd kbs
 bundle install
 
-# Run tests
-bundle exec rake test
+# Run tests (or `asgard test_check`)
+bundle exec ruby -Ilib:test -e 'Dir["test/**/test_*.rb"].each { |f| require File.expand_path(f) }'
 
 # Run examples
 bundle exec ruby examples/working_demo.rb

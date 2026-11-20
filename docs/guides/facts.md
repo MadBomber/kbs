@@ -54,11 +54,13 @@ fact = engine.add_fact(:stock, { symbol: "AAPL", price: 150 })
 Database-backed facts with UUIDs that survive restarts.
 
 ```ruby
+require 'kbs/blackboard'
+
 engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
 
 # Add persistent fact (saved to database)
 fact = engine.add_fact(:stock, { symbol: "AAPL", price: 150 })
-puts fact.id  # => "550e8400-e29b-41d4-a716-446655440000"
+puts fact.uuid  # => "550e8400-e29b-41d4-a716-446655440000"
 
 # Facts reload on next run
 engine.close
@@ -91,20 +93,41 @@ fact.attributes     # => { symbol: "AAPL", price: 150 }
 # Method 1: Via engine (recommended)
 fact = engine.add_fact(:sensor, { id: "bedroom", temp: 28 })
 
-# Method 2: Direct instantiation
-fact = KBS::Fact.new(:sensor, { id: "bedroom", temp: 28 })
-engine.add_fact(fact)
+# Method 2: Via the DSL (fact and assert both call engine.add_fact)
+kb = KBS.knowledge_base
+fact = kb.fact :sensor, id: "bedroom", temp: 28
 ```
+
+`add_fact` takes a type and an attributes hash, not a `KBS::Fact` object.
 
 **`add_fact` automatically:**
 - Stores fact in working memory
 - Triggers pattern matching in RETE network
 - Notifies observers
 - Persists to database (if using Blackboard::Engine)
+- Returns the fact
+
+Rules do not fire until you call `engine.run`; matching only puts activations on the agenda.
+
+### Duplicate Facts
+
+By default working memory may hold two facts with the same type and attributes. Turn that off and `add_fact` returns the fact already there instead of adding another:
+
+```ruby
+engine = KBS::Engine.new(fact_duplication: false)
+
+a = engine.add_fact(:sensor, { id: "bedroom", temp: 28 })
+b = engine.add_fact(:sensor, { id: "bedroom", temp: 28 })
+
+a.equal?(b)          # => true
+engine.facts.size    # => 1
+```
+
+You can also flip it later with `engine.fact_duplication = false`; duplicates already in working memory stay.
 
 ### With Type Conversion
 
-Attributes are stored as-is:
+`KBS::Engine` stores attributes as-is:
 
 ```ruby
 engine.add_fact(:reading, {
@@ -114,6 +137,8 @@ engine.add_fact(:reading, {
   metadata: { foo: 1 }    # Hash
 })
 ```
+
+A `KBS::Blackboard::Engine` stores attributes as JSON. The fact `add_fact` returns keeps the original values, but facts read back from the store (`engine.facts`, or after a restart) have Symbol and Time values turned into Strings.
 
 ### Bulk Creation
 
@@ -191,14 +216,14 @@ end
 fact.type  # => :sensor
 ```
 
-### Identity (Persistent Facts Only)
+### Identity
 
 ```ruby
 # Blackboard facts have UUIDs
-fact.id  # => "550e8400-e29b-41d4-a716-446655440000"
+fact.uuid  # => "550e8400-e29b-41d4-a716-446655440000"
 
-# Transient facts use object_id
-fact.object_id  # => 70123456789000
+# Transient facts use their object_id
+fact.id  # => 70123456789000 (same as fact.object_id)
 ```
 
 ## Querying Facts
@@ -219,6 +244,8 @@ sensors = engine.facts.select { |f| f.type == :sensor }
 # Get all stock facts
 stocks = engine.facts.select { |f| f.type == :stock }
 ```
+
+With the DSL, `kb.query(:sensor, id: "bedroom")` returns the facts of a type that match a pattern.
 
 ### Filter by Attribute
 
@@ -301,66 +328,59 @@ bedroom = helper.fact_where(:sensor) { |f| f[:id] == "bedroom" }
 
 ## Updating Facts
 
-Facts are immutable in KBS. To "update" a fact, remove the old one and add a new one.
+Use `engine.modify` to change a fact. It merges the changes into the fact's attributes and matches the fact again, as a retraction followed by an assertion: matches that depended on the old values go away, and rules the new values satisfy are activated, including rules that already fired for this fact.
 
 ### Update Pattern
 
 ```ruby
 # Find existing fact
-old_fact = engine.facts.find { |f|
+fact = engine.facts.find { |f|
   f.type == :sensor && f[:id] == "bedroom"
 }
 
-if old_fact
-  # Remove old fact
-  engine.remove_fact(old_fact)
+if fact
+  engine.modify(fact, temp: 30)  # => the fact, with temp: 30
 
-  # Add updated fact
-  engine.add_fact(:sensor, {
-    id: "bedroom",
-    temp: 30,  # Updated temperature
-    humidity: 65
-  })
-
-  # Re-run matching
+  # Fire the rules the change activated
   engine.run
 end
 ```
 
+`modify` returns `nil` when the fact is not in working memory. With `fact_duplication: false`, if the change makes the fact equal to one already there, the modified fact is removed and the existing one is returned. The DSL has the same method: `kb.modify(fact, temp: 30)`.
+
+Setting an attribute directly with `fact[:temp] = 30` changes the hash but does **not** re-match the fact; the network keeps matching the values the fact had when it was added.
+
 ### Update Helper
 
 ```ruby
-def update_fact(engine, type, matcher, new_attrs)
-  old_fact = engine.facts.find { |f|
+def update_fact(engine, type, matcher, changes)
+  fact = engine.facts.find { |f|
     f.type == type && matcher.call(f)
   }
 
-  if old_fact
-    engine.remove_fact(old_fact)
-    engine.add_fact(type, new_attrs)
-  end
+  engine.modify(fact, changes) if fact
 end
 
 # Usage
 update_fact(engine, :sensor, ->(f) { f[:id] == "bedroom" },
-  { id: "bedroom", temp: 30, humidity: 65 }
+  { temp: 30, humidity: 65 }
 )
 ```
 
 ### Blackboard Update (Persistent Facts)
 
-Blackboard facts support in-place updates:
+`modify` works the same on a blackboard engine. The fact keeps its UUID and the audit log records an `UPDATE`:
 
 ```ruby
 engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
 
 fact = engine.add_fact(:sensor, { id: "bedroom", temp: 28 })
 
-# Update attributes (saves to database)
-fact.update({ temp: 30 })
+# Update via engine (saves to database and re-matches)
+fact = engine.modify(fact, temp: 32)
 
-# Or update via engine
-engine.update_fact(fact.id, { temp: 32 })
+# Or update in place (saves to database, does NOT re-match)
+fact.update({ temp: 33 })
 ```
 
 ## Removing Facts
@@ -372,7 +392,8 @@ engine.update_fact(fact.id, { temp: 32 })
 fact = engine.facts.find { |f| f.type == :alert }
 engine.remove_fact(fact) if fact
 
-# Re-run to propagate changes
+# Retraction updates matches immediately; run fires any
+# rule it activated (e.g. one with a `without` condition)
 engine.run
 ```
 
@@ -403,11 +424,11 @@ engine.run
 
 ```ruby
 # Clear working memory
-engine.facts.dup.each { |f| engine.remove_fact(f) }
+engine.facts.each { |f| engine.remove_fact(f) }
 engine.run
 ```
 
-**Note:** Use `.dup` to avoid modifying array while iterating.
+**Note:** `engine.facts` returns a copy, so removing facts while iterating over it is safe.
 
 ## Fact Lifecycle
 
@@ -425,22 +446,21 @@ engine.run
 3. Matching
    ├─> Alpha network activation
    ├─> Join network propagation
-   └─> Production node tokens created
+   └─> Activations put on the agenda
 
 4. Rule Firing
    ├─> engine.run()
    └─> Actions execute with fact
 
 5. Update (Optional)
-   ├─> engine.remove_fact(old_fact)
-   ├─> engine.add_fact(:type, new_attrs)
+   ├─> engine.modify(fact, changes)
    └─> Matching re-triggered
 
 6. Removal
    ├─> engine.remove_fact(fact)
    ├─> Removed from WorkingMemory
-   ├─> Deleted from database (if persistent)
-   └─> Tokens invalidated
+   ├─> Marked retracted in database (if persistent)
+   └─> Tokens and pending activations withdrawn
 ```
 
 ### Observing Fact Changes
@@ -463,7 +483,7 @@ observer = FactObserver.new
 engine.working_memory.add_observer(observer)
 
 engine.add_fact(:sensor, { id: "bedroom", temp: 28 })
-# Output: Added: sensor - {:id=>"bedroom", :temp=>28}
+# Output: Added: sensor - {id: "bedroom", temp: 28}
 ```
 
 ## Best Practices
@@ -649,4 +669,4 @@ repo.remove_where(:alert) { |f| f[:stale] }
 
 ---
 
-*Facts are immutable knowledge. When facts change, replace them to trigger re-evaluation.*
+*Facts are knowledge. When facts change, modify them through the engine to trigger re-evaluation.*

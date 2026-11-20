@@ -2,6 +2,8 @@
 
 module KBS
   module DSL
+    # Predicates for use as pattern values in the DSL, such as
+    # greater_than(90) and between(1, 9).
     module ConditionHelpers
       def less_than(value)
         ->(v) { v < value rescue false }
@@ -27,7 +29,7 @@ module KBS
         if min_or_range.is_a?(Range)
           ->(v) { min_or_range.include?(v) rescue false }
         else
-          ->(v) { v >= min_or_range && v <= max rescue false }
+          ->(v) { v.between?(min_or_range, max) rescue false }
         end
       end
 
@@ -38,7 +40,7 @@ module KBS
       def any(*values)
         if values.empty?
           # Match anything
-          ->(v) { true }
+          ->(_v) { true }
         else
           # Match one of the values
           one_of(*values)

@@ -11,15 +11,17 @@ require_relative 'dsl/pattern_evaluator'
 require_relative 'dsl/rule_builder'
 require_relative 'dsl/knowledge_base'
 
+# Knowledge-based systems for Ruby: a RETE rule engine, a blackboard and
+# the DSL to write rules in.
 module KBS
   # Builds a knowledge base and evaluates the block in its context.
   #
   # @param engine [KBS::Engine, nil] engine to run on, such as a
   #   KBS::Blackboard::Engine for persistence; a new KBS::Engine when nil
   # @return [KBS::DSL::KnowledgeBase]
-  def self.knowledge_base(engine: nil, &block)
+  def self.knowledge_base(engine: nil, &)
     kb = DSL::KnowledgeBase.new(engine: engine)
-    kb.instance_eval(&block) if block_given?
+    kb.instance_eval(&) if block_given?
     kb
   end
 end

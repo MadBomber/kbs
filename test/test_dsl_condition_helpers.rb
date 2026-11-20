@@ -157,16 +157,37 @@ class TestDSLConditionHelpers < Minitest::Test
     kb = KBS::DSL::KnowledgeBase.new
     fired = []
 
-    kb.rule('big')  { on(:stock) { volume greater_than(500_000) };            perform { fired << :big } }
-    kb.rule('soon') { on(:earnings) { days_until satisfies { |d| d <= 3 } };  perform { fired << :soon } }
-    kb.rule('hot')  { on(:stock) { sector one_of(:tech, :energy) };            perform { fired << :hot } }
-    kb.rule('low')  { on(:stock) { rsi less_than(30) };                        perform { fired << :low } }
-    kb.rule('flat') { on(:stock) { change not_equal(0) };                      perform { fired << :flat } }
-    kb.rule('mid')  { on(:stock) { rsi range(20..40) };                        perform { fired << :mid } }
-    kb.rule('ex')   { on(:stock) { exchange equals(:nyse) };                   perform { fired << :ex } }
+    kb.rule('big')  do
+      on(:stock) { volume greater_than(500_000) }
+      perform { fired << :big }
+    end
+    kb.rule('soon') do
+      on(:earnings) { days_until(satisfies { |d| d <= 3 }) }
+      perform { fired << :soon }
+    end
+    kb.rule('hot')  do
+      on(:stock) { sector one_of(:tech, :energy) }
+      perform { fired << :hot }
+    end
+    kb.rule('low')  do
+      on(:stock) { rsi less_than(30) }
+      perform { fired << :low }
+    end
+    kb.rule('flat') do
+      on(:stock) { change not_equal(0) }
+      perform { fired << :flat }
+    end
+    kb.rule('mid')  do
+      on(:stock) { rsi range(20..40) }
+      perform { fired << :mid }
+    end
+    kb.rule('ex')   do
+      on(:stock) { exchange equals(:nyse) }
+      perform { fired << :ex }
+    end
 
-    assert_equal [[:volume], [:days_until], [:sector], [:rsi], [:change], [:rsi], [:exchange]],
-                 kb.rules.values.map { |rule| rule.conditions.first.pattern.keys }
+    assert_equal([[:volume], [:days_until], [:sector], [:rsi], [:change], [:rsi], [:exchange]],
+                 kb.rules.values.map { |rule| rule.conditions.first.pattern.keys })
 
     kb.fact :stock, volume: 900_000, sector: :tech, rsi: 25, change: 1, exchange: :nyse
     kb.fact :earnings, days_until: 2

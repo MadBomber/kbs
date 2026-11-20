@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The gemspec floor is 3.2.
+        # The gemspec floor is 4.0.
         ruby: ['4.0']
 
     # A disposable Redis for the Redis store tests, which flush the database
@@ -54,4 +54,4 @@ jobs:
           bundler-cache: true
 
       - name: Run tests
-        run: bundle exec rake test
+        run: bundle exec ruby -Ilib:test -e 'Dir["test/**/test_*.rb"].each { |f| require File.expand_path(f) }'

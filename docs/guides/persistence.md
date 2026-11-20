@@ -38,6 +38,8 @@ engine.add_fact(:sensor, { temp: 28 })
 Embedded database using `KBS::Blackboard::Engine`:
 
 ```ruby
+require 'kbs/blackboard'  # not loaded by require 'kbs'
+
 engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
 
 engine.add_fact(:sensor, { temp: 28 })
@@ -60,7 +62,7 @@ puts engine.facts.size  # => 1 (persisted)
 - ✅ ACID guarantees
 - ✅ Durable
 - ✅ Full audit trail
-- ✅ SQL queries available
+- ✅ SQL queries available (`engine.blackboard.query_facts(sql, params)`)
 
 **Cons:**
 - ❌ Slower than Redis
@@ -71,9 +73,11 @@ puts engine.facts.size  # => 1 (persisted)
 
 ```ruby
 engine = KBS::Blackboard::Engine.new(
-  db_path: 'kb.db',          # Database file path
-  journal_mode: 'WAL'        # WAL mode for better concurrency
+  db_path: 'kb.db'           # Database file path (default ':memory:')
 )
+
+# WAL mode for better concurrency, set on the SQLite3::Database
+engine.blackboard.store.db.execute("PRAGMA journal_mode = WAL")
 ```
 
 ### 3. Redis (High Performance)
@@ -81,7 +85,7 @@ engine = KBS::Blackboard::Engine.new(
 In-memory data structure store:
 
 ```ruby
-require 'kbs/blackboard/persistence/redis_store'
+require 'kbs/blackboard'  # the Redis stores also need the redis gem
 
 store = KBS::Blackboard::Persistence::RedisStore.new(
   url: 'redis://localhost:6379/0'
@@ -89,6 +93,8 @@ store = KBS::Blackboard::Persistence::RedisStore.new(
 
 engine = KBS::Blackboard::Engine.new(store: store)
 ```
+
+With a Redis store the message queue and audit log are kept in Redis too.
 
 **When to use:**
 - High-frequency updates (> 1000 writes/sec)
@@ -98,7 +104,7 @@ engine = KBS::Blackboard::Engine.new(store: store)
 - Speed is critical
 
 **Pros:**
-- ✅ 100x faster than SQLite
+- ✅ Faster than SQLite for high write rates
 - ✅ Distributed (multiple engines share data)
 - ✅ Perfect for real-time
 - ✅ Scalable
@@ -107,17 +113,19 @@ engine = KBS::Blackboard::Engine.new(store: store)
 - ❌ Requires Redis server
 - ❌ Volatile by default (enable RDB/AOF for persistence)
 - ❌ No ACID across keys
-- ❌ Less audit trail
+- ❌ Audit trail capped (latest 1,000 entries per fact or rule, 10,000 overall) and no SQL queries
 
 **Configuration:**
 
 ```ruby
 store = KBS::Blackboard::Persistence::RedisStore.new(
-  url: 'redis://localhost:6379/0',
-  namespace: 'kbs',              # Key prefix
-  ttl: 86400                     # Expire facts after 24h (optional)
+  url: 'redis://localhost:6379/0',  # Ignored when redis: is given
+  session_id: nil,                  # Defaults to a new UUID
+  redis: nil                        # An existing Redis client to use
 )
 ```
+
+Retracted facts stay in Redis until `engine.blackboard.vacuum` removes those retracted more than 30 days ago.
 
 **Redis Persistence Options:**
 
@@ -138,7 +146,7 @@ appendfsync everysec  # Sync to disk every second
 Combines Redis (speed) with SQLite (durability):
 
 ```ruby
-require 'kbs/blackboard/persistence/hybrid_store'
+require 'kbs/blackboard'
 
 store = KBS::Blackboard::Persistence::HybridStore.new(
   redis_url: 'redis://localhost:6379/0',
@@ -168,18 +176,21 @@ engine = KBS::Blackboard::Engine.new(store: store)
 **Cons:**
 - ❌ Requires both Redis and SQLite
 - ❌ More complex setup
-- ❌ Slightly slower writes (dual write)
+- ❌ Slightly slower writes (each change also writes the SQLite audit log)
+- ❌ No transactions (Redis and SQLite writes are separate)
 
 **Configuration:**
 
 ```ruby
 store = KBS::Blackboard::Persistence::HybridStore.new(
-  redis_url: 'redis://localhost:6379/0',
-  db_path: 'audit.db',
-  audit_facts: true,        # Log fact changes to SQLite
-  audit_rules: true         # Log rule firings to SQLite
+  redis_url: 'redis://localhost:6379/0',  # Ignored when redis: is given
+  redis: nil,                              # An existing Redis client
+  db_path: 'audit.db',                     # SQLite audit log (the default)
+  session_id: nil                          # Defaults to a new UUID
 )
 ```
+
+Fact changes and rule firings are always logged to SQLite.
 
 ## Choosing a Backend
 
@@ -291,7 +302,6 @@ Benchmark.bm do |x|
     10_000.times { |i| sqlite_engine.add_fact(:test, { value: i }) }
   end
 end
-# ~5,000 ops/sec
 
 # Redis
 redis_store = KBS::Blackboard::Persistence::RedisStore.new(
@@ -303,7 +313,6 @@ Benchmark.bm do |x|
     10_000.times { |i| redis_engine.add_fact(:test, { value: i }) }
   end
 end
-# ~50,000 ops/sec (10x faster)
 ```
 
 ### Read Performance
@@ -312,52 +321,57 @@ end
 # SQLite
 Benchmark.bm do |x|
   x.report("SQLite reads:") do
-    10_000.times { sqlite_engine.facts }
+    100.times { sqlite_engine.facts }
   end
 end
-# ~10,000 ops/sec
 
 # Redis
 Benchmark.bm do |x|
   x.report("Redis reads:") do
-    10_000.times { redis_engine.facts }
+    100.times { redis_engine.facts }
   end
 end
-# ~100,000 ops/sec (10x faster)
 ```
+
+Results depend on your hardware, Redis setup and SQLite pragmas; run these against your own workload. `engine.facts` reads every active fact from the store each time, so it slows as the store grows.
 
 ## Custom Persistence
 
-Implement your own backend by subclassing `KBS::Blackboard::Persistence::Store`:
+Implement your own backend by subclassing `KBS::Blackboard::Persistence::Store`. A store keeps facts only; the blackboard picks its message queue and audit log by what the store offers, so it must also respond to `db` (a SQLite3 database) or `connection` (a Redis client):
 
 ```ruby
 class PostgresStore < KBS::Blackboard::Persistence::Store
-  def save_fact(fact)
+  attr_reader :session_id
+
+  def add_fact(uuid, type, attributes)
     # Insert into PostgreSQL
   end
 
-  def load_facts(type = nil)
-    # Query from PostgreSQL
+  def remove_fact(uuid)
+    # Mark retracted; return { type:, attributes: }, or nil if not found
   end
 
-  def delete_fact(id)
-    # Delete from PostgreSQL
+  def update_fact(uuid, attributes)
+    # Replace attributes; return the fact's type, or nil
   end
 
-  def save_message(topic, message, priority)
-    # Store message
+  def get_fact(uuid)
+    # Return { uuid:, type:, attributes: }, or nil
   end
 
-  def pop_message(topic)
-    # Retrieve highest priority message
+  def get_facts(type = nil, pattern = {})
+    # Return an Array of { uuid:, type:, attributes: } for active facts
   end
 
-  def log_fact_change(operation, fact)
-    # Audit logging
+  def transaction
+    yield
   end
 
-  def fact_history(fact_id)
-    # Get change history
+  # Also: query_facts, register_knowledge_source, clear_session,
+  # stats, vacuum, close
+
+  def connection
+    # A Redis client for the message queue and audit log
   end
 end
 
@@ -374,36 +388,26 @@ See [Custom Persistence](../advanced/custom-persistence.md) for details.
 
 ```ruby
 # Enable WAL mode for better concurrency
-engine = KBS::Blackboard::Engine.new(
-  db_path: 'kb.db',
-  journal_mode: 'WAL',
-  synchronous: 'NORMAL',  # Trade some durability for speed
-  cache_size: -64000      # 64MB cache
-)
+engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
+db = engine.blackboard.store.db
+
+db.execute("PRAGMA journal_mode = WAL")
+db.execute("PRAGMA synchronous = NORMAL")  # Trade some durability for speed
+db.execute("PRAGMA cache_size = -64000")   # 64MB cache
 ```
 
 ### Redis
 
 ```ruby
-# Connection pooling for high concurrency
-store = KBS::Blackboard::Persistence::RedisStore.new(
-  url: 'redis://localhost:6379/0',
-  pool_size: 10,          # Connection pool size
-  pool_timeout: 5         # Timeout in seconds
-)
+# Configure the client yourself and pass it in
+client = Redis.new(url: 'redis://localhost:6379/0', timeout: 5)
+
+store = KBS::Blackboard::Persistence::RedisStore.new(redis: client)
 ```
 
 ### Hybrid
 
-```ruby
-# Balance between speed and durability
-store = KBS::Blackboard::Persistence::HybridStore.new(
-  redis_url: 'redis://localhost:6379/0',
-  db_path: 'audit.db',
-  batch_audit_writes: true,   # Batch SQLite writes
-  audit_batch_size: 100       # Flush every 100 changes
-)
-```
+The hybrid store writes each audit record to SQLite as the change happens; there is no batching to configure.
 
 ## Troubleshooting
 
@@ -411,32 +415,20 @@ store = KBS::Blackboard::Persistence::HybridStore.new(
 
 ```ruby
 # Increase busy timeout
-engine = KBS::Blackboard::Engine.new(
-  db_path: 'kb.db',
-  busy_timeout: 5000  # Wait up to 5 seconds
-)
+engine = KBS::Blackboard::Engine.new(db_path: 'kb.db')
+engine.blackboard.store.db.busy_timeout = 5000  # Wait up to 5 seconds
 ```
 
 ### Redis Connection Issues
 
 ```ruby
-# Enable retry logic
-store = KBS::Blackboard::Persistence::RedisStore.new(
+# Enable retry logic on the client
+client = Redis.new(
   url: 'redis://localhost:6379/0',
-  reconnect_attempts: 3,
-  reconnect_delay: 1.0
+  reconnect_attempts: 3
 )
-```
 
-### Hybrid Sync Issues
-
-```ruby
-# Force synchronous audit writes
-store = KBS::Blackboard::Persistence::HybridStore.new(
-  redis_url: 'redis://localhost:6379/0',
-  db_path: 'audit.db',
-  sync_audit_writes: true  # Don't batch, write immediately
-)
+store = KBS::Blackboard::Persistence::RedisStore.new(redis: client)
 ```
 
 ## Next Steps

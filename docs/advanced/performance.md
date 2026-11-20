@@ -44,6 +44,87 @@ other. These are environment-specific baseline observations, not performance
 targets. Re-run the benchmark on the target Ruby/runtime before evaluating a
 regex engine change.
 
+### RETE Scaling
+
+`benchmarks/rete_scaling.rb` measures how the network scales as facts and
+rules are added: a two-condition join on a shared variable, the same join
+negated, retraction, and fact assertion against many alpha memories.
+
+```bash
+ruby -Ilib benchmarks/rete_scaling.rb
+SIZES=500,1000,2000 REPEATS=5 ruby -Ilib benchmarks/rete_scaling.rb
+```
+
+A scenario that scales linearly keeps its rate as the size grows.
+
+In the tables below, the "scan" columns were recorded before the indexing
+and linking changes; the script measures only the current code, so a
+re-run reproduces the right-hand columns.
+
+Joins on a shared `?variable` are hash joins. The alpha memory is indexed on
+the fact's fields and the beta memory on the token's fields, so a new fact or
+token only visits the entries that share its value. Recorded on Ruby 4.0.9,
+arm64-darwin (median of 3), for `n` orders joined with `n` payments on `?id`:
+
+| n | Memory scan | Hash index |
+|--:|------------:|-----------:|
+| 500 | 15,294 facts/sec | 313,873 facts/sec |
+| 1000 | 7,949 facts/sec | 327,279 facts/sec |
+| 2000 | 4,120 facts/sec | 360,101 facts/sec |
+
+Retraction follows links instead of searching. The engine records which
+alpha memories each fact went into, each join records the tokens it built
+from each fact, and each token records its children, so removing a fact
+touches only its own matches. Removing `n` joined payments:
+
+| n | Memory scan | Linked |
+|--:|------------:|-------:|
+| 500 | 16,576 facts/sec | 500,500 facts/sec |
+| 1000 | 8,566 facts/sec | 392,311 facts/sec |
+| 2000 | 4,251 facts/sec | 484,848 facts/sec |
+
+Asserting a fact does not test it against every pattern. Alpha memories are
+grouped by fact type, and those that test an attribute against a constant are
+hashed on that value, so the cost does not grow with the number of rules.
+2000 asserts against `n` rules:
+
+| n | Each on its own type, scan | Indexed | Each on its own constant, scan | Indexed |
+|--:|--:|--:|--:|--:|
+| 500 | 32,965 facts/sec | 292,912 facts/sec | 7,877 facts/sec | 315,657 facts/sec |
+| 1000 | 17,316 facts/sec | 336,361 facts/sec | 3,960 facts/sec | 300,661 facts/sec |
+| 2000 | 8,770 facts/sec | 321,492 facts/sec | 1,996 facts/sec | 310,029 facts/sec |
+
+A pattern is hashed on its first attribute compared with a plain value. A
+pattern that only uses predicates or variables is tested for every fact of
+its type, so put a constant test in the pattern when the rule has one.
+
+`without` and `exists` conditions link each partial match to the facts that
+satisfy it, and each fact to the matches it affects. Retracting `n` payments
+that each block one order in a `without`:
+
+| n | Memory scan | Linked |
+|--:|------------:|-------:|
+| 500 | 21,668 facts/sec | 302,847 facts/sec |
+| 1000 | 10,445 facts/sec | 235,405 facts/sec |
+| 2000 | 4,915 facts/sec | 244,439 facts/sec |
+
+Rules that start with the same conditions share the nodes for them. 50 rules
+that each begin with the same join of `n` orders and `n` payments:
+
+| n | A join per rule | Shared join |
+|--:|----------------:|------------:|
+| 500 | 8,200 facts/sec | 105,541 facts/sec |
+| 1000 | 9,633 facts/sec | 118,842 facts/sec |
+| 2000 | 7,740 facts/sec | 107,411 facts/sec |
+
+Write the conditions rules have in common first, in the same order and with
+the same variable names: a pattern includes its variable names, so
+`id: :id?` and `id: :order_id?` are different patterns.
+
+Only equality between two conditions is indexed. A condition with no shared
+variable, or one that only uses predicates, still scans its memories, so put
+a shared variable on the join where the data allows it.
+
 ### Basic Benchmark
 
 ```ruby
@@ -81,6 +162,7 @@ puts "Ran engine in #{time.real} seconds"
 
 ```ruby
 require 'benchmark'
+require 'kbs/blackboard'
 
 class KBSBenchmark
   def initialize(engine_type: :memory)
@@ -88,38 +170,23 @@ class KBSBenchmark
     @results = {}
   end
 
-  def setup_engine
+  # A fresh engine of the type under test
+  def new_engine
     case @engine_type
     when :memory
-      # Return a new knowledge base context
-      @kb_context = :memory
+      KBS::Engine.new
     when :blackboard_sqlite
-      @kb_context = :blackboard_sqlite
-      @db_path = ':memory:'
+      KBS::Blackboard::Engine.new(db_path: ':memory:')
     when :blackboard_redis
-      require 'kbs/blackboard/persistence/redis_store'
-      @kb_context = :blackboard_redis
-      @store = KBS::Blackboard::Persistence::RedisStore.new(
+      store = KBS::Blackboard::Persistence::RedisStore.new(
         url: 'redis://localhost:6379/15'  # Test database
       )
+      KBS::Blackboard::Engine.new(store: store)
     end
   end
 
   def benchmark_fact_addition(count: 10_000)
-    setup_engine
-
-    kb = case @kb_context
-    when :memory
-      KBS.knowledge_base do
-        # Add facts in benchmark block
-      end
-    when :blackboard_sqlite
-      engine = KBS::Blackboard::Engine.new(db_path: @db_path)
-      KBS.knowledge_base(engine: engine)
-    when :blackboard_redis
-      engine = KBS::Blackboard::Engine.new(store: @store)
-      KBS.knowledge_base(engine: engine)
-    end
+    kb = KBS.knowledge_base(engine: new_engine)
 
     time = Benchmark.measure do
       count.times do |i|
@@ -135,51 +202,18 @@ class KBSBenchmark
   end
 
   def benchmark_simple_rules(fact_count: 1000, rule_count: 10)
-    setup_engine
-
-    kb = case @kb_context
-    when :memory
-      KBS.knowledge_base do
-        # Add rules
-        rule_count.times do |i|
-          rule "rule_#{i}" do
-            on :fact, value: :v?
-            perform do |facts, bindings|
-              # Minimal action
-            end
-          end
-        end
-
-        # Add facts
-        fact_count.times do |i|
-          fact :fact, value: i
+    kb = KBS.knowledge_base(engine: new_engine) do
+      # Add rules
+      rule_count.times do |i|
+        rule "rule_#{i}" do
+          on :fact, value: :v?
+          perform { }  # Minimal action
         end
       end
-    when :blackboard_sqlite
-      engine = KBS::Blackboard::Engine.new(db_path: @db_path)
-      kb = KBS.knowledge_base(engine: engine) do
-        rule_count.times do |i|
-          rule "rule_#{i}" do
-            on :fact, value: :v?
-            perform { }
-          end
-        end
-        fact_count.times do |i|
-          fact :fact, value: i
-        end
-      end
-    when :blackboard_redis
-      engine = KBS::Blackboard::Engine.new(store: @store)
-      kb = KBS.knowledge_base(engine: engine) do
-        rule_count.times do |i|
-          rule "rule_#{i}" do
-            on :fact, value: :v?
-            perform { }
-          end
-        end
-        fact_count.times do |i|
-          fact :fact, value: i
-        end
+
+      # Add facts
+      fact_count.times do |i|
+        fact :fact, value: i
       end
     end
 
@@ -196,27 +230,22 @@ class KBSBenchmark
   end
 
   def benchmark_complex_joins(fact_count: 500)
-    setup_engine
-
-    kb = case @kb_context
-    when :memory
-      KBS.knowledge_base do
-        # Rule with 3-way join
-        rule "complex_join" do
-          on :a, id: :id?, value: :v?
-          on :b, a_id: :id?, score: :s?
-          on :c, b_score: :s?
-          perform do |facts, bindings|
-            # Action
-          end
+    kb = KBS.knowledge_base(engine: new_engine) do
+      # Rule with 3-way join
+      rule "complex_join" do
+        on :a, id: :id?, value: :v?
+        on :b, a_id: :id?, score: :s?
+        on :c, b_score: :s?
+        perform do |facts, bindings|
+          # Action
         end
+      end
 
-        # Add facts
-        fact_count.times do |i|
-          fact :a, id: i, value: rand(100)
-          fact :b, a_id: i, score: rand(100)
-          fact :c, b_score: i
-        end
+      # Add facts
+      fact_count.times do |i|
+        fact :a, id: i, value: rand(100)
+        fact :b, a_id: i, score: rand(100)
+        fact :c, b_score: i
       end
     end
 
@@ -232,9 +261,7 @@ class KBSBenchmark
   end
 
   def benchmark_negation(fact_count: 1000)
-    setup_engine
-
-    kb = KBS.knowledge_base do
+    kb = KBS.knowledge_base(engine: new_engine) do
       # Rule with negation
       rule "negation_rule" do
         on :positive, id: :id?
@@ -302,6 +329,8 @@ puts "\n=== Performance Comparison ==="
 puts "Fact addition: Memory is #{(blackboard_results[:fact_addition][:time] / memory_results[:fact_addition][:time]).round(2)}x faster"
 ```
 
+Run it with `ruby -Ilib`, as for the scripts in `benchmarks/`: on Ruby 4, `benchmark` is a bundled gem that is not in the project's Gemfile, so `bundle exec` cannot load it.
+
 ## Rule Optimization
 
 ### Condition Ordering
@@ -312,16 +341,16 @@ Order conditions from most to least selective:
 # Bad: Generic condition first
 KBS::Rule.new("inefficient") do |r|
   r.conditions = [
-    KBS::Condition.new(:any_event, {}),  # Matches ALL events (large alpha memory)
-    KBS::Condition.new(:critical_error, { severity: "critical" })  # Selective
+    KBS::Condition.new(:any_event, { error_id: :id? }),  # Matches ALL events (large alpha memory)
+    KBS::Condition.new(:critical_error, { id: :id?, severity: "critical" })  # Selective
   ]
 end
 
 # Good: Selective condition first
 KBS::Rule.new("efficient") do |r|
   r.conditions = [
-    KBS::Condition.new(:critical_error, { severity: "critical" }),  # Selective
-    KBS::Condition.new(:any_event, { error_id: :id? })  # Filtered by join
+    KBS::Condition.new(:critical_error, { id: :id?, severity: "critical" }),  # Selective
+    KBS::Condition.new(:any_event, { error_id: :id? })  # Filtered by join on ?id
   ]
 end
 ```
@@ -344,18 +373,24 @@ Good ordering:
   → 5 token propagations (2000x fewer!)
 ```
 
+Both orderings find the 5 matches through a hash lookup on `?id`; the
+difference is the 10,000 partial-match tokens the bad ordering builds and
+stores in its first beta memory.
+
 ### Predicate Efficiency
 
-Use simple predicates:
+Use simple predicates. A predicate is a Proc given as an attribute's
+expected value; it is called with that attribute's value for each candidate
+fact as it is asserted:
 
 ```ruby
 # Bad: Complex predicate
-KBS::Condition.new(:data, { value: :v? }, predicate: lambda { |f|
+KBS::Condition.new(:data, { raw_data: lambda { |raw|
   # Expensive operations
-  json = JSON.parse(f[:raw_data])
+  json = JSON.parse(raw)
   result = ComplexCalculation.new(json).process
   result > threshold
-})
+} })
 
 # Good: Pre-process data
 engine.add_fact(:data, {
@@ -363,31 +398,32 @@ engine.add_fact(:data, {
   processed: true
 })
 
-KBS::Condition.new(:data, { value: :v? }, predicate: lambda { |f|
-  f[:value] > threshold  # Simple comparison
-})
+KBS::Condition.new(:data, { value: ->(v) { v > threshold } })  # Simple comparison
 ```
 
 ### Network Sharing
 
-Leverage shared alpha and beta memories:
+Leverage shared alpha memories (join nodes and beta memories are built per
+rule and are not shared). Two conditions share an alpha memory only when
+their type and whole pattern are equal, variable names included:
 
 ```ruby
-# Inefficient: Duplicate alpha nodes
 rule1 = KBS::Rule.new("rule1") do |r|
   r.conditions = [
-    KBS::Condition.new(:sensor, { type: "temperature", value: :v1? })
+    KBS::Condition.new(:sensor, { kind: "temperature", value: :v? })
   ]
 end
 
 rule2 = KBS::Rule.new("rule2") do |r|
   r.conditions = [
-    KBS::Condition.new(:sensor, { type: "temperature", value: :v2? })  # SAME pattern
+    KBS::Condition.new(:sensor, { kind: "temperature", value: :v? })  # SAME pattern
   ]
 end
 
-# Engine automatically shares alpha memory for :sensor + type="temperature"
-# Adding 1 temperature sensor fact activates BOTH rules efficiently
+# Engine automatically shares alpha memory for :sensor + kind="temperature"
+# Adding 1 temperature sensor fact activates BOTH rules efficiently.
+# With value: :v1? in one rule and :v2? in the other, the patterns differ
+# and each rule gets its own alpha memory.
 ```
 
 **Sharing visualization:**
@@ -403,7 +439,9 @@ Facts → AlphaMemory1(:sensor) → Rule1
 
 ### Minimize Negations
 
-Negations are expensive:
+Negations cost more than a plain join: each keeps links between partial
+matches and the facts that block them, and a negation without a shared
+`?variable` checks the whole alpha memory for every new token:
 
 ```ruby
 # Expensive: Multiple negations
@@ -415,7 +453,8 @@ KBS::Rule.new("many_negations") do |r|
     KBS::Condition.new(:d, {}, negated: true)
   ]
 end
-# Each negation checks alpha memory on every token
+# Each of these negations has no shared variable, so it checks its whole
+# alpha memory for every token
 
 # Better: Use positive logic
 engine.add_fact(:conditions_clear, {}) unless b_exists? || c_exists? || d_exists?
@@ -433,18 +472,25 @@ end
 Group related operations:
 
 ```ruby
-# Inefficient: Add facts one by one with run after each
+# Add facts one by one with run after each
 1000.times do |i|
   engine.add_fact(:item, { id: i })
-  engine.run  # Run engine 1000 times!
+  engine.run  # Run engine 1000 times
 end
 
-# Efficient: Batch add, then run once
+# Batch add, then run once
 1000.times do |i|
   engine.add_fact(:item, { id: i })
 end
 engine.run  # Run engine once
 ```
+
+Matching happens as each fact is added, and `run` only pops the agenda, so
+both forms do about the same matching work. The difference is *when* rules
+fire: running after each fact fires rules before later facts arrive, while
+one `run` lets priorities and the strategy order all activations together,
+and lets a later fact cancel an activation before it fires. With a
+blackboard, wrap the batch in `memory.transaction` to commit once.
 
 ## Storage Backend Selection
 
@@ -481,11 +527,15 @@ engines.each do |name, engine|
   puts "#{name}: #{(10_000 / time.real).round(2)} facts/sec"
 end
 
-# Typical results:
-# memory: 50,000 facts/sec
-# sqlite: 5,000 facts/sec
-# redis: 25,000 facts/sec
+# One run on Ruby 4.0.9, arm64-darwin, file-backed SQLite, local Redis:
+# memory: ~930,000 facts/sec
+# sqlite: ~1,900 facts/sec
+# redis:  ~1,700 facts/sec
 ```
+
+Each blackboard `add_fact` writes the fact and an audit entry; outside a
+transaction SQLite commits each one, and Redis makes several round trips.
+Measure on your own hardware and network.
 
 ### Backend Decision Matrix
 
@@ -499,14 +549,14 @@ end
 - ✅ Persistent
 - ✅ ACID transactions
 - ✅ No dependencies
-- ❌ Slower writes (~5,000/sec)
+- ❌ Slower writes (each fact also writes an audit entry; batch in a transaction)
 - **Use when:** Single process, moderate load, need durability
 
 **Redis (`RedisStore`)**:
-- ✅ Fast (~25,000/sec)
-- ✅ Distributed
-- ✅ Scalable
+- ✅ Shared between processes
+- ✅ In-memory storage
 - ❌ Requires Redis server
+- ❌ A network round trip per operation; not faster than SQLite per fact in the run above
 - **Use when:** High throughput, multiple processes, real-time systems
 
 **Hybrid (`HybridStore`)**:
@@ -516,27 +566,32 @@ end
 
 ### SQLite Optimization
 
-```ruby
-engine = KBS::Blackboard::Engine.new(
-  db_path: 'optimized.db',
-  journal_mode: 'WAL',         # Write-Ahead Logging (better concurrency)
-  synchronous: 'NORMAL',       # Balance safety/speed
-  cache_size: -64000,          # 64MB cache
-  busy_timeout: 5000           # Wait 5s for locks
-)
+`Blackboard::Engine.new` takes only `db_path:`, `store:`, `strategy:` and
+`fact_duplication:`. Set SQLite pragmas on the store's database handle:
 
-# Results: 2-3x faster than default settings
+```ruby
+engine = KBS::Blackboard::Engine.new(db_path: 'optimized.db')
+db = engine.blackboard.store.db   # SQLite3::Database
+
+db.execute("PRAGMA journal_mode = WAL")      # Write-Ahead Logging (better concurrency)
+db.execute("PRAGMA synchronous = NORMAL")    # Balance safety/speed
+db.execute("PRAGMA cache_size = -64000")     # 64MB cache
+db.busy_timeout = 5000                       # Wait 5s for locks
 ```
+
+Batching writes in `engine.blackboard.transaction { ... }` usually matters
+more: in one run, 1,000 `add_fact` calls took 0.6 s one by one and 0.02 s
+in a single transaction.
 
 ### Redis Optimization
 
+`RedisStore.new` takes `url:`, `session_id:` and `redis:`. To configure the
+connection (timeouts, reconnects), build the `Redis` client yourself and
+pass it in; the store has no connection pool:
+
 ```ruby
-store = KBS::Blackboard::Persistence::RedisStore.new(
-  url: 'redis://localhost:6379/0',
-  pool_size: 10,          # Connection pooling
-  pool_timeout: 5,        # Pool timeout
-  reconnect_attempts: 3   # Retry on failure
-)
+redis = Redis.new(url: 'redis://localhost:6379/0', reconnect_attempts: 3)
+store = KBS::Blackboard::Persistence::RedisStore.new(redis: redis)
 
 engine = KBS::Blackboard::Engine.new(store: store)
 
@@ -612,7 +667,12 @@ class InstrumentedEngine < KBS::Engine
     super
   end
 
-  def run
+  def fire_activation(activation)
+    @metrics[:rule_firings] += 1
+    super
+  end
+
+  def run(limit = nil)
     start = Time.now
     result = super
     elapsed = Time.now - start
@@ -645,7 +705,7 @@ KBS::Condition.new(:event, {})  # Alpha memory: 100,000 facts
 
 ```ruby
 # Fast: Matches specific events
-KBS::Condition.new(:event, { type: "error", severity: "critical" })
+KBS::Condition.new(:event, { kind: "error", severity: "critical" })
 # Alpha memory: 50 facts
 ```
 
@@ -654,10 +714,8 @@ KBS::Condition.new(:event, { type: "error", severity: "critical" })
 **Problem**: Complex predicates evaluated repeatedly
 
 ```ruby
-# Slow: Expensive predicate called for every fact
-KBS::Condition.new(:data, {}, predicate: lambda { |f|
-  expensive_calculation(f[:raw_data])
-})
+# Slow: Expensive predicate called for every :data fact asserted
+KBS::Condition.new(:data, { raw_data: ->(raw) { expensive_calculation(raw) } })
 ```
 
 **Solution**: Pre-calculate
@@ -685,22 +743,25 @@ end
 **Solution**: Async processing
 
 ```ruby
-# Fast: Queue action, process asynchronously
+# Fast: Queue action, process asynchronously (KBS::Blackboard::Engine)
 r.action = lambda do |facts, bindings|
-  engine.send_message(:api_queue, {
+  engine.post_message("rules", "api_queue", {
     url: "https://api.example.com/process",
-    fact_id: facts[0].id
+    fact_id: facts[0].uuid
   }, priority: 50)
 end
 
 # Separate worker processes messages
 worker = Thread.new do
   loop do
-    msg = engine.pop_message(:api_queue)
+    msg = engine.consume_message("api_queue", "api_worker")
     break unless msg
 
     result = HTTParty.get(msg[:content][:url])
-    engine.add_fact(:result, result)
+    # The engine is not thread-safe: hand the result back to the thread
+    # that runs the engine (e.g. post it as another message) rather than
+    # calling engine.add_fact from here
+    engine.post_message("api_worker", "api_results", { body: result.body })
   end
 end
 ```
@@ -723,22 +784,26 @@ end
 
 **Solution**: Clean up old facts
 
-```ruby
-# Cleanup rule
-cleanup_rule = KBS::Rule.new("cleanup_old_readings", priority: 1) do |r|
-  r.conditions = [
-    KBS::Condition.new(:sensor_reading, {
-      timestamp: :time?
-    }, predicate: lambda { |f|
-      (Time.now - f[:timestamp]) > 300  # 5 minutes old
-    })
-  ]
+A predicate is evaluated when the fact is asserted, so a rule cannot notice
+a reading becoming old later. Prune from the loop instead:
 
-  r.action = lambda do |facts, bindings|
-    engine.remove_fact(facts[0])
+```ruby
+loop do
+  engine.add_fact(:sensor_reading, {
+    value: read_sensor(),
+    timestamp: Time.now
+  })
+  engine.run
+
+  cutoff = Time.now - 300  # 5 minutes
+  engine.facts.each do |fact|
+    engine.remove_fact(fact) if fact.type == :sensor_reading && fact[:timestamp] < cutoff
   end
 end
 ```
+
+Facts a rule asserts under `logical` conditions are retracted automatically
+when the facts that support them go.
 
 ## Optimization Checklist
 
@@ -755,7 +820,7 @@ end
 - [ ] Remove facts when no longer needed
 - [ ] Batch fact additions
 - [ ] Use specific fact types (not generic `:data`)
-- [ ] Avoid duplicate facts
+- [ ] Avoid duplicate facts (`KBS::Engine.new(fact_duplication: false)` makes `add_fact` return the existing equal fact)
 
 ### Actions
 
@@ -771,8 +836,8 @@ end
   - SQLite for persistence + moderate load
   - Redis for persistence + high load
   - Hybrid for production
-- [ ] Optimize SQLite with WAL mode
-- [ ] Use connection pooling for Redis
+- [ ] Optimize SQLite with WAL mode and batch writes in transactions
+- [ ] Configure the Redis client you pass to `RedisStore.new(redis:)`
 - [ ] Monitor database size
 
 ### Monitoring
@@ -784,6 +849,11 @@ end
 - [ ] Log rule firing frequency
 
 ## Performance Targets
+
+These are rough targets, not measurements, and the measured rates above
+differ from them substantially (in-memory assertion is much faster; a
+blackboard backend without batching is much slower). Use them as a
+starting point and measure your own workload.
 
 ### Expected Performance (In-Memory)
 
@@ -836,6 +906,11 @@ engine = KBS::Blackboard::Engine.new(store: store)
 
 **Multiple processes sharing Redis:**
 
+Each engine matches only the facts asserted through it (plus the facts
+already in the store when its rules are added, which seed new alpha
+memories). Facts another process writes later do not reach its network, so
+hand work between processes through the shared message queue:
+
 ```ruby
 # Process 1: Data collector
 collector_store = KBS::Blackboard::Persistence::RedisStore.new(
@@ -846,7 +921,7 @@ collector = KBS::Blackboard::Engine.new(store: collector_store)
 # Collect data
 loop do
   data = fetch_data()
-  collector.add_fact(:raw_data, data)
+  collector.post_message("collector", "raw_data", data)
 end
 
 # Process 2: Rule processor
@@ -860,6 +935,9 @@ processor.add_rule(...)
 
 # Process data
 loop do
+  while (msg = processor.consume_message("raw_data", "processor"))
+    processor.add_fact(:raw_data, msg[:content])
+  end
   processor.run
   sleep 1
 end

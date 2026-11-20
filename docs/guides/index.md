@@ -12,6 +12,7 @@ Practical guides for using KBS effectively.
 - **[Pattern Matching](pattern-matching.md)** - Pattern syntax and operators
 - **[Variable Binding](variable-binding.md)** - Using variables in rules
 - **[Negation](negation.md)** - Matching absent patterns
+- **[Truth Maintenance](truth-maintenance.md)** - Derived facts that retract themselves
 
 ## Persistence
 - **[Blackboard Memory](blackboard-memory.md)** - Persistent shared memory

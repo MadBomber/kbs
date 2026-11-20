@@ -40,4 +40,16 @@ class TestDSLVariable < Minitest::Test
     hash = { var1 => "value" }
     assert_equal "value", hash[var2]
   end
+
+  # Contract: dsl/block-pattern-operators
+  # Bug: comparing a Variable outside a pattern block must fail clearly, and Variable equality must stay intact
+  def test_comparison_outside_a_pattern_block_raises_and_equality_is_unchanged
+    var = KBS::DSL::Variable.new(:price?)
+
+    error = assert_raises(KBS::Error) { var > 5 }
+    assert_match(/inside a pattern block/, error.message)
+    refute var == 5
+    assert var != KBS::DSL::Variable.new(:qty?)
+    refute var != KBS::DSL::Variable.new(:price)
+  end
 end

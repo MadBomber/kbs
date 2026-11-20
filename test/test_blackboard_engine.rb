@@ -2,6 +2,8 @@
 
 require_relative 'test_helper'
 require_relative '../lib/kbs/blackboard'
+require 'tmpdir'
+require 'fileutils'
 
 class TestBlackboardEngine < Minitest::Test
   def setup
@@ -33,7 +35,7 @@ class TestBlackboardEngine < Minitest::Test
 
     assert_same @engine, kb.engine
     assert_equal [28], readings
-    assert_equal [22, 28], @engine.blackboard.get_facts(:sensor).map { |fact| fact[:value] }
+    assert_equal([22, 28], @engine.blackboard.get_facts(:sensor).map { |fact| fact[:value] })
     assert_equal 'temperature_monitor', @engine.blackboard.get_rule_firings.first[:rule_name]
   end
 
@@ -71,7 +73,7 @@ class TestBlackboardEngine < Minitest::Test
   def test_rule_firing_logged
     rule = KBS::Rule.new('test_rule') do |r|
       r.conditions << KBS::Condition.new(:sensor, { temp: 22 })
-      r.action = ->(facts) { }
+      r.action = ->(facts) {}
     end
 
     @engine.add_rule(rule)
@@ -116,7 +118,7 @@ class TestBlackboardEngine < Minitest::Test
   # Issue #64: the docs call engine.facts and engine.close.
   def test_facts_and_close
     @engine.add_fact(:sensor, { temp: 22 })
-    assert_equal [22], @engine.facts.map { |f| f[:temp] }
+    assert_equal([22], @engine.facts.map { |f| f[:temp] })
 
     @engine.close
     assert @engine.blackboard.store.db.closed?
@@ -136,7 +138,7 @@ class TestBlackboardEngine < Minitest::Test
 
     rule = KBS::Rule.new('high_temp_rule') do |r|
       r.conditions << KBS::Condition.new(:sensor, { temp: ->(t) { t > 25 } })
-      r.action = ->(facts) { result << :fired }
+      r.action = ->(_facts) { result << :fired }
     end
 
     @engine.add_rule(rule)
@@ -146,7 +148,7 @@ class TestBlackboardEngine < Minitest::Test
 
     # Update triggers re-evaluation
     fact[:temp] = 30
-    # Note: In current implementation, updates don't auto-trigger RETE
+    # NOTE: In current implementation, updates don't auto-trigger RETE
     # This would require re-adding the updated fact or implementing update propagation
   end
 
@@ -155,8 +157,6 @@ class TestBlackboardEngine < Minitest::Test
   end
 
   def test_observer_integration
-    observer_called = false
-
     observer = Object.new
     def observer.update(action, fact)
       @called = true
@@ -177,8 +177,8 @@ class TestBlackboardEngine < Minitest::Test
   def test_remove_fact_retracts_negated_fact_from_network
     fired = 0
     @engine.add_rule(KBS::Rule.new('a_without_b',
-      conditions: [KBS::Condition.new(:a, {}), KBS::Condition.new(:b, {}, negated: true)],
-      action: ->(_facts) { fired += 1 }))
+                                   conditions: [KBS::Condition.new(:a, {}), KBS::Condition.new(:b, {}, negated: true)],
+                                   action: ->(_facts) { fired += 1 }))
     @engine.add_fact(:a, {})
     b = @engine.add_fact(:b, {})
     @engine.remove_fact(b)
@@ -191,8 +191,8 @@ class TestBlackboardEngine < Minitest::Test
   def test_remove_fact_retracts_positive_match
     fired = 0
     @engine.add_rule(KBS::Rule.new('a_and_b',
-      conditions: [KBS::Condition.new(:a, {}), KBS::Condition.new(:b, {})],
-      action: ->(_facts) { fired += 1 }))
+                                   conditions: [KBS::Condition.new(:a, {}), KBS::Condition.new(:b, {})],
+                                   action: ->(_facts) { fired += 1 }))
     @engine.add_fact(:a, {})
     b = @engine.add_fact(:b, {})
     @engine.remove_fact(b)
@@ -200,6 +200,113 @@ class TestBlackboardEngine < Minitest::Test
 
     assert_equal 0, fired
     assert_empty @engine.production_nodes['a_and_b'].tokens
+  end
+
+  # Contract: blackboard/symbol-rule-name-is-audited
+  # Bug: a rule with a Symbol name raised "can't prepare Symbol" when it fired on the SQLite store
+  def test_rule_with_symbol_name_fires_and_is_audited
+    fired = 0
+    @engine.add_rule(KBS::Rule.new(:symbol_rule,
+                                   conditions: [KBS::Condition.new(:sensor, {})],
+                                   action: ->(_facts) { fired += 1 }))
+    @engine.add_fact(:sensor, { temp: 22 })
+    @engine.run
+
+    assert_equal 1, fired
+    assert_equal(['symbol_rule'], @engine.blackboard.get_rule_firings(:symbol_rule).map { |f| f[:rule_name] })
+  end
+
+  # Contract: blackboard/remove-fact-returns-fact
+  # Bug: Blackboard::Engine#remove_fact returned the observer array instead of the fact
+  def test_remove_fact_returns_the_fact
+    fact = @engine.add_fact(:sensor, { temp: 22 })
+
+    assert_equal fact, @engine.remove_fact(fact)
+  end
+
+  # Contract: blackboard/transaction-rollback-withdraws-added-facts
+  # Bug: facts added in a rolled-back transaction stayed in the RETE network and their rules still fired
+  def test_rolled_back_fact_is_withdrawn_from_the_network
+    fired = 0
+    @engine.add_rule(KBS::Rule.new('order_rule',
+                                   conditions: [KBS::Condition.new(:order, {})],
+                                   action: ->(_facts) { fired += 1 }))
+
+    assert_raises(RuntimeError) do
+      @engine.blackboard.transaction do
+        @engine.add_fact(:order, { id: 1 })
+        raise 'validation failed'
+      end
+    end
+    @engine.run
+
+    assert_equal 0, fired
+    assert_empty @engine.facts
+    assert_empty @engine.alpha_memories[{ type: :order }].items
+  end
+
+  def test_rolled_back_nested_transaction_withdraws_facts_from_both_levels
+    @engine.add_rule(KBS::Rule.new('order_rule', conditions: [KBS::Condition.new(:order, {})], action: ->(_f) {}))
+
+    assert_raises(RuntimeError) do
+      @engine.blackboard.transaction do
+        @engine.add_fact(:order, { id: 1 })
+        @engine.blackboard.transaction { @engine.add_fact(:order, { id: 2 }) }
+        raise 'validation failed'
+      end
+    end
+
+    assert_equal 0, @engine.run
+    assert_empty @engine.alpha_memories[{ type: :order }].items
+  end
+
+  def test_committed_transaction_keeps_its_facts
+    @engine.blackboard.transaction { @engine.add_fact(:order, { id: 1 }) }
+
+    assert_equal 1, @engine.facts.size
+  end
+
+  def test_fact_removed_inside_a_rolled_back_transaction_is_withdrawn_once
+    removals = []
+    observer = Object.new
+    observer.define_singleton_method(:update) { |action, fact| removals << fact.uuid if action == :remove }
+    @engine.blackboard.add_observer(observer)
+
+    assert_raises(RuntimeError) do
+      @engine.blackboard.transaction do
+        fact = @engine.add_fact(:order, { id: 1 })
+        @engine.remove_fact(fact)
+        raise 'validation failed'
+      end
+    end
+
+    assert_equal 1, removals.size
+  end
+end
+
+class TestBlackboardEngineReopen < Minitest::Test
+  def setup
+    @dir = Dir.mktmpdir
+    @path = File.join(@dir, 'bb.db')
+  end
+
+  def teardown
+    FileUtils.remove_entry(@dir)
+  end
+
+  # Contract: blackboard/stored-facts-registered-on-reopen
+  # Bug: with fact_duplication: false, a reopened blackboard accepted a duplicate of a stored fact
+  def test_reopened_blackboard_rejects_duplicate_of_stored_fact
+    first = KBS::Blackboard::Engine.new(db_path: @path, fact_duplication: false)
+    stored = first.add_fact(:sensor, { temp: 22 })
+    first.close
+
+    reopened = KBS::Blackboard::Engine.new(db_path: @path, fact_duplication: false)
+
+    assert_equal stored, reopened.add_fact(:sensor, { temp: 22 })
+    assert_equal 1, reopened.blackboard.get_facts(:sensor).size
+  ensure
+    reopened&.close
   end
 end
 

@@ -31,7 +31,7 @@ class TestBetaMemory < Minitest::Test
 
   def test_activate_adds_and_propagates
     activations = []
-    successor = Object.new
+    successor = Object.new.extend(KBS::NetworkNode)
     def successor.left_activate(token)
       @activations ||= []
       @activations << token
@@ -46,24 +46,18 @@ class TestBetaMemory < Minitest::Test
     assert_equal @token, activations[0]
   end
 
-  def test_activate_with_generic_activate_method
-    activations = []
-    successor = Object.new
-    def successor.activate(token)
-      @activations ||= []
-      @activations << token
-    end
-    successor.instance_variable_set(:@activations, activations)
+  def test_activate_reaches_a_production_node
+    node = KBS::ProductionNode.new(KBS::Rule.new("r"))
 
-    @memory.successors << successor
+    @memory.successors << node
     @memory.activate(@token)
 
-    assert_equal 1, activations.length
+    assert_equal [@token], node.tokens
   end
 
   def test_unlink_prevents_propagation
     calls = []
-    successor = Object.new
+    successor = Object.new.extend(KBS::NetworkNode)
     def successor.left_unlink!
       @calls ||= []
       @calls << :unlinked
@@ -79,7 +73,7 @@ class TestBetaMemory < Minitest::Test
 
   def test_relink_enables_propagation
     calls = []
-    successor = Object.new
+    successor = Object.new.extend(KBS::NetworkNode)
     def successor.left_relink!
       @calls ||= []
       @calls << :relinked
@@ -113,15 +107,15 @@ class TestBetaMemory < Minitest::Test
     calls1 = []
     calls2 = []
 
-    successor1 = Object.new
+    successor1 = Object.new.extend(KBS::NetworkNode)
     def successor1.left_activate(token)
       @calls ||= []
       @calls << token
     end
     successor1.instance_variable_set(:@calls, calls1)
 
-    successor2 = Object.new
-    def successor2.activate(token)
+    successor2 = Object.new.extend(KBS::NetworkNode)
+    def successor2.left_activate(token)
       @calls ||= []
       @calls << token
     end

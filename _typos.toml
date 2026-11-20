@@ -1,0 +1,3 @@
+[files]
+# Reports written by the quality gates quote the words they flag.
+extend-exclude = ["*_output.txt", "coverage/", "site/"]

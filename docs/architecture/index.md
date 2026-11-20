@@ -16,17 +16,24 @@ The heart of KBS. Implements Charles Forgy's RETE algorithm with modern optimiza
 
 **Key Files:**
 - `lib/kbs/engine.rb` - Main engine coordinator
+- `lib/kbs/alpha_network.rb` - Finds a fact's alpha memories by type and constant
 - `lib/kbs/alpha_memory.rb` - Pattern-level fact storage
 - `lib/kbs/beta_memory.rb` - Token (partial match) storage
 - `lib/kbs/join_node.rb` - Inter-condition joins
-- `lib/kbs/negation_node.rb` - Negated condition handling
-- `lib/kbs/production_node.rb` - Rule firing coordination
+- `lib/kbs/join_test_builder.rb`, `join_tests.rb` - Compile shared `?variables` into join tests
+- `lib/kbs/join_indexing.rb`, `memory_index.rb` - Hash indexes for joins on shared variables
+- `lib/kbs/quantifier_node.rb`, `negation_node.rb`, `exists_node.rb` - `without` and `exists` conditions
+- `lib/kbs/production_node.rb` - Puts complete matches on the agenda
+- `lib/kbs/agenda.rb` - Conflict set of pending activations (priority + strategy)
+- `lib/kbs/truth_maintenance.rb` - Logical support for facts asserted under `logical` conditions
+- `lib/kbs/fact_registry.rb` - Duplicate fact detection when `fact_duplication: false`
+- `lib/kbs/introspection.rb`, `tracer.rb`, `rule_step.rb` - `watch`, `matches`, `join_activity` and `network_stats`
 
 **Responsibilities:**
 - Compile rules into discrimination networks
 - Propagate fact changes through the network
 - Maintain partial matches (tokens)
-- Fire rules when all conditions are satisfied
+- Queue complete matches on the agenda and fire them on `run`, until the agenda is empty
 
 **Learn more**: [RETE Algorithm Details](rete-algorithm.md)
 
@@ -41,7 +48,7 @@ Stores facts and notifies the RETE engine of changes using the Observer pattern.
 **Responsibilities:**
 - Store facts
 - Notify observers when facts are added/removed
-- Support queries and bulk operations
+- Support queries (`Blackboard::Memory#get_facts` and `#query_facts`)
 
 **Learn more**: [Blackboard Architecture](blackboard.md)
 
@@ -50,11 +57,12 @@ Stores facts and notifies the RETE engine of changes using the Observer pattern.
 Provides a Ruby-native interface for defining rules, conditions, and patterns.
 
 **Key Classes:**
+- `KBS.knowledge_base` / `DSL::KnowledgeBase` / `DSL::RuleBuilder` - The `rule ... on ... perform` DSL
 - `Rule` - Production rule with conditions and actions
 - `Condition` - Pattern specification for fact matching
 - `Fact` - Knowledge representation unit
 
-**Example:**
+**Example** (the core classes the DSL builds):
 ```ruby
 Rule.new("alert") do |r|
   r.conditions = [
@@ -104,18 +112,22 @@ WorkingMemory.add_fact(fact)
           ▼
        Engine.update(:add, fact)
           │
-          └─→ For each AlphaMemory:
-                 if fact.matches?(pattern)
+          └─→ AlphaNetwork.memories_for(fact)
+                 (candidates by fact type and constant,
+                  then fact.matches?(pattern))
                     │
                     ▼
                  AlphaMemory.activate(fact)
                     │
                     └─→ JoinNode.right_activate(fact)
-                           │
+                           │  (hash-index lookup of tokens
+                           │   sharing the ?variable values)
                            └─→ Create tokens, propagate...
                                   │
                                   ▼
-                               ProductionNode
+                               ProductionNode.activate(token)
+                                  │
+                                  └─→ agenda.add(activation)
 ```
 
 ### Firing Rules
@@ -123,22 +135,25 @@ WorkingMemory.add_fact(fact)
 ```
 User Code
    │
-   ├─→ engine.run()
+   ├─→ engine.run(limit = nil)
    │
    ▼
-For each ProductionNode:
+Until halted, limit reached, or agenda empty:
    │
-   ├─→ For each token:
-   │      │
-   │      └─→ rule.fire(token.facts)
-   │             │
-   │             └─→ Extract bindings
-   │                    │
-   │                    └─→ Execute action lambda
-   │                           │
-   │                           └─→ User code in action
+   ├─→ activation = agenda.pop
+   │      (highest priority first, then strategy:
+   │       :definition, :depth or :breadth)
    │
-   └─→ Mark tokens as fired
+   └─→ ProductionNode.fire_rule(token)
+          │
+          ├─→ rule.fire(token.facts)
+          │      │
+          │      └─→ Extract bindings, execute action
+          │             │
+          │             └─→ add_fact / remove_fact / modify in the
+          │                 action update the agenda before the next pop
+          │
+          └─→ Mark token as fired
 ```
 
 ## Network Compilation
@@ -170,9 +185,9 @@ engine.add_rule(rule)
 | Operation | Complexity | Notes |
 |-----------|-----------|-------|
 | Add rule | O(C × F) | C = conditions, F = existing facts |
-| Add fact | O(N) | N = activated nodes (typically << total) |
-| Remove fact | O(T) | T = tokens containing fact |
-| Fire rules | O(M) | M = complete matches |
+| Add fact | O(N) | N = activated nodes; alpha memories found by type/constant hash, joins on shared `?variables` by hash index |
+| Remove fact | O(T) | T = tokens built from the fact (followed by recorded links, no memory scan) |
+| Fire rules | O(M log M) | M = activations; the agenda is a binary heap |
 | Network sharing | O(1) | Same pattern → same alpha memory |
 
 ## Design Principles
@@ -189,7 +204,7 @@ Maintain RETE correctness per Forgy's specifications. No shortcuts that break se
 Each component is independently testable and swappable.
 
 ### 3. Performance Through Clarity
-Optimize algorithm first (unlinking, network sharing), then profile before micro-optimizations.
+Optimize algorithm first (unlinking, network sharing, hash-indexed joins, linked retraction), then profile before micro-optimizations.
 
 ### 4. Testability
 Every method testable in isolation. Dependency injection for external services.
@@ -204,14 +219,25 @@ Complete audit trails for production systems. Know *why* a rule fired.
 
 ### Custom Persistence
 
-Implement `KBS::Blackboard::Persistence::Store`:
+Subclass `KBS::Blackboard::Persistence::Store`:
 
 ```ruby
-class MyStore
-  def save_fact(fact) ... end
-  def load_facts(type) ... end
-  def delete_fact(id) ... end
-  # ...
+class MyStore < KBS::Blackboard::Persistence::Store
+  attr_reader :session_id
+
+  def add_fact(uuid, type, attributes) ... end
+  def remove_fact(uuid) ... end        # returns { type:, attributes: } or nil
+  def update_fact(uuid, attributes) ... end
+  def get_fact(uuid) ... end
+  def get_facts(type = nil, pattern = {}) ... end
+  def stats ... end
+  def close ... end
+  # query_facts, clear_session, vacuum, transaction as needed
+
+  # Blackboard::Memory builds its message queue and audit log from
+  # either #db (a SQLite3::Database) or #connection (a Redis client);
+  # a store with neither raises ArgumentError.
+  def db ... end
 end
 
 engine = KBS::Blackboard::Engine.new(store: MyStore.new)
@@ -219,7 +245,8 @@ engine = KBS::Blackboard::Engine.new(store: MyStore.new)
 
 ### Custom Pattern Matching
 
-Override `Fact#matches?`:
+Subclass `KBS::Fact`, override `matches?`, and have the engine build your
+facts by overriding `Engine#create_fact`:
 
 ```ruby
 class MyFact < KBS::Fact
@@ -227,7 +254,20 @@ class MyFact < KBS::Fact
     # Custom matching logic
   end
 end
+
+class MyEngine < KBS::Engine
+  def create_fact(type, attributes)
+    fact = MyFact.new(type, attributes)
+    @working_memory.add_fact(fact)
+    fact
+  end
+end
 ```
+
+`matches?` is only asked about the alpha memories `AlphaNetwork` selects
+for the fact: memories of the fact's type, filed under the fact's own value
+for a constant-tested attribute. It can narrow a match but cannot make a
+fact match a constant it is not equal to; use a Proc in the pattern for that.
 
 ### Custom Rule Actions
 
@@ -248,20 +288,37 @@ lib/kbs/
 ├── engine.rb              # Main engine
 ├── working_memory.rb      # Fact storage
 ├── fact.rb                # Fact representation
+├── pattern_matching.rb    # Fact#matches?
+├── fact_registry.rb       # Duplicate detection
+├── truth_maintenance.rb   # Logical support of facts
 ├── rule.rb                # Rule definition
 ├── condition.rb           # Pattern specification
 ├── token.rb               # Partial match
+├── alpha_network.rb       # Type/constant discrimination of alpha memories
 ├── alpha_memory.rb        # Pattern-level cache
 ├── beta_memory.rb         # Token storage
+├── memory_index.rb        # Hash index over a memory
+├── join_test_builder.rb   # ?variables → join tests
+├── join_tests.rb          # Join test evaluation
+├── join_indexing.rb       # Indexed vs residual join tests
 ├── join_node.rb           # Inter-condition joins
+├── quantifier_node.rb     # Base for negation/exists (blocker links)
 ├── negation_node.rb       # Negated conditions
-├── production_node.rb     # Rule firing
+├── exists_node.rb         # Exists conditions
+├── production_node.rb     # Puts matches on the agenda
+├── agenda.rb              # Activations and conflict resolution
+├── introspection.rb       # watch, matches, join_activity (Engine mixin)
+├── tracer.rb              # Writes the watch lines
+├── rule_step.rb           # One condition of a rule's network path
+├── dsl/                   # KBS.knowledge_base DSL
 └── blackboard/            # Persistent memory
     ├── engine.rb          # Blackboard-aware RETE
     ├── memory.rb          # Central workspace
     ├── fact.rb            # Persisted fact
     ├── message_queue.rb   # Agent communication
     ├── audit_log.rb       # Change history
+    ├── redis_message_queue.rb
+    ├── redis_audit_log.rb
     └── persistence/       # Storage backends
         ├── store.rb       # Abstract interface
         ├── sqlite_store.rb
