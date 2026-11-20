@@ -104,6 +104,19 @@ that each block one order in a `without`:
 | 1000 | 10,445 facts/sec | 235,405 facts/sec |
 | 2000 | 4,915 facts/sec | 244,439 facts/sec |
 
+Rules that start with the same conditions share the nodes for them. 50 rules
+that each begin with the same join of `n` orders and `n` payments:
+
+| n | A join per rule | Shared join |
+|--:|----------------:|------------:|
+| 500 | 8,200 facts/sec | 105,541 facts/sec |
+| 1000 | 9,633 facts/sec | 118,842 facts/sec |
+| 2000 | 7,740 facts/sec | 107,411 facts/sec |
+
+Write the conditions rules have in common first, in the same order and with
+the same variable names: a pattern includes its variable names, so
+`id: :id?` and `id: :order_id?` are different patterns.
+
 Only equality between two conditions is indexed. A condition with no shared
 variable, or one that only uses predicates, still scans its memories, so put
 a shared variable on the join where the data allows it.

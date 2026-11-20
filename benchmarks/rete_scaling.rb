@@ -71,6 +71,23 @@ def constant_rules_engine(count)
   engine
 end
 
+# `count` rules that start with the same two joined conditions and end
+# with a third condition of their own.
+def shared_prefix_engine(count)
+  engine = KBS::Engine.new
+  count.times do |i|
+    engine.add_rule(KBS::Rule.new(
+      "rule_#{i}",
+      conditions: [
+        KBS::Condition.new(:order, { id: :id? }),
+        KBS::Condition.new(:payment, { order_id: :id? }),
+        KBS::Condition.new(:"flag_#{i}", {})
+      ]
+    ))
+  end
+  engine
+end
+
 scenarios = {
   "join: n orders + n payments on a shared ?id" => {
     setup: ->(_n) { join_engine },
@@ -107,6 +124,14 @@ scenarios = {
     end,
     work: ->((engine, payments), _n) { payments.each { |payment| engine.remove_fact(payment) } },
     operations: ->(n) { n }
+  },
+  "shared prefix: 50 rules on the same join, n orders + n payments" => {
+    setup: ->(_n) { shared_prefix_engine(50) },
+    work: lambda do |engine, n|
+      n.times { |i| engine.add_fact(:order, id: i) }
+      n.times { |i| engine.add_fact(:payment, order_id: i) }
+    end,
+    operations: ->(n) { 2 * n }
   },
   "alpha: 2000 asserts against n rules on n fact types" => {
     setup: ->(n) { many_rules_engine(n) },
