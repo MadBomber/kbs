@@ -45,6 +45,33 @@ class TestToken < Minitest::Test
     assert_equal @fact1, facts[0]
   end
 
+  def test_fact_at_returns_the_fact_for_a_condition_position
+    token1 = KBS::Token.new(nil, @fact1, nil)
+    token2 = KBS::Token.new(token1, @fact2, nil)
+
+    assert_equal @fact1, token2.fact_at(0)
+    assert_equal @fact2, token2.fact_at(1)
+    assert_nil token2.fact_at(2)
+  end
+
+  def test_fact_at_skips_the_root_dummy_token
+    dummy = KBS::Token.new(nil, nil, nil)
+    token = KBS::Token.new(dummy, @fact1, nil)
+
+    assert_equal @fact1, token.fact_at(0)
+  end
+
+  def test_fact_at_keeps_the_position_of_a_negated_condition
+    token1 = KBS::Token.new(KBS::Token.new(nil, nil, nil), @fact1, nil)
+    negated = KBS::Token.new(token1, nil, :negation_node)
+    token3 = KBS::Token.new(negated, @fact2, nil)
+
+    assert_equal @fact1, token3.fact_at(0)
+    assert_nil token3.fact_at(1)
+    assert_equal @fact2, token3.fact_at(2)
+    assert_equal [@fact1, @fact2], token3.facts
+  end
+
   def test_children_management
     parent = KBS::Token.new(nil, @fact1, nil)
     child = KBS::Token.new(parent, @fact2, nil)
