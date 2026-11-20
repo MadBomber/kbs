@@ -27,6 +27,7 @@ The heart of KBS. Implements Charles Forgy's RETE algorithm with modern optimiza
 - `lib/kbs/agenda.rb` - Conflict set of pending activations (priority + strategy)
 - `lib/kbs/truth_maintenance.rb` - Logical support for facts asserted under `logical` conditions
 - `lib/kbs/fact_registry.rb` - Duplicate fact detection when `fact_duplication: false`
+- `lib/kbs/introspection.rb`, `tracer.rb`, `rule_step.rb` - `watch`, `matches`, `join_activity` and `network_stats`
 
 **Responsibilities:**
 - Compile rules into discrimination networks
@@ -306,6 +307,9 @@ lib/kbs/
 ├── exists_node.rb         # Exists conditions
 ├── production_node.rb     # Puts matches on the agenda
 ├── agenda.rb              # Activations and conflict resolution
+├── introspection.rb       # watch, matches, join_activity (Engine mixin)
+├── tracer.rb              # Writes the watch lines
+├── rule_step.rb           # One condition of a rule's network path
 ├── dsl/                   # KBS.knowledge_base DSL
 └── blackboard/            # Persistent memory
     ├── engine.rb          # Blackboard-aware RETE

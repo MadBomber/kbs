@@ -155,6 +155,99 @@ find_facts(engine, type: :sensor, location: "bedroom")
 find_facts(engine, type: :alert, severity: "critical")
 ```
 
+## Built-in Tracing and Inspection
+
+The engine can report what it does and how far each rule has matched, without wrapping rules or reading instance variables.
+
+### watch
+
+`watch` writes a line for each change to the items you name: `:facts`, `:activations`, `:rules`, or all three when called with no argument. `unwatch` stops it.
+
+```ruby
+kb = KBS.knowledge_base
+kb.rule "paid", priority: 5 do
+  on :order, id: :id?
+  on :payment, order_id: :id?
+  without :hold, order_id: :id?
+end
+
+kb.watch
+kb.assert(:order, id: 1)
+payment = kb.assert(:payment, order_id: 1)
+kb.run
+kb.retract(payment)
+```
+
+```
+==> fact :order, id: 1
+==> fact :payment, order_id: 1
+==> Activation 5 paid: fact :order, id: 1; fact :payment, order_id: 1; *
+FIRE 1 paid: fact :order, id: 1; fact :payment, order_id: 1; *
+<== fact :payment, order_id: 1
+```
+
+| Line | Meaning |
+|---|---|
+| `==> fact ...` | a fact entered working memory |
+| `<== fact ...` | a fact left it |
+| `==> Activation P rule: ...` | a match of the rule went on the agenda; `P` is the rule's priority |
+| `<== Activation P rule: ...` | a match was withdrawn before it fired |
+| `FIRE N rule: ...` | the rule fired; `N` counts firings |
+
+An activation lists one entry per condition: the matched fact, or `*` for a `without` or `exists` condition.
+
+Lines go to `$stdout`. Send them elsewhere with `engine.trace_output = io`; anything that responds to `puts` works.
+
+### matches
+
+`matches(rule_name)` answers "why didn't this rule fire?". For each condition it gives the number of facts that fit the condition on its own (`alpha_matches`) and the number of partial matches of the rule up to and including it (`partial_matches`).
+
+```ruby
+kb.assert(:order, id: 2)
+kb.matches("paid")
+# => {rule: "paid",
+#     conditions:
+#      [{keyword: "on", type: :order, alpha_matches: 2, partial_matches: 2},
+#       {keyword: "on", type: :payment, alpha_matches: 0, partial_matches: 0},
+#       {keyword: "without", type: :hold, alpha_matches: 0, partial_matches: 0}],
+#     matches: 0,
+#     activations: 0}
+```
+
+Read down the list: the first condition with `partial_matches: 0` is the one that stops the rule. Here two orders match, and no payment does. When `alpha_matches` is positive and `partial_matches` is zero, facts fit the pattern but a shared variable does not line up with the earlier conditions.
+
+`matches:` counts complete matches, and `activations:` the ones that have not fired yet.
+
+### join_activity
+
+`engine.join_activity(rule_name)` shows what each condition has cost since the engine started, or since `engine.reset_join_activity`.
+
+```ruby
+kb.engine.join_activity("paid")[1]
+# => {keyword: "on", type: :payment, indexed: true,
+#     left_activations: 2, right_activations: 1, comparisons: 1, matches: 1}
+```
+
+| Key | Meaning |
+|---|---|
+| `indexed` | the condition is joined through a hash index on a shared variable |
+| `left_activations` | partial matches that arrived from the conditions before it |
+| `right_activations` | facts that arrived for this condition |
+| `comparisons` | candidates looked at |
+| `matches` | candidates that passed |
+
+A condition with `comparisons` far above `matches` is doing wasted work: it has no shared variable to index on, or its pattern is too loose. Move a more selective condition ahead of it. Rules that share a node report the same counts for it.
+
+### network_stats
+
+```ruby
+kb.engine.network_stats
+# => {rules: 1, facts: 2, alpha_memories: 3, beta_nodes: 3, conditions: 3,
+#     partial_matches: 2, activations: 0}
+```
+
+`beta_nodes` below `conditions` means rules are sharing joins. A `partial_matches` count that grows much faster than `facts` points at a join without a shared variable.
+
 ## Rule Debugging
 
 ### Trace Rule Execution

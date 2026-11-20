@@ -4,7 +4,9 @@ module KBS
   # The RETE rule engine: builds the network for each rule, matches facts
   # as they are added and removed, and fires the activated rules.
   class Engine
-    attr_reader :working_memory, :rules, :alpha_memories, :production_nodes, :agenda
+    include Introspection
+
+    attr_reader :working_memory, :rules, :alpha_memories, :production_nodes, :agenda, :tracer
 
     # @param strategy [Symbol] conflict resolution strategy; see KBS::Agenda
     # @param fact_duplication [Boolean] whether working memory may hold two
@@ -18,12 +20,15 @@ module KBS
       @retracting = false
       @firing = nil
       @agenda = Agenda.new(strategy: strategy)
+      @tracer = Tracer.new
+      @rule_paths = {}
       @halted = false
       @working_memory = WorkingMemory.new
       @rules = []
       @alpha_network = AlphaNetwork.new
       @alpha_memories = @alpha_network.memories
       @fact_memories = {}
+      @beta_nodes = []
       @production_nodes = {}
       @root_beta_memory = BetaMemory.new
 
@@ -222,9 +227,11 @@ module KBS
       @matching = true
       begin
         if action == :add
+          @tracer.fact_added(fact)
           @fact_registry.add(fact) unless @fact_duplication
           match_fact(fact)
         elsif action == :remove
+          @tracer.fact_removed(fact)
           @fact_registry.remove(fact)
           @truth_maintenance.release(fact)
           unmatch_fact(fact)
@@ -277,6 +284,7 @@ module KBS
         activation = @agenda.pop
         break unless activation
 
+        @tracer.rule_fired(activation)
         fire_activation(activation)
         fired += 1
       end
@@ -380,29 +388,28 @@ module KBS
     end
 
     def build_network_for_rule(rule)
-      conditions = rule.conditions
-      join_tests = JoinTestBuilder.new(conditions).tests
+      join_tests = JoinTestBuilder.new(rule.conditions).tests
       last_logical = rule.logical_count - 1
-
+      path = @rule_paths[rule.name] = []
       beta_memory = @root_beta_memory
-      conditions.each_with_index do |condition, index|
-        beta_memory = add_condition_node(beta_memory, condition, join_tests[index])
+      rule.conditions.each_with_index do |condition, index|
+        node = add_condition_node(beta_memory, condition, join_tests[index])
+        beta_memory = node.successors.grep(BetaMemory).first
         beta_memory.listener = self if index == last_logical
+        path << RuleStep.new(condition, node.alpha_memory, node, beta_memory)
       end
       add_production_node(rule, beta_memory)
     end
 
-    # Adds the node for `condition` below `beta_memory` and brings it up
-    # to date.
+    # The node for `condition` below `beta_memory`: one that is already
+    # there doing the same work, or a new one brought up to date.
     #
-    # @return [KBS::BetaMemory] the new memory below the node
+    # @return [KBS::JoinNode, KBS::QuantifierNode]
     def add_condition_node(beta_memory, condition, tests)
       alpha_memory = get_or_create_alpha_memory(condition.pattern.merge(type: condition.type))
-      node = node_class_for(condition).new(alpha_memory, beta_memory, tests)
-      new_beta = BetaMemory.new
-      node.successors << new_beta
-      replay_tokens(beta_memory, node)
-      new_beta
+      node_class = node_class_for(condition)
+      shareable_node(beta_memory, node_class, alpha_memory, tests) ||
+        build_node(beta_memory, node_class, alpha_memory, tests)
     end
 
     # Ends the rule's path with its production node. A rule with no
@@ -412,6 +419,26 @@ module KBS
       beta_memory.successors << node
       @production_nodes[rule.name] = node
       replay_tokens(beta_memory, node) unless rule.conditions.empty?
+    end
+
+    # A node already below `beta_memory` that does the same work: the
+    # same kind of node, on the same alpha memory, with the same tests.
+    # Rules that start with the same conditions share those nodes and
+    # the partial matches in their beta memories.
+    def shareable_node(beta_memory, node_class, alpha_memory, tests)
+      beta_memory.successors.find do |node|
+        node.instance_of?(node_class) && node.alpha_memory.equal?(alpha_memory) && node.tests == tests
+      end
+    end
+
+    # A new node with its beta memory, brought up to date with the
+    # tokens already in `beta_memory`.
+    def build_node(beta_memory, node_class, alpha_memory, tests)
+      node = node_class.new(alpha_memory, beta_memory, tests)
+      node.successors << BetaMemory.new
+      @beta_nodes << node
+      replay_tokens(beta_memory, node)
+      node
     end
 
     def node_class_for(condition)

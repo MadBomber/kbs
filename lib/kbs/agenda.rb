@@ -27,6 +27,12 @@ module KBS
       @cancelled
     end
 
+    # The rule's name and one entry per condition, separated by "; ": the
+    # matched fact, or * for a negated or exists condition.
+    def description
+      "#{rule.name}: #{@token.slots.map { |fact| fact ? fact.to_s : '*' }.join('; ')}"
+    end
+
     # Cancels the activation unless it already is.
     #
     # @return [Boolean] whether this call cancelled it
@@ -48,7 +54,7 @@ module KBS
     end
 
     def to_s
-      "#{@salience} #{rule.name}: #{@token.facts.join(', ')}"
+      "#{@salience} #{description}"
     end
   end
 
@@ -69,7 +75,13 @@ module KBS
 
     attr_reader :strategy, :size
 
+    # An object told about each activation that is added, and each one
+    # removed before it fired, through activation_added(activation) and
+    # activation_removed(activation).
+    attr_accessor :listener
+
     def initialize(strategy: :definition)
+      @listener = nil
       validate_strategy(strategy)
       @strategy = strategy
       @heap = []
@@ -90,6 +102,7 @@ module KBS
       activation = Activation.new(node, token, rule_order: rule_order, timetag: @timetag += 1)
       push(activation)
       @size += 1
+      @listener&.activation_added(activation)
       activation
     end
 
@@ -97,6 +110,7 @@ module KBS
       return unless activation&.withdraw
 
       @size -= 1
+      @listener&.activation_removed(activation)
     end
 
     # Removes and returns the next activation to fire, or nil when empty.

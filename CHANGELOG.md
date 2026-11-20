@@ -12,6 +12,7 @@ The engine now works like CLIPS: an agenda with conflict resolution, truth maint
 - The DSL keyword `exists` now means "at least one such fact" and matches once; it used to be an alias for `on`.
 - `WorkingMemory#facts`, `AlphaMemory#items`, `BetaMemory#tokens` and `ProductionNode#tokens` return copies; change the memories through their methods (`add_item`, `remove_token`, `clear`, …). `Token#children` is a frozen Set changed through `add_child` / `remove_child`.
 - `RedisStore#query_facts` and `HybridStore#query_facts` raise `NotImplementedError` instead of returning every fact (#16).
+- Shared nodes mean shared tokens, so whether a rule fired is now `ProductionNode#fired?(token)`; `Token#fired?` no longer prevents a second firing. `Activation#to_s` separates facts with `; ` and shows `*` for a `without` or `exists` condition.
 - The gem ships only `lib/`, `README.md`, `CHANGELOG.md` and `LICENSE.txt` (#31). The Rakefile is gone; development tasks run through [asgard](https://github.com/MadBomber/asgard) (`.loki`).
 
 ### Added
@@ -26,11 +27,13 @@ The engine now works like CLIPS: an agenda with conflict resolution, truth maint
 - `KnowledgeBase#query` accepts condition helpers such as `greater_than(80)`.
 - `Engine#facts`, `Engine#close`, `KnowledgeBase#close`, `KBS.knowledge_base(engine:)` (#10, #64).
 - `Fact#to_s` and `Rule#to_s` print DSL source (#3).
+- **Introspection, as in CLIPS**: `watch` / `unwatch` (`:facts`, `:activations`, `:rules`) with `trace_output=`; `matches(rule_name)` shows the facts and partial matches per condition; `join_activity`, `reset_join_activity`, `network_stats` and `beta_nodes` measure the network. Also on `KnowledgeBase`.
 - Benchmarks: `benchmarks/rete_scaling.rb` and `benchmarks/regex_baseline.rb` (#4).
 
 ### Performance
 With 2,000 facts or rules:
 - Asserting finds alpha memories by type and constant: 1 s → 6 ms.
+- Rules that start with the same conditions share those join, negation and exists nodes and their partial matches: 50 such rules over 2000 orders and payments, 517 ms → 37 ms.
 - Shared-variable joins use hash indexes: 970 ms → 11 ms.
 - Retracting follows recorded links instead of searching: 470 ms → 4 ms; removing negation blockers: 407 ms → 8 ms. Asserting costs about 20% more for the bookkeeping.
 

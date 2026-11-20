@@ -65,6 +65,22 @@ module KBS
         @engine.halt
       end
 
+      # See KBS::Engine#watch.
+      def watch(*items)
+        @engine.watch(*items)
+        self
+      end
+
+      def unwatch(*items)
+        @engine.unwatch(*items)
+        self
+      end
+
+      # See KBS::Engine#matches.
+      def matches(rule_name)
+        @engine.matches(rule_name)
+      end
+
       def reset
         @engine.reset
       end

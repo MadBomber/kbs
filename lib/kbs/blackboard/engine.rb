@@ -51,15 +51,19 @@ module KBS
 
       # Records the firing in the audit log, then fires the rule.
       def fire_activation(activation)
-        log_firing(activation.rule, activation.token)
+        log_firing(activation)
         super
       end
 
-      # Writes the firing of `rule` for `token` to the audit log, unless
-      # the token has fired already.
-      def log_firing(rule, token)
-        return if token.fired?
+      # Writes the activation's firing to the audit log, unless its rule
+      # has fired for that token already. Rules that share join nodes
+      # share tokens, so whether a rule fired is asked of its production
+      # node, not of the token.
+      def log_firing(activation)
+        token = activation.token
+        return if activation.node.fired?(token)
 
+        rule = activation.rule
         facts = token.facts
         @blackboard.log_rule_firing(rule.name, facts.map(&:uuid), rule.bindings_for(facts))
       end

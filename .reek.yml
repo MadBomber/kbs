@@ -55,6 +55,8 @@ detectors:
   Attribute:
     exclude:
       - 'KBS::Activation#sort_key'
+      - 'KBS::Agenda#listener'   # the engine sets it while activations are watched
+      - 'KBS::Tracer#output'     # published as Engine#trace_output=
       - 'KBS::AlphaMemory'
       - 'KBS::BetaMemory'
       - 'KBS::JoinNode'
