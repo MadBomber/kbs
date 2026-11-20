@@ -3,9 +3,10 @@
 module KBS
   class JoinNode
     include JoinTests
+    include JoinIndexing
 
-    attr_accessor :alpha_memory, :beta_memory, :successors, :tests
-    attr_reader :left_linked, :right_linked
+    attr_accessor :successors
+    attr_reader :alpha_memory, :beta_memory, :tests, :left_linked, :right_linked
 
     def initialize(alpha_memory, beta_memory, tests = [])
       @alpha_memory = alpha_memory
@@ -17,6 +18,22 @@ module KBS
 
       alpha_memory.successors << self if alpha_memory
       beta_memory.successors << self if beta_memory
+      build_join_indexes
+    end
+
+    def tests=(tests)
+      @tests = tests
+      build_join_indexes
+    end
+
+    def alpha_memory=(memory)
+      @alpha_memory = memory
+      build_join_indexes
+    end
+
+    def beta_memory=(memory)
+      @beta_memory = memory
+      build_join_indexes
     end
 
     def left_unlink!
@@ -42,27 +59,14 @@ module KBS
       # Left activation: a new token from beta memory needs to be joined with facts from alpha memory
       return unless @left_linked && @right_linked
 
-      @alpha_memory.items.each do |fact|
-        if perform_join_tests(token, fact)
-          new_token = Token.new(token, fact, self)
-          token.children << new_token if token
-          @successors.each { |s| s.activate(new_token) }
-        end
-      end
+      matching_facts(token).each { |fact| emit(token, fact) }
     end
 
     def right_activate(fact)
       return unless @left_linked && @right_linked
 
-      parent_tokens = @beta_memory ? @beta_memory.tokens : [Token.new(nil, nil, nil)]
-
-      parent_tokens.each do |token|
-        if perform_join_tests(token, fact)
-          new_token = Token.new(token, fact, self)
-          token.children << new_token if token
-          @successors.each { |s| s.activate(new_token) }
-        end
-      end
+      parent_tokens = @beta_memory ? matching_tokens(fact) : [Token.new(nil, nil, nil)]
+      parent_tokens.each { |token| emit(token, fact) }
     end
 
     def left_deactivate(token)
@@ -85,6 +89,15 @@ module KBS
       end
 
       tokens_to_remove.each { |token| token.parent.children.delete(token) if token.parent }
+    end
+
+    private
+
+    # Passes the match of `token` and `fact` on to the successors.
+    def emit(token, fact)
+      new_token = Token.new(token, fact, self)
+      token.children << new_token
+      @successors.each { |s| s.activate(new_token) }
     end
   end
 end

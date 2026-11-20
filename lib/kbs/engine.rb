@@ -118,7 +118,7 @@ module KBS
 
       # 2. Clear alpha memories and their downstream beta memories
       @alpha_memories.each_value do |alpha_mem|
-        alpha_mem.items.clear
+        alpha_mem.clear
 
         # Each alpha memory successor is a JoinNode or NegationNode.
         # Their successors are intermediate BetaMemory nodes.
@@ -128,7 +128,7 @@ module KBS
           join_node.reset if join_node.is_a?(NegationNode)
           next unless join_node.respond_to?(:successors)
           join_node.successors.each do |beta_or_prod|
-            beta_or_prod.tokens.clear if beta_or_prod.respond_to?(:tokens)
+            beta_or_prod.clear if beta_or_prod.is_a?(BetaMemory)
           end
         end
       end
@@ -187,7 +187,7 @@ module KBS
     # and existing alpha memories already hold their facts.
     def get_or_create_alpha_memory(pattern)
       @alpha_memories[pattern] ||= AlphaMemory.new(pattern).tap do |memory|
-        memory.items.concat(@working_memory.facts.select { |fact| fact.matches?(pattern) })
+        @working_memory.facts.each { |fact| memory.add_item(fact) if fact.matches?(pattern) }
       end
     end
   end
