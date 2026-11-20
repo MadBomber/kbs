@@ -42,6 +42,12 @@ module KBS
         @engine.remove_fact(fact)
       end
 
+      # Changes a fact's attributes and matches it against the rules again.
+      # See KBS::Engine#modify.
+      def modify(fact, changes)
+        @engine.modify(fact, changes)
+      end
+
       # @param limit [Integer, nil] stop after this many rule firings
       # @return [Integer] the number of rules fired
       def run(limit = nil)

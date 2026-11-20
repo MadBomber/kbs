@@ -4,6 +4,9 @@
 - `benchmarks/regex_baseline.rb` measures regex pattern matching in the RETE network; results are in `docs/advanced/performance.md` (#4).
 
 ### Added
+- `Engine#modify(fact, changes)` on both engines, and `KnowledgeBase#modify`: changes a fact's attributes and matches it again, as a retraction followed by an assertion. `KBS::Engine` keeps the same fact object; `KBS::Blackboard::Engine` keeps the uuid and logs an `UPDATE`, through the new `Blackboard::Memory#modify_fact` and `#find_fact`. Setting an attribute directly still does not re-match.
+- `fact_duplication:` on `KBS::Engine.new` and `KBS::Blackboard::Engine.new`, and `engine.fact_duplication=`. With it off, `add_fact` returns the existing fact instead of adding one with the same type and attributes. It is on by default, as before. `Engine#duplicate_of(type, attributes)` finds the existing fact.
+- `KBS::MatchInProgressError`: `add_fact`, `remove_fact` and `modify` raise it when a pattern predicate or a working-memory observer calls them while another fact is being matched. Such a call used to change the network halfway through a match. `Engine#matching?` reports the state. Error classes now live in `lib/kbs/errors.rb`.
 - `KBS::Condition.new(type, pattern, exists: true)` and `KBS::ExistsNode`: a condition that matches once while at least one fact fits the pattern. `Condition#binds_fact?` tells whether a condition adds a fact to the match, and `Condition#keyword` gives its DSL keyword.
 - `benchmarks/rete_scaling.rb` measures how joins, negation, retraction and fact assertion scale with the number of facts and rules; see `docs/advanced/performance.md`.
 - `KBS::Agenda` holds every rule match that has not fired yet, as CLIPS does. `engine.agenda` exposes it: `size`, `empty?`, `peek` and `to_a` (pending activations in firing order).

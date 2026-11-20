@@ -5,7 +5,12 @@ module KBS
     attr_reader :working_memory, :rules, :alpha_memories, :production_nodes, :agenda
 
     # @param strategy [Symbol] conflict resolution strategy; see KBS::Agenda
-    def initialize(strategy: :definition)
+    # @param fact_duplication [Boolean] whether working memory may hold two
+    #   facts with the same type and attributes; see #fact_duplication=
+    def initialize(strategy: :definition, fact_duplication: true)
+      @fact_duplication = fact_duplication
+      @fact_registry = FactRegistry.new
+      @matching = false
       @agenda = Agenda.new(strategy: strategy)
       @halted = false
       @working_memory = WorkingMemory.new
@@ -28,25 +33,97 @@ module KBS
       build_network_for_rule(rule)
     end
 
+    # Adds a fact to working memory and matches it against the rules.
+    #
+    # With fact duplication off, a fact equal to one already in working
+    # memory is not added and the existing fact is returned.
     def add_fact(type, attributes = {})
+      ensure_not_matching!
+      existing = duplicate_of(type, attributes)
+      return existing if existing
+
       fact = Fact.new(type, attributes)
       @working_memory.add_fact(fact)
       fact
     end
 
     def remove_fact(fact)
+      ensure_not_matching!
       @working_memory.remove_fact(fact)
+    end
+
+    # Changes a fact's attributes and matches it again, as a retraction
+    # followed by an assertion: matches that depended on the old values
+    # go away, and rules the new values satisfy are activated, including
+    # rules that already fired for this fact.
+    #
+    # Setting an attribute with fact[:key] = value does not do this; the
+    # network keeps matching the values the fact had when it was added.
+    #
+    # @param changes [Hash] attributes to merge into the fact's
+    # @return [KBS::Fact, nil] the fact; the existing equal fact when
+    #   duplication is off and the change makes this fact a duplicate (this
+    #   fact is then removed); nil when the fact is not in working memory
+    def modify(fact, changes)
+      ensure_not_matching!
+      return nil unless @working_memory.include?(fact)
+
+      @working_memory.remove_fact(fact)
+      existing = duplicate_of(fact.type, fact.attributes.merge(changes))
+      return existing if existing
+
+      fact.attributes.merge!(changes)
+      @working_memory.add_fact(fact)
+    end
+
+    # Whether working memory may hold two facts with the same type and
+    # attributes. True by default.
+    attr_reader :fact_duplication
+
+    # Turning duplication off makes add_fact return the existing fact
+    # instead of adding an equal one. Duplicates already in working
+    # memory stay.
+    def fact_duplication=(allowed)
+      @fact_duplication = allowed
+      @fact_registry.clear
+      @working_memory.facts.each { |fact| @fact_registry.add(fact) } unless allowed
+    end
+
+    # The fact in working memory with this type and attributes, when
+    # duplication is off; nil otherwise.
+    def duplicate_of(type, attributes)
+      return nil if @fact_duplication
+
+      @fact_registry.find(type, attributes)
+    end
+
+    # Whether the engine is matching a fact right now.
+    def matching?
+      @matching
+    end
+
+    def ensure_not_matching!
+      raise MatchInProgressError if @matching
     end
 
     def facts
       @working_memory.facts
     end
 
+    # Working memory calls this when a fact is added or removed.
     def update(action, fact)
-      if action == :add
-        match_fact(fact)
-      elsif action == :remove
-        unmatch_fact(fact)
+      ensure_not_matching!
+      @matching = true
+      begin
+        if action == :add
+          @fact_registry.add(fact) unless @fact_duplication
+          match_fact(fact)
+        elsif action == :remove
+          @fact_registry.remove(fact)
+          unmatch_fact(fact)
+        end
+      ensure
+        @matching = false
       end
     end
 
@@ -141,6 +218,7 @@ module KBS
       # 1. Clear working memory directly (bypass observer — we clear everything)
       @working_memory.clear if @working_memory.respond_to?(:clear)
       @fact_memories.clear
+      @fact_registry.clear
 
       # 2. Clear alpha memories and their downstream beta memories
       @alpha_memories.each_value do |alpha_mem|

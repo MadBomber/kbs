@@ -189,6 +189,52 @@ engine.remove_fact(old_fact) if old_fact
 
 ---
 
+#### `modify(fact, changes)`
+
+Changes a fact's attributes and matches it against the rules again.
+
+`modify` works as a retraction followed by an assertion. Matches that depended on the old values go away, and every rule the new values satisfy is activated, including rules that already fired for this fact.
+
+**Parameters**:
+- `fact` - a fact in working memory (`KBS::Blackboard::Engine` also accepts a uuid)
+- `changes` (Hash) - attributes to merge into the fact's
+
+**Returns**: the fact with its new attributes, or `nil` when the fact is not in working memory. `KBS::Engine` returns the same object; `KBS::Blackboard::Engine` returns a new object with the same uuid and records an `UPDATE` in the audit log.
+
+```ruby
+reading = engine.add_fact(:sensor, id: 1, temp: 20)
+engine.run                       # "hot" rule does not fire
+engine.modify(reading, temp: 45)
+engine.run                       # "hot" rule fires
+```
+
+Setting an attribute directly (`fact[:temp] = 45`, or `Blackboard::Fact#update`) does **not** match the fact again: the network keeps the matches it made from the values the fact had when it was added.
+
+A rule whose action modifies a fact that the same rule matches is activated again by the change. Guard it with a condition the change makes false, or the rule runs until `run(limit)` stops it.
+
+---
+
+#### `fact_duplication` / `fact_duplication=`
+
+Whether working memory may hold two facts with the same type and attributes. `true` by default.
+
+```ruby
+engine = KBS::Engine.new(fact_duplication: false)
+first = engine.add_fact(:sensor, id: 1)
+again = engine.add_fact(:sensor, id: 1)   # not added
+again.equal?(first)                        # => true
+```
+
+With duplication off, `add_fact` returns the existing fact instead of adding an equal one, and no rule is activated a second time. `modify` that would make a fact equal to another removes the modified fact and returns the other. Turning it off later keeps any duplicates already in working memory.
+
+---
+
+#### Changing facts while a fact is being matched
+
+`add_fact`, `remove_fact` and `modify` raise `KBS::MatchInProgressError` when called while the engine is matching another fact. That only happens from code the engine calls during a match: a predicate in a pattern (`temp: ->(t) { ... }`) or a working-memory observer. Change facts from rule actions, which run between matches.
+
+---
+
 #### `run(limit = nil)`
 
 Fires activations from the agenda until it is empty.
