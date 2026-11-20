@@ -2933,6 +2933,37 @@ that each block one order in a <code>without</code>:</p>
 </tr>
 </tbody>
 </table>
+<p>Rules that start with the same conditions share the nodes for them. 50 rules
+that each begin with the same join of <code>n</code> orders and <code>n</code> payments:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">n</th>
+<th style="text-align: right;">A join per rule</th>
+<th style="text-align: right;">Shared join</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">500</td>
+<td style="text-align: right;">8,200 facts/sec</td>
+<td style="text-align: right;">105,541 facts/sec</td>
+</tr>
+<tr>
+<td style="text-align: right;">1000</td>
+<td style="text-align: right;">9,633 facts/sec</td>
+<td style="text-align: right;">118,842 facts/sec</td>
+</tr>
+<tr>
+<td style="text-align: right;">2000</td>
+<td style="text-align: right;">7,740 facts/sec</td>
+<td style="text-align: right;">107,411 facts/sec</td>
+</tr>
+</tbody>
+</table>
+<p>Write the conditions rules have in common first, in the same order and with
+the same variable names: a pattern includes its variable names, so
+<code>id: :id?</code> and <code>id: :order_id?</code> are different patterns.</p>
 <p>Only equality between two conditions is indexed. A condition with no shared
 variable, or one that only uses predicates, still scans its memories, so put
 a shared variable on the join where the data allows it.</p>

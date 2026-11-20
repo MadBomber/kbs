@@ -1999,7 +1999,8 @@
 - <code>lib/kbs/production_node.rb</code> - Puts complete matches on the agenda
 - <code>lib/kbs/agenda.rb</code> - Conflict set of pending activations (priority + strategy)
 - <code>lib/kbs/truth_maintenance.rb</code> - Logical support for facts asserted under <code>logical</code> conditions
-- <code>lib/kbs/fact_registry.rb</code> - Duplicate fact detection when <code>fact_duplication: false</code></p>
+- <code>lib/kbs/fact_registry.rb</code> - Duplicate fact detection when <code>fact_duplication: false</code>
+- <code>lib/kbs/introspection.rb</code>, <code>tracer.rb</code>, <code>rule_step.rb</code> - <code>watch</code>, <code>matches</code>, <code>join_activity</code> and <code>network_stats</code></p>
 <p><strong>Responsibilities:</strong>
 - Compile rules into discrimination networks
 - Propagate fact changes through the network
@@ -2251,20 +2252,23 @@ fact match a constant it is not equal to; use a Proc in the pattern for that.</p
 </span><span id="__span-7-21"><a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a>├── exists_node.rb         # Exists conditions
 </span><span id="__span-7-22"><a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a>├── production_node.rb     # Puts matches on the agenda
 </span><span id="__span-7-23"><a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a>├── agenda.rb              # Activations and conflict resolution
-</span><span id="__span-7-24"><a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a>├── dsl/                   # KBS.knowledge_base DSL
-</span><span id="__span-7-25"><a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a>└── blackboard/            # Persistent memory
-</span><span id="__span-7-26"><a id="__codelineno-7-26" name="__codelineno-7-26" href="#__codelineno-7-26"></a>    ├── engine.rb          # Blackboard-aware RETE
-</span><span id="__span-7-27"><a id="__codelineno-7-27" name="__codelineno-7-27" href="#__codelineno-7-27"></a>    ├── memory.rb          # Central workspace
-</span><span id="__span-7-28"><a id="__codelineno-7-28" name="__codelineno-7-28" href="#__codelineno-7-28"></a>    ├── fact.rb            # Persisted fact
-</span><span id="__span-7-29"><a id="__codelineno-7-29" name="__codelineno-7-29" href="#__codelineno-7-29"></a>    ├── message_queue.rb   # Agent communication
-</span><span id="__span-7-30"><a id="__codelineno-7-30" name="__codelineno-7-30" href="#__codelineno-7-30"></a>    ├── audit_log.rb       # Change history
-</span><span id="__span-7-31"><a id="__codelineno-7-31" name="__codelineno-7-31" href="#__codelineno-7-31"></a>    ├── redis_message_queue.rb
-</span><span id="__span-7-32"><a id="__codelineno-7-32" name="__codelineno-7-32" href="#__codelineno-7-32"></a>    ├── redis_audit_log.rb
-</span><span id="__span-7-33"><a id="__codelineno-7-33" name="__codelineno-7-33" href="#__codelineno-7-33"></a>    └── persistence/       # Storage backends
-</span><span id="__span-7-34"><a id="__codelineno-7-34" name="__codelineno-7-34" href="#__codelineno-7-34"></a>        ├── store.rb       # Abstract interface
-</span><span id="__span-7-35"><a id="__codelineno-7-35" name="__codelineno-7-35" href="#__codelineno-7-35"></a>        ├── sqlite_store.rb
-</span><span id="__span-7-36"><a id="__codelineno-7-36" name="__codelineno-7-36" href="#__codelineno-7-36"></a>        ├── redis_store.rb
-</span><span id="__span-7-37"><a id="__codelineno-7-37" name="__codelineno-7-37" href="#__codelineno-7-37"></a>        └── hybrid_store.rb
+</span><span id="__span-7-24"><a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a>├── introspection.rb       # watch, matches, join_activity (Engine mixin)
+</span><span id="__span-7-25"><a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a>├── tracer.rb              # Writes the watch lines
+</span><span id="__span-7-26"><a id="__codelineno-7-26" name="__codelineno-7-26" href="#__codelineno-7-26"></a>├── rule_step.rb           # One condition of a rule's network path
+</span><span id="__span-7-27"><a id="__codelineno-7-27" name="__codelineno-7-27" href="#__codelineno-7-27"></a>├── dsl/                   # KBS.knowledge_base DSL
+</span><span id="__span-7-28"><a id="__codelineno-7-28" name="__codelineno-7-28" href="#__codelineno-7-28"></a>└── blackboard/            # Persistent memory
+</span><span id="__span-7-29"><a id="__codelineno-7-29" name="__codelineno-7-29" href="#__codelineno-7-29"></a>    ├── engine.rb          # Blackboard-aware RETE
+</span><span id="__span-7-30"><a id="__codelineno-7-30" name="__codelineno-7-30" href="#__codelineno-7-30"></a>    ├── memory.rb          # Central workspace
+</span><span id="__span-7-31"><a id="__codelineno-7-31" name="__codelineno-7-31" href="#__codelineno-7-31"></a>    ├── fact.rb            # Persisted fact
+</span><span id="__span-7-32"><a id="__codelineno-7-32" name="__codelineno-7-32" href="#__codelineno-7-32"></a>    ├── message_queue.rb   # Agent communication
+</span><span id="__span-7-33"><a id="__codelineno-7-33" name="__codelineno-7-33" href="#__codelineno-7-33"></a>    ├── audit_log.rb       # Change history
+</span><span id="__span-7-34"><a id="__codelineno-7-34" name="__codelineno-7-34" href="#__codelineno-7-34"></a>    ├── redis_message_queue.rb
+</span><span id="__span-7-35"><a id="__codelineno-7-35" name="__codelineno-7-35" href="#__codelineno-7-35"></a>    ├── redis_audit_log.rb
+</span><span id="__span-7-36"><a id="__codelineno-7-36" name="__codelineno-7-36" href="#__codelineno-7-36"></a>    └── persistence/       # Storage backends
+</span><span id="__span-7-37"><a id="__codelineno-7-37" name="__codelineno-7-37" href="#__codelineno-7-37"></a>        ├── store.rb       # Abstract interface
+</span><span id="__span-7-38"><a id="__codelineno-7-38" name="__codelineno-7-38" href="#__codelineno-7-38"></a>        ├── sqlite_store.rb
+</span><span id="__span-7-39"><a id="__codelineno-7-39" name="__codelineno-7-39" href="#__codelineno-7-39"></a>        ├── redis_store.rb
+</span><span id="__span-7-40"><a id="__codelineno-7-40" name="__codelineno-7-40" href="#__codelineno-7-40"></a>        └── hybrid_store.rb
 </span></code></pre></div>
 <h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
 <ul>
