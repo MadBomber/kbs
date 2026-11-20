@@ -2,6 +2,8 @@
 
 module KBS
   class JoinNode
+    include JoinTests
+
     attr_accessor :alpha_memory, :beta_memory, :successors, :tests
     attr_reader :left_linked, :right_linked
 
@@ -83,39 +85,6 @@ module KBS
       end
 
       tokens_to_remove.each { |token| token.parent.children.delete(token) if token.parent }
-    end
-
-    private
-
-    def perform_join_tests(token, fact)
-      @tests.all? do |test|
-        fact_value = fact.attributes[test[:fact_field]]
-
-        # If test has expected_value, compare against that constant
-        if test.key?(:expected_value)
-          expected = test[:expected_value]
-          if expected.is_a?(Proc)
-            fact_value && expected.call(fact_value)
-          elsif test[:operation] == :eq
-            fact_value == expected
-          elsif test[:operation] == :ne
-            fact_value != expected
-          else
-            true
-          end
-        else
-          # Otherwise compare with token value
-          token_value = token.facts[test[:token_field_index]]&.attributes&.[](test[:token_field])
-
-          if test[:operation] == :eq
-            token_value == fact_value
-          elsif test[:operation] == :ne
-            token_value != fact_value
-          else
-            true
-          end
-        end
-      end
     end
   end
 end

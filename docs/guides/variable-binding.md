@@ -166,7 +166,7 @@ r.conditions = [
 ```ruby
 def perform_join_test(token, new_fact, test)
   # Get value from token (previous facts)
-  token_fact = token.facts[test[:token_field_index]]
+  token_fact = token.fact_at(test[:token_field_index])
   token_value = token_fact[test[:token_field]]
 
   # Get value from new fact

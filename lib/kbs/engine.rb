@@ -115,27 +115,13 @@ module KBS
     def build_network_for_rule(rule)
       current_beta = @root_beta_memory
 
+      join_tests = JoinTestBuilder.new(rule.conditions).tests
+
       rule.conditions.each_with_index do |condition, index|
         # Build alpha memory pattern - merge condition type
         pattern = condition.pattern.merge(type: condition.type)
         alpha_memory = get_or_create_alpha_memory(pattern)
-
-        # Build join tests - if pattern has :type that differs from condition.type,
-        # add it as an attribute test since it was overwritten in the merge.
-        # A ?variable on :type matches any value, so it needs no test.
-        tests = []
-        user_type = condition.pattern[:type]
-        variable = user_type.is_a?(Symbol) && user_type.to_s.end_with?('?')
-        if user_type && user_type != condition.type && !variable
-          # The pattern's :type should be checked as an attribute constraint
-          tests << {
-            token_field_index: index,
-            token_field: :type,
-            fact_field: :type,
-            operation: :eq,
-            expected_value: condition.pattern[:type]
-          }
-        end
+        tests = join_tests[index]
 
         if condition.negated
           negation_node = NegationNode.new(alpha_memory, current_beta, tests)
