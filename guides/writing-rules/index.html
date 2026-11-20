@@ -1464,10 +1464,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-calling-dsl-methods-inside-perform" class="md-nav__link">
+  <a href="#2-writing-conditions-inside-perform" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Calling DSL Methods Inside perform
+        2. Writing Conditions Inside perform
       
     </span>
   </a>
@@ -2630,10 +2630,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#2-calling-dsl-methods-inside-perform" class="md-nav__link">
+  <a href="#2-writing-conditions-inside-perform" class="md-nav__link">
     <span class="md-ellipsis">
       
-        2. Calling DSL Methods Inside perform
+        2. Writing Conditions Inside perform
       
     </span>
   </a>
@@ -2798,7 +2798,7 @@
 </span><span id="__span-4-18"><a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="k">end</span>
 </span></code></pre></div>
 <p><code>facts</code> holds one fact per positive condition, in order; <code>without</code> and <code>exists</code> conditions contribute none. <code>bindings</code> maps each <code>?variable</code> to its value.</p>
-<p><strong><code>self</code> inside <code>perform</code>:</strong> the action block runs with the rule builder as <code>self</code>, not the knowledge base. Calling <code>fact</code>, <code>assert</code> or <code>engine</code> bare inside <code>perform</code> does not reach working memory (<code>fact</code> would silently add a condition to the already-built rule). Capture the knowledge base in a local and call it explicitly:</p>
+<p><strong>Working memory inside <code>perform</code>:</strong> the action block runs with the rule builder as <code>self</code>. Once the rule is built, the builder forwards <code>fact</code>, <code>assert</code>, <code>retract</code>, <code>modify</code>, <code>query</code>, <code>facts</code>, <code>halt</code> and <code>engine</code> to the knowledge base, so bare calls work. Condition keywords (<code>on</code>, <code>without</code>, <code>exists</code>, <code>logical</code>, <code>perform</code> and their aliases) raise <code>KBS::RuleBuiltError</code> there, since they can no longer change the rule. Calling the knowledge base through a local works as well:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">kb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">.</span><span class="n">knowledge_base</span><span class="w"> </span><span class="k">do</span>
 </span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="n">rule</span><span class="w"> </span><span class="s2">"derive"</span><span class="w"> </span><span class="k">do</span>
 </span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="n">on</span><span class="w"> </span><span class="ss">:sensor</span><span class="p">,</span><span class="w"> </span><span class="ss">temp</span><span class="p">:</span><span class="w"> </span><span class="ss">:temp?</span>
@@ -2811,7 +2811,7 @@
 </span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="n">kb</span><span class="o">.</span><span class="n">fact</span><span class="w"> </span><span class="ss">:sensor</span><span class="p">,</span><span class="w"> </span><span class="ss">temp</span><span class="p">:</span><span class="w"> </span><span class="mi">28</span>
 </span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="n">kb</span><span class="o">.</span><span class="n">run</span><span class="w">   </span><span class="c1"># call run after `kb` is assigned</span>
 </span></code></pre></div>
-<p>The examples below follow this pattern.</p>
+<p>The examples below use either form.</p>
 <h2 id="condition-ordering">Condition Ordering<a class="headerlink" href="#condition-ordering" title="Permanent link">&para;</a></h2>
 <p><strong>Golden Rule</strong>: Order conditions from most selective to least selective.</p>
 <h3 id="why-order-matters">Why Order Matters<a class="headerlink" href="#why-order-matters" title="Permanent link">&para;</a></h3>
@@ -3433,20 +3433,20 @@
 </span><span id="__span-29-24"><a id="__codelineno-29-24" name="__codelineno-29-24" href="#__codelineno-29-24"></a><span class="k">end</span>
 </span></code></pre></div>
 <p>As a safety net while developing, <code>kb.run(100)</code> stops after 100 firings, and <code>kb.halt</code> called from an action stops the current run.</p>
-<h3 id="2-calling-dsl-methods-inside-perform">2. Calling DSL Methods Inside <code>perform</code><a class="headerlink" href="#2-calling-dsl-methods-inside-perform" title="Permanent link">&para;</a></h3>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="c1"># Bad: self in the action is the rule builder, not the knowledge base</span>
+<h3 id="2-writing-conditions-inside-perform">2. Writing Conditions Inside <code>perform</code><a class="headerlink" href="#2-writing-conditions-inside-perform" title="Permanent link">&para;</a></h3>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="c1"># Bad: the rule is already built when the action runs</span>
 </span><span id="__span-30-2"><a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a><span class="n">kb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">.</span><span class="n">knowledge_base</span><span class="w"> </span><span class="k">do</span>
 </span><span id="__span-30-3"><a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a><span class="w">  </span><span class="n">rule</span><span class="w"> </span><span class="s2">"derive"</span><span class="w"> </span><span class="k">do</span>
 </span><span id="__span-30-4"><a id="__codelineno-30-4" name="__codelineno-30-4" href="#__codelineno-30-4"></a><span class="w">    </span><span class="n">on</span><span class="w"> </span><span class="ss">:reading</span><span class="p">,</span><span class="w"> </span><span class="p">{}</span>
-</span><span id="__span-30-5"><a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a><span class="w">    </span><span class="n">perform</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">fact</span><span class="w"> </span><span class="ss">:derived</span><span class="p">,</span><span class="w"> </span><span class="p">{}</span><span class="w"> </span><span class="p">}</span><span class="w">   </span><span class="c1"># Adds a condition to the built rule; no fact is asserted</span>
+</span><span id="__span-30-5"><a id="__codelineno-30-5" name="__codelineno-30-5" href="#__codelineno-30-5"></a><span class="w">    </span><span class="n">perform</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">on</span><span class="w"> </span><span class="ss">:other</span><span class="w"> </span><span class="p">}</span><span class="w">   </span><span class="c1"># raises KBS::RuleBuiltError during run</span>
 </span><span id="__span-30-6"><a id="__codelineno-30-6" name="__codelineno-30-6" href="#__codelineno-30-6"></a><span class="w">  </span><span class="k">end</span>
 </span><span id="__span-30-7"><a id="__codelineno-30-7" name="__codelineno-30-7" href="#__codelineno-30-7"></a><span class="k">end</span>
 </span><span id="__span-30-8"><a id="__codelineno-30-8" name="__codelineno-30-8" href="#__codelineno-30-8"></a>
-</span><span id="__span-30-9"><a id="__codelineno-30-9" name="__codelineno-30-9" href="#__codelineno-30-9"></a><span class="c1"># Fix: Call the knowledge base explicitly</span>
+</span><span id="__span-30-9"><a id="__codelineno-30-9" name="__codelineno-30-9" href="#__codelineno-30-9"></a><span class="c1"># Fine: working-memory calls, bare or through kb</span>
 </span><span id="__span-30-10"><a id="__codelineno-30-10" name="__codelineno-30-10" href="#__codelineno-30-10"></a><span class="n">kb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">.</span><span class="n">knowledge_base</span><span class="w"> </span><span class="k">do</span>
 </span><span id="__span-30-11"><a id="__codelineno-30-11" name="__codelineno-30-11" href="#__codelineno-30-11"></a><span class="w">  </span><span class="n">rule</span><span class="w"> </span><span class="s2">"derive"</span><span class="w"> </span><span class="k">do</span>
 </span><span id="__span-30-12"><a id="__codelineno-30-12" name="__codelineno-30-12" href="#__codelineno-30-12"></a><span class="w">    </span><span class="n">on</span><span class="w"> </span><span class="ss">:reading</span><span class="p">,</span><span class="w"> </span><span class="p">{}</span>
-</span><span id="__span-30-13"><a id="__codelineno-30-13" name="__codelineno-30-13" href="#__codelineno-30-13"></a><span class="w">    </span><span class="n">perform</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">kb</span><span class="o">.</span><span class="n">fact</span><span class="w"> </span><span class="ss">:derived</span><span class="p">,</span><span class="w"> </span><span class="p">{}</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-30-13"><a id="__codelineno-30-13" name="__codelineno-30-13" href="#__codelineno-30-13"></a><span class="w">    </span><span class="n">perform</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">fact</span><span class="w"> </span><span class="ss">:derived</span><span class="p">,</span><span class="w"> </span><span class="p">{}</span><span class="w"> </span><span class="p">}</span><span class="w">   </span><span class="c1"># same as kb.fact :derived, {}</span>
 </span><span id="__span-30-14"><a id="__codelineno-30-14" name="__codelineno-30-14" href="#__codelineno-30-14"></a><span class="w">  </span><span class="k">end</span>
 </span><span id="__span-30-15"><a id="__codelineno-30-15" name="__codelineno-30-15" href="#__codelineno-30-15"></a><span class="k">end</span>
 </span></code></pre></div>

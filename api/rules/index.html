@@ -3386,7 +3386,7 @@
 - Should be idempotent if possible (safe to run multiple times)
 - Should not modify facts directly with <code>fact[:key] = value</code> (use <code>engine.add_fact</code> / <code>engine.remove_fact</code> / <code>engine.modify</code> instead)
 - May add/remove/modify facts (the agenda changes before the next firing, so rules chain within one <code>run</code>)
-- In the DSL, <code>self</code> inside a <code>perform</code> block is the rule builder, not the knowledge base: reach the knowledge base through a local (<code>kb = KBS.knowledge_base do ... end</code>, or <code>kb = self</code> at the top of the block) and call <code>kb.assert(...)</code>, <code>kb.retract(...)</code>, <code>kb.modify(...)</code>, <code>kb.query(...)</code>. A bare <code>assert</code>, <code>retract</code> or <code>query</code> raises <code>NoMethodError</code>, and a bare <code>fact :x</code> is worse: it is the builder's alias for <code>on</code>, so it silently adds a condition to the already-built rule and asserts nothing</p>
+- In the DSL, <code>self</code> inside a <code>perform</code> block is the rule builder. Once the rule is built, the builder forwards <code>fact</code>, <code>assert</code>, <code>retract</code>, <code>modify</code>, <code>query</code>, <code>facts</code>, <code>halt</code> and <code>engine</code> to the knowledge base, so bare calls work, as do calls through a local (<code>kb.assert(...)</code>). Condition keywords (<code>on</code>, <code>without</code>, <code>exists</code>, <code>logical</code>, <code>perform</code> and their aliases) raise <code>KBS::RuleBuiltError</code> once the rule is built; a builder created without a knowledge base raises <code>KBS::NoKnowledgeBaseError</code> for the working-memory calls</p>
 <hr />
 <h3 id="public-methods">Public Methods<a class="headerlink" href="#public-methods" title="Permanent link">&para;</a></h3>
 <h4 id="firefacts"><code>fire(facts)</code><a class="headerlink" href="#firefacts" title="Permanent link">&para;</a></h4>
@@ -3543,10 +3543,10 @@
 </span><span id="__span-23-6"><a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="k">end</span>
 </span></code></pre></div>
 <p>An attribute whose name is already a method (<code>load</code>, <code>print</code>, <code>display</code>, <code>format</code>, ...) can't be set this way; put it in the hash pattern instead.</p>
-<p>Write variables as <code>:name?</code> symbols. A bare name with no arguments returns a <code>KBS::DSL::Variable</code>, but a pattern value that is a <code>Variable</code> object (<code>id sensor_id</code>) is compared with <code>==</code> and never matches a fact; and <code>temp &gt; 90</code> raises <code>NoMethodError</code>, since a <code>Variable</code> has no <code>&gt;</code>.</p>
+<p>Write variables as <code>:name?</code> symbols or as bare names: <code>id sensor_id</code> is <code>id :sensor_id?</code>. A bare name compared with a value sets that attribute's predicate: <code>temp &gt; 90</code>, <code>&lt;</code>, <code>&gt;=</code>, <code>&lt;=</code> and <code>!=</code> build predicates, and <code>temp == 90</code> is a literal match.</p>
 <p>Inside the block, <code>between(min, max)</code>, <code>matches(regexp)</code>, <code>any(*values)</code> and <code>all(*predicates)</code> return predicates (as does <code>self.in(collection)</code>; a bare <code>in</code> is Ruby syntax), along with the condition helpers below.</p>
 <h3 id="condition-helpers">Condition helpers<a class="headerlink" href="#condition-helpers" title="Permanent link">&para;</a></h3>
-<p>Available in a rule block and in condition blocks. Each returns a predicate lambda to use as a pattern value, except <code>equals</code>, which returns the value itself.</p>
+<p>Available in a rule block, in condition blocks and on the knowledge base (for <code>query</code>). Each returns a predicate lambda to use as a pattern value, except <code>equals</code>, which returns the value itself.</p>
 <table>
 <thead>
 <tr>
@@ -3589,7 +3589,7 @@
 </tr>
 </tbody>
 </table>
-<p>A predicate is not called when the attribute is missing or <code>nil</code>: the condition simply does not match. The helpers exist only while building rules; <code>kb.query</code> takes literal values or lambdas you write yourself.</p>
+<p>A predicate is not called when the attribute is missing or <code>nil</code>: the condition simply does not match. The helpers are also methods of the knowledge base, so <code>kb.query(:sensor, temp: kb.greater_than(90))</code> (or a bare <code>greater_than</code> inside the <code>KBS.knowledge_base</code> block) filters with them.</p>
 <hr />
 <h2 id="rule-lifecycle">Rule Lifecycle<a class="headerlink" href="#rule-lifecycle" title="Permanent link">&para;</a></h2>
 <h3 id="1-rule-creation">1. Rule Creation<a class="headerlink" href="#1-rule-creation" title="Permanent link">&para;</a></h3>

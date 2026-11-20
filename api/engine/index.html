@@ -3414,7 +3414,7 @@
 </span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="n">again</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:sensor</span><span class="p">,</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w">   </span><span class="c1"># not added</span>
 </span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="n">again</span><span class="o">.</span><span class="n">equal?</span><span class="p">(</span><span class="n">first</span><span class="p">)</span><span class="w">                        </span><span class="c1"># =&gt; true</span>
 </span></code></pre></div>
-<p>With duplication off, <code>add_fact</code> returns the existing fact instead of adding an equal one, and no rule is activated a second time. <code>modify</code> that would make a fact equal to another removes the modified fact and returns the other. Turning it off later keeps any duplicates already in working memory.</p>
+<p>With duplication off, <code>add_fact</code> returns the existing fact instead of adding an equal one, and no rule is activated a second time. <code>modify</code> that would make a fact equal to another removes the modified fact and returns the other. Turning it off later keeps any duplicates already in working memory. A <code>KBS::Blackboard::Engine</code> created with <code>fact_duplication: false</code> on a database that already holds facts checks new facts against those too.</p>
 <hr />
 <h4 id="changing-facts-while-a-fact-is-being-matched">Changing facts while a fact is being matched<a class="headerlink" href="#changing-facts-while-a-fact-is-being-matched" title="Permanent link">&para;</a></h4>
 <p><code>add_fact</code>, <code>remove_fact</code> and <code>modify</code> raise <code>KBS::MatchInProgressError</code> when called while the engine is matching another fact. That only happens from code the engine calls during a match, such as a predicate in a pattern (<code>temp: -&gt;(t) { ... }</code>). An observer added with <code>working_memory.add_observer</code> is called after the engine has matched the fact, so it does not raise. Change facts from rule actions, which run between matches.</p>
@@ -3784,7 +3784,7 @@
 <p>Removes a persistent fact from the blackboard.</p>
 <p><strong>Parameters</strong>:
 - <code>fact</code> (KBS::Blackboard::Fact) - Fact to remove</p>
-<p><strong>Returns</strong>: no meaningful value</p>
+<p><strong>Returns</strong>: the removed <code>KBS::Blackboard::Fact</code>, or <code>nil</code> when the fact was not active, as <code>KBS::Engine#remove_fact</code> returns the fact</p>
 <p><strong>Side Effects</strong>:
 - Marks fact as inactive in store
 - Logs removal to audit trail
@@ -3822,7 +3822,7 @@
 <p><strong>Difference from KBS::Engine</strong>:
 - Logs every rule firing
 - Records fact UUIDs and variable bindings in audit</p>
-<p><strong>Caution</strong>: With the SQLite store, give rules String names. A rule named with a Symbol (<code>KBS::Rule.new(:my_rule, ...)</code>) raises <code>RuntimeError: can't prepare Symbol</code> when it fires, because the audit log passes the name straight to SQLite. DSL rule names are usually Strings.</p>
+<p>A rule named with a Symbol (<code>KBS::Rule.new(:my_rule, ...)</code>) is logged under its String name (<code>"my_rule"</code>); <code>get_rule_firings</code> takes either.</p>
 <hr />
 <h4 id="post_messagesender-topic-content-priority-0"><code>post_message(sender, topic, content, priority: 0)</code><a class="headerlink" href="#post_messagesender-topic-content-priority-0" title="Permanent link">&para;</a></h4>
 <p>Posts a message to the blackboard message queue.</p>
@@ -3887,7 +3887,7 @@
 - <code>:total_messages</code> (Integer) - Messages ever posted (all topics)
 - <code>:unconsumed_messages</code> (Integer) - Messages still queued
 - <code>:rules_fired</code> (Integer) - Rule firings in the audit log</p>
-<p>The Redis store reports the same keys; the hybrid store adds <code>:audit_records</code>.</p>
+<p>The Redis store reports the same keys; the hybrid store adds <code>:audit_records</code>, the rows in its SQLite audit log (fact changes plus rule firings).</p>
 <p><strong>Example</strong>:
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-34-1"><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="n">stats</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">engine</span><span class="o">.</span><span class="n">stats</span>
 </span><span id="__span-34-2"><a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a><span class="nb">puts</span><span class="w"> </span><span class="s2">"Facts: </span><span class="si">#{</span><span class="n">stats</span><span class="o">[</span><span class="ss">:active_facts</span><span class="o">]</span><span class="si">}</span><span class="s2">"</span>
@@ -3976,12 +3976,12 @@
 </span><span id="__span-38-2"><a id="__codelineno-38-2" name="__codelineno-38-2" href="#__codelineno-38-2"></a><span class="w">  </span><span class="n">fact1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:order</span><span class="p">,</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="ss">status</span><span class="p">:</span><span class="w"> </span><span class="s2">"pending"</span><span class="p">)</span>
 </span><span id="__span-38-3"><a id="__codelineno-38-3" name="__codelineno-38-3" href="#__codelineno-38-3"></a><span class="w">  </span><span class="n">fact2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:inventory</span><span class="p">,</span><span class="w"> </span><span class="ss">item</span><span class="p">:</span><span class="w"> </span><span class="s2">"ABC"</span><span class="p">,</span><span class="w"> </span><span class="ss">quantity</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">)</span>
 </span><span id="__span-38-4"><a id="__codelineno-38-4" name="__codelineno-38-4" href="#__codelineno-38-4"></a>
-</span><span id="__span-38-5"><a id="__codelineno-38-5" name="__codelineno-38-5" href="#__codelineno-38-5"></a><span class="w">  </span><span class="c1"># If error occurs here, both facts are rolled back in the store</span>
+</span><span id="__span-38-5"><a id="__codelineno-38-5" name="__codelineno-38-5" href="#__codelineno-38-5"></a><span class="w">  </span><span class="c1"># If error occurs here, both facts are rolled back in the store and the engine</span>
 </span><span id="__span-38-6"><a id="__codelineno-38-6" name="__codelineno-38-6" href="#__codelineno-38-6"></a><span class="w">  </span><span class="k">raise</span><span class="w"> </span><span class="s2">"Validation failed"</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">invalid_order?</span><span class="p">(</span><span class="n">fact1</span><span class="p">)</span>
 </span><span id="__span-38-7"><a id="__codelineno-38-7" name="__codelineno-38-7" href="#__codelineno-38-7"></a><span class="k">end</span>
 </span></code></pre></div>
 <p><strong>Database Support</strong>: The SQLite store wraps the block in a SQLite transaction (nested calls join the outer one). The Redis and hybrid stores just run the block: there is nothing to roll back.</p>
-<p><strong>Note</strong>: The rollback covers the store only. Facts added inside the block were already matched by the engine, and stay in its network until removed or until <code>reset</code>.</p>
+<p><strong>Note</strong>: When the block raises, the facts it added that the store rolled back are also removed from the engine, so their rules do not fire. With the Redis and hybrid stores the facts stay, in the store and in the engine. Facts the block removed or modified are restored in the store only: the engine does not see them again until it is rebuilt from the store (a new engine on the same database).</p>
 <hr />
 <h2 id="advanced-topics">Advanced Topics<a class="headerlink" href="#advanced-topics" title="Permanent link">&para;</a></h2>
 <h3 id="network-sharing">Network Sharing<a class="headerlink" href="#network-sharing" title="Permanent link">&para;</a></h3>

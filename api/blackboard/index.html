@@ -3707,7 +3707,7 @@
 <p>Removes a fact from the blackboard.</p>
 <p><strong>Parameters</strong>:
 - <code>fact</code> (KBS::Blackboard::Fact or String) - Fact object or UUID</p>
-<p><strong>Returns</strong>: No meaningful value</p>
+<p><strong>Returns</strong>: the removed <code>KBS::Blackboard::Fact</code>, or <code>nil</code> when the fact was not active</p>
 <p><strong>Side Effects</strong> (only when the fact is active; otherwise nothing happens):
 - Marks fact as inactive in store
 - Logs removal to audit log
@@ -3819,8 +3819,8 @@
 <h4 id="post_messagesender-topic-content-priority-0"><code>post_message(sender, topic, content, priority: 0)</code><a class="headerlink" href="#post_messagesender-topic-content-priority-0" title="Permanent link">&para;</a></h4>
 <p>Posts a message to the blackboard message queue.</p>
 <p><strong>Parameters</strong>:
-- <code>sender</code> (String) - Sender identifier (e.g., agent name)
-- <code>topic</code> (String) - Message topic (channel/category)
+- <code>sender</code> (String or Symbol) - Sender identifier (e.g., agent name); stored as a String
+- <code>topic</code> (String or Symbol) - Message topic (channel/category); stored as a String
 - <code>content</code> (Hash or String) - Message payload. A Hash is stored as JSON and comes back with Symbol keys; a String is stored as is
 - <code>priority</code> (Integer, optional) - Message priority (default: 0, higher = more urgent)</p>
 <p><strong>Returns</strong>: The new message id (Integer) with a Redis queue; no meaningful value with the SQLite queue</p>
@@ -3849,8 +3849,8 @@
 <h4 id="consume_messagetopic-consumer"><code>consume_message(topic, consumer)</code><a class="headerlink" href="#consume_messagetopic-consumer" title="Permanent link">&para;</a></h4>
 <p>Retrieves and removes the highest priority message from a topic.</p>
 <p><strong>Parameters</strong>:
-- <code>topic</code> (String) - Topic to consume from
-- <code>consumer</code> (String) - Consumer identifier (for audit trail)</p>
+- <code>topic</code> (String or Symbol) - Topic to consume from
+- <code>consumer</code> (String or Symbol) - Consumer identifier (for audit trail)</p>
 <p><strong>Returns</strong>: <code>Hash</code> or <code>nil</code> - Message hash with <code>:id</code>, <code>:sender</code>, <code>:topic</code>, <code>:content</code>, <code>:priority</code>, <code>:posted_at</code>, or <code>nil</code> if queue empty</p>
 <p><strong>Side Effects</strong>:
 - Removes message from queue (atomic operation)
@@ -3975,7 +3975,7 @@
 <p><strong>Returns</strong>: No meaningful value</p>
 <p><strong>Side Effects</strong>:
 - Stores knowledge source metadata in the store (registering the same name again replaces it)</p>
-<p><strong>Note</strong>: With a Redis or Hybrid store, pass a <code>description</code>; the default <code>nil</code> makes the Redis client raise <code>TypeError</code>.</p>
+<p>With a Redis or Hybrid store, a <code>nil</code> description is left out of the knowledge source's hash.</p>
 <p><strong>Example</strong>:
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="n">memory</span><span class="o">.</span><span class="n">register_knowledge_source</span><span class="p">(</span>
 </span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a><span class="w">  </span><span class="s2">"TemperatureMonitor"</span><span class="p">,</span>
@@ -4053,7 +4053,7 @@
 - Executes block
 - Commits on success
 - Rolls back on exception</p>
-<p>Redis and Hybrid stores just run the block: there is no rollback. Observers are notified as each fact is added, before the transaction commits.</p>
+<p>Redis and Hybrid stores just run the block: there is no rollback. Observers are notified as each fact is added, before the transaction commits. When the block raises, the observers (a <code>KBS::Blackboard::Engine</code>) are told each added fact the store rolled back was removed, so it leaves the RETE network too. Facts the block removed or modified are restored in the store only; the observers are not told.</p>
 <p><strong>Example</strong>:
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="n">memory</span><span class="o">.</span><span class="n">transaction</span><span class="w"> </span><span class="k">do</span>
 </span><span id="__span-28-2"><a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a><span class="w">  </span><span class="n">fact1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:order</span><span class="p">,</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="ss">total</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">)</span>
@@ -4076,7 +4076,7 @@
 - <code>:total_messages</code> (Integer) - Total messages (consumed + unconsumed)
 - <code>:unconsumed_messages</code> (Integer) - Unconsumed messages
 - <code>:rules_fired</code> (Integer) - Total rule firings
-- <code>:audit_records</code> (Integer) - Hybrid store only; currently the row count of the SQLite <code>facts</code> table, which the hybrid store does not write to, so it is always 0</p>
+- <code>:audit_records</code> (Integer) - Hybrid store only; rows in the SQLite audit log (<code>fact_history</code> plus <code>rules_fired</code>), or 0 before a <code>Memory</code> has created those tables</p>
 <p>Counts cover the whole database (or Redis DB), not just this session.</p>
 <p><strong>Example</strong>:
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="n">stats</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">memory</span><span class="o">.</span><span class="n">stats</span>
@@ -4296,7 +4296,7 @@
 </table>
 <p>Retracted facts stay in the store, marked retracted; <code>get_fact</code> and <code>get_facts</code> skip them.</p>
 <h3 id="kbsblackboardpersistencestore"><code>KBS::Blackboard::Persistence::Store</code><a class="headerlink" href="#kbsblackboardpersistencestore" title="Permanent link">&para;</a></h3>
-<p>Abstract base class. Every method above except <code>vacuum</code>, <code>transaction</code> and <code>register_knowledge_source</code> raises <code>NotImplementedError</code> until a subclass defines it; <code>vacuum</code> does nothing and <code>transaction</code> just yields. <code>register_knowledge_source</code> is not defined on the base class, but <code>Memory#register_knowledge_source</code> calls it. <code>Memory</code> also needs a store to respond to <code>session_id</code> and to <code>db</code> (SQLite) or <code>connection</code> (Redis). See <a href="../../advanced/custom-persistence/">Custom Persistence</a>.</p>
+<p>Abstract base class. Every method above except <code>vacuum</code> and <code>transaction</code> raises <code>NotImplementedError</code> until a subclass defines it; <code>vacuum</code> does nothing and <code>transaction</code> just yields. <code>session_id</code> returns <code>nil</code>, so a <code>Memory</code> given the store makes its own session id. <code>Memory</code> also needs a store to respond to <code>db</code> (SQLite) or <code>connection</code> (Redis); <code>Memory.new(store:)</code> raises <code>ArgumentError</code> for one that does neither. See <a href="../../advanced/custom-persistence/">Custom Persistence</a>.</p>
 <h3 id="kbsblackboardpersistencesqlitestore"><code>KBS::Blackboard::Persistence::SqliteStore</code><a class="headerlink" href="#kbsblackboardpersistencesqlitestore" title="Permanent link">&para;</a></h3>
 <h4 id="initializedb_path-memory-session_id-nil"><code>initialize(db_path: ':memory:', session_id: nil)</code><a class="headerlink" href="#initializedb_path-memory-session_id-nil" title="Permanent link">&para;</a></h4>
 <p>Opens (or creates) the SQLite database and its <code>facts</code> and <code>knowledge_sources</code> tables. <code>session_id</code> defaults to a new UUID.</p>

@@ -2251,7 +2251,7 @@
 </span><span id="__span-7-16"><a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="k">end</span>
 </span></code></pre></div>
 <p><strong>Negated condition</strong> (<code>without</code>): Rule fires only when NO <code>:alert</code> fact exists for this sensor.</p>
-<p>Inside <code>perform</code>, <code>self</code> is the rule builder, not the knowledge base, so a bare <code>fact</code> there would add a condition instead of a fact. Call knowledge base methods through <code>kb</code>. (The action runs during <code>kb.run</code>, after <code>kb</code> has been assigned.)</p>
+<p>Inside <code>perform</code>, <code>fact</code>, <code>assert</code>, <code>retract</code>, <code>modify</code> and <code>query</code> change or read working memory, whether you write them bare or through <code>kb</code>. (The action runs during <code>kb.run</code>, after <code>kb</code> has been assigned.)</p>
 <p><strong>Flow:</strong></p>
 <ol>
 <li>First execution: No <code>:alert</code> fact → rule fires, creates <code>:alert</code> fact</li>
@@ -2328,7 +2328,7 @@
 </span><span id="__span-11-11"><a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="w">    </span><span class="n">monitor</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">self</span>
 </span><span id="__span-11-12"><a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>
 </span><span id="__span-11-13"><a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a><span class="w">    </span><span class="no">KBS</span><span class="o">.</span><span class="n">knowledge_base</span><span class="p">(</span><span class="ss">engine</span><span class="p">:</span><span class="w"> </span><span class="n">engine</span><span class="p">)</span><span class="w"> </span><span class="k">do</span>
-</span><span id="__span-11-14"><a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a><span class="w">      </span><span class="n">kb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">self</span><span class="w">   </span><span class="c1"># rule actions run with the rule builder as self</span>
+</span><span id="__span-11-14"><a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a><span class="w">      </span><span class="n">kb</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">self</span><span class="w">   </span><span class="c1"># the knowledge base, for use inside actions</span>
 </span><span id="__span-11-15"><a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>
 </span><span id="__span-11-16"><a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a><span class="w">      </span><span class="c1"># Rule 1: Send alert when temp exceeds threshold</span>
 </span><span id="__span-11-17"><a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a><span class="w">      </span><span class="n">rule</span><span class="w"> </span><span class="s2">"temperature_alert"</span><span class="p">,</span><span class="w"> </span><span class="ss">priority</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="w"> </span><span class="k">do</span>
