@@ -5,11 +5,16 @@ module KBS
     attr_accessor :successors
     attr_reader :linked
 
+    # An object told, through token_removed(token), about each token
+    # that leaves this memory.
+    attr_accessor :listener
+
     def initialize
       @tokens = Set.new
       @successors = []
       @linked = true
       @indexes = {}
+      @listener = nil
     end
 
     # @return [Array<KBS::Token>] the tokens in this memory, in the order
@@ -72,6 +77,7 @@ module KBS
     def remove_token(token)
       @tokens.delete(token)
       @indexes.each_value { |index| index.remove(token) }
+      @listener&.token_removed(token)
       unlink! if @tokens.empty?
     end
 

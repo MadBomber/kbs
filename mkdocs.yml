@@ -164,6 +164,7 @@ nav:
       - Pattern Matching: guides/pattern-matching.md
       - Variable Binding: guides/variable-binding.md
       - Negation: guides/negation.md
+      - Truth Maintenance: guides/truth-maintenance.md
       - Blackboard Memory: guides/blackboard-memory.md
       - Persistence Options: guides/persistence.md
   - Examples: examples/index.md

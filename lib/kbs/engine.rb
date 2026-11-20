@@ -11,6 +11,10 @@ module KBS
       @fact_duplication = fact_duplication
       @fact_registry = FactRegistry.new
       @matching = false
+      @truth_maintenance = TruthMaintenance.new
+      @pending_retractions = []
+      @retracting = false
+      @firing = nil
       @agenda = Agenda.new(strategy: strategy)
       @halted = false
       @working_memory = WorkingMemory.new
@@ -29,6 +33,10 @@ module KBS
     end
 
     def add_rule(rule)
+      unless rule.logical_conditions_first?
+        raise ArgumentError, "rule #{rule.name.inspect}: logical conditions must come before the other conditions"
+      end
+
       @rules << rule
       build_network_for_rule(rule)
     end
@@ -37,11 +45,30 @@ module KBS
     #
     # With fact duplication off, a fact equal to one already in working
     # memory is not added and the existing fact is returned.
+    #
+    # A fact added by the action of a rule with logical conditions is
+    # supported by the match of those conditions and is retracted when
+    # that match goes away. If the match is already gone, because an
+    # earlier step of the same action removed it, the fact is not added
+    # and nil is returned.
     def add_fact(type, attributes = {})
       ensure_not_matching!
-      existing = duplicate_of(type, attributes)
-      return existing if existing
+      support = current_support
+      return nil if support&.retracted?
 
+      existing = duplicate_of(type, attributes)
+      if existing
+        reinforce(existing, support)
+        return existing
+      end
+
+      fact = create_fact(type, attributes)
+      attach_support(fact, support) if support
+      fact
+    end
+
+    # Makes the fact and puts it in working memory, which matches it.
+    def create_fact(type, attributes)
       fact = Fact.new(type, attributes)
       @working_memory.add_fact(fact)
       fact
@@ -97,6 +124,83 @@ module KBS
       @fact_registry.find(type, attributes)
     end
 
+    # Whether `fact` was asserted under logical conditions and will be
+    # retracted when the matches that support it are gone.
+    def logically_supported?(fact)
+      @truth_maintenance.supported?(fact)
+    end
+
+    # The matches that support `fact`, each as the facts that matched the
+    # rule's logical conditions. Empty for an unconditional fact.
+    def dependencies(fact)
+      @truth_maintenance.supports_of(fact).map(&:facts)
+    end
+
+    # The facts that will lose a support if `fact` is retracted.
+    def dependents(fact)
+      @truth_maintenance.facts_depending_on(fact)
+    end
+
+    # A beta memory calls this when a token that can support facts
+    # leaves it. Facts left without support are retracted once the
+    # current match is done.
+    def token_removed(token)
+      token.mark_retracted!
+      @pending_retractions.concat(@truth_maintenance.withdraw(token))
+    end
+
+    # The token that supports facts asserted right now: the match of the
+    # firing rule's logical conditions. nil outside such a rule.
+    def current_support
+      return nil unless @firing
+
+      rule = @firing.rule
+      logical = rule.logical_count
+      return nil if logical.zero?
+
+      token = @firing.token
+      (rule.conditions.size - logical).times { token = token.parent }
+      token
+    end
+
+    # A fact that already exists was asserted again. From a logical rule
+    # it gains a support, unless it is unconditional. From anywhere else
+    # it becomes unconditional.
+    def reinforce(fact, support)
+      if support.nil?
+        @truth_maintenance.release(fact)
+      elsif @truth_maintenance.supported?(fact)
+        @truth_maintenance.support(fact, support)
+      end
+    end
+
+    # Records the support of a new fact. Matching the fact may itself
+    # have removed the support, in which case the fact goes straight
+    # back out.
+    def attach_support(fact, support)
+      if support.retracted?
+        @pending_retractions << fact
+      else
+        @truth_maintenance.support(fact, support)
+      end
+      retract_unsupported_facts
+    end
+
+    # Retracts the facts whose last support was withdrawn. Retracting
+    # one can withdraw the support of others; the loop takes those too.
+    def retract_unsupported_facts
+      return if @matching || @retracting
+
+      @retracting = true
+      begin
+        while (fact = @pending_retractions.shift)
+          remove_fact(fact)
+        end
+      ensure
+        @retracting = false
+      end
+    end
+
     # Whether the engine is matching a fact right now.
     def matching?
       @matching
@@ -120,11 +224,13 @@ module KBS
           match_fact(fact)
         elsif action == :remove
           @fact_registry.remove(fact)
+          @truth_maintenance.release(fact)
           unmatch_fact(fact)
         end
       ensure
         @matching = false
       end
+      retract_unsupported_facts
     end
 
     # Sends a new fact to every alpha memory whose pattern it matches,
@@ -191,7 +297,10 @@ module KBS
     end
 
     def fire_activation(activation)
+      @firing = activation
       activation.node.fire_rule(activation.token)
+    ensure
+      @firing = nil
     end
 
     # Production nodes in firing order: higher rule priority first, and
@@ -219,6 +328,8 @@ module KBS
       @working_memory.clear if @working_memory.respond_to?(:clear)
       @fact_memories.clear
       @fact_registry.clear
+      @truth_maintenance.clear
+      @pending_retractions.clear
 
       # 2. Clear alpha memories and their downstream beta memories
       @alpha_memories.each_value do |alpha_mem|
@@ -256,6 +367,7 @@ module KBS
       current_beta = @root_beta_memory
 
       join_tests = JoinTestBuilder.new(rule.conditions).tests
+      logical_count = rule.logical_count
 
       rule.conditions.each_with_index do |condition, index|
         # Build alpha memory pattern - merge condition type
@@ -265,6 +377,7 @@ module KBS
 
         node = node_class_for(condition).new(alpha_memory, current_beta, tests)
         new_beta = BetaMemory.new
+        new_beta.listener = self if index == logical_count - 1
         node.successors << new_beta
         current_beta.tokens.each { |token| node.left_activate(token) }
         current_beta = new_beta
