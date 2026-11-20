@@ -14,6 +14,7 @@ module KBS
       @agenda = agenda
       @order = order
       @activations = {}.compare_by_identity
+      @fired = Set.new.compare_by_identity
     end
 
     # @return [Array<KBS::Token>] the rule's current matches, fired or
@@ -30,14 +31,25 @@ module KBS
       @activations[token] = @agenda.add(self, token, rule_order: @order) if @agenda
     end
 
+    # Fires the rule for `token` unless this rule already fired for it.
+    # Rules with the same conditions share their tokens, so the record is
+    # kept here, per rule, and not only on the token.
     def fire_rule(token)
-      return if token.fired?
+      return if fired?(token)
+
+      @fired << token
       @rule.fire(token.facts)
       token.mark_fired!
     end
 
+    # Whether this rule has fired for `token`.
+    def fired?(token)
+      @fired.include?(token)
+    end
+
     def deactivate(token)
       @tokens.delete(token)
+      @fired.delete(token)
       @agenda&.remove(@activations.delete(token))
     end
 
@@ -45,6 +57,7 @@ module KBS
     def reset
       @activations.each_value { |activation| @agenda&.remove(activation) }
       @activations.clear
+      @fired.clear
       @tokens.clear
     end
   end

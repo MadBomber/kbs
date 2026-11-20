@@ -49,7 +49,7 @@ module KBS
 
       # Records the firing in the audit log, then fires the rule.
       def fire_activation(activation)
-        unless activation.token.fired?
+        unless activation.node.fired?(activation.token)
           facts = activation.token.facts
           fact_uuids = facts.map { |f| f.respond_to?(:uuid) ? f.uuid : f.object_id.to_s }
           bindings = activation.rule.bindings_for(facts)

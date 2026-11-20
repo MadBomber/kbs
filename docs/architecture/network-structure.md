@@ -42,6 +42,8 @@ alpha2 = get_or_create_alpha_memory(pattern2)
 
 **Network Sharing**: If another rule has the same pattern, they share the same alpha memory node.
 
+**Join sharing**: rules that start with the same conditions also share the join, negation and exists nodes for them, and the beta memories below. `Engine#build_network_for_rule` reuses a node under the current beta memory when it is the same kind of node, on the same alpha memory, with the same tests. Ten rules that begin with the same two joined conditions compute that join once. Sharing follows the order of the conditions, so put the conditions that rules have in common first, in the same order and with the same variable names. `engine.beta_nodes` lists the nodes.
+
 **Finding a fact's memories**: `KBS::AlphaNetwork` groups the alpha memories by fact type. Within a type, a memory whose pattern tests an attribute against a constant is filed in a hash under that attribute and value. A new fact reaches those memories with one lookup on its own value, and is only tested against the memories of its type that have no constant test. The number of rules on other fact types, or testing other constants, does not affect the cost of asserting a fact.
 
 ### Step 3: Build Join Network

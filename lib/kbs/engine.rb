@@ -22,6 +22,7 @@ module KBS
       @alpha_network = AlphaNetwork.new
       @alpha_memories = @alpha_network.memories
       @fact_memories = {}
+      @beta_nodes = []
       @production_nodes = {}
       @root_beta_memory = BetaMemory.new
 
@@ -201,6 +202,13 @@ module KBS
       end
     end
 
+    # Every join, negation and exists node in the network. Rules that
+    # start with the same conditions share nodes, so there can be fewer
+    # nodes than conditions.
+    def beta_nodes
+      @beta_nodes.dup
+    end
+
     # Whether the engine is matching a fact right now.
     def matching?
       @matching
@@ -375,12 +383,10 @@ module KBS
         alpha_memory = get_or_create_alpha_memory(pattern)
         tests = join_tests[index]
 
-        node = node_class_for(condition).new(alpha_memory, current_beta, tests)
-        new_beta = BetaMemory.new
-        new_beta.listener = self if index == logical_count - 1
-        node.successors << new_beta
-        current_beta.tokens.each { |token| node.left_activate(token) }
-        current_beta = new_beta
+        node = shareable_node(current_beta, node_class_for(condition), alpha_memory, tests) ||
+               build_node(current_beta, node_class_for(condition), alpha_memory, tests)
+        current_beta = node.successors.grep(BetaMemory).first
+        current_beta.listener = self if index == logical_count - 1
       end
 
       production_node = ProductionNode.new(rule, @agenda, order: @rules.size)
@@ -389,6 +395,26 @@ module KBS
       unless rule.conditions.empty?
         current_beta.tokens.each { |token| production_node.activate(token) }
       end
+    end
+
+    # A node already below `beta_memory` that does the same work: the
+    # same kind of node, on the same alpha memory, with the same tests.
+    # Rules that start with the same conditions share those nodes and
+    # the partial matches in their beta memories.
+    def shareable_node(beta_memory, node_class, alpha_memory, tests)
+      beta_memory.successors.find do |node|
+        node.instance_of?(node_class) && node.alpha_memory.equal?(alpha_memory) && node.tests == tests
+      end
+    end
+
+    # A new node with its beta memory, brought up to date with the
+    # tokens already in `beta_memory`.
+    def build_node(beta_memory, node_class, alpha_memory, tests)
+      node = node_class.new(alpha_memory, beta_memory, tests)
+      node.successors << BetaMemory.new
+      @beta_nodes << node
+      beta_memory.tokens.each { |token| node.left_activate(token) }
+      node
     end
 
     def node_class_for(condition)
