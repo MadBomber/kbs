@@ -1,10 +1,12 @@
 # frozen_string_literal: true
 
 require_relative 'kbs/version'
+require_relative 'kbs/errors'
 
 # Core RETE classes
 require_relative 'kbs/fact'
 require_relative 'kbs/working_memory'
+require_relative 'kbs/fact_registry'
 require_relative 'kbs/token'
 require_relative 'kbs/memory_index'
 require_relative 'kbs/alpha_memory'
@@ -24,7 +26,3 @@ require_relative 'kbs/rule'
 require_relative 'kbs/engine'
 require_relative 'kbs/decompiler'
 require_relative 'kbs/dsl'
-
-module KBS
-  class Error < StandardError; end
-end
