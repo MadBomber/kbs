@@ -185,19 +185,11 @@ module KBS
         alpha_memory = get_or_create_alpha_memory(pattern)
         tests = join_tests[index]
 
-        if condition.negated
-          negation_node = NegationNode.new(alpha_memory, current_beta, tests)
-          new_beta = BetaMemory.new
-          negation_node.successors << new_beta
-          current_beta.tokens.each { |token| negation_node.left_activate(token) }
-          current_beta = new_beta
-        else
-          join_node = JoinNode.new(alpha_memory, current_beta, tests)
-          new_beta = BetaMemory.new
-          join_node.successors << new_beta
-          current_beta.tokens.each { |token| join_node.left_activate(token) }
-          current_beta = new_beta
-        end
+        node = node_class_for(condition).new(alpha_memory, current_beta, tests)
+        new_beta = BetaMemory.new
+        node.successors << new_beta
+        current_beta.tokens.each { |token| node.left_activate(token) }
+        current_beta = new_beta
       end
 
       production_node = ProductionNode.new(rule, @agenda, order: @rules.size)
@@ -206,6 +198,13 @@ module KBS
       unless rule.conditions.empty?
         current_beta.tokens.each { |token| production_node.activate(token) }
       end
+    end
+
+    def node_class_for(condition)
+      return NegationNode if condition.negated
+      return ExistsNode if condition.exists
+
+      JoinNode
     end
 
     # A new alpha memory starts with the facts already in working memory.

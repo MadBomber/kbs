@@ -469,6 +469,23 @@ engine.run
 refute rule_fired, "Should not fire when negated condition present"
 ```
 
+## The Opposite Test: `exists`
+
+`without` matches while no fact fits a pattern. `exists` matches while at least one does, and matches once however many there are:
+
+```ruby
+rule "unpaid orders remain" do
+  on :order, id: :id?
+  without :payment, order_id: :id?   # no payment for this order
+  exists :customer_service, open: true  # and somebody is on duty
+  perform { |facts, bindings| escalate(bindings[:id?]) }
+end
+```
+
+Neither kind of condition adds a fact to the match, and a variable first used in one is not bound for later conditions. Both are kept up to date by links between each partial match and the facts that satisfy it, so adding or retracting a fact only visits the matches it affects.
+
+With the low-level API, pass `exists: true` or `negated: true` to `KBS::Condition.new`.
+
 ## Alternatives to Negation
 
 Sometimes positive logic is clearer and faster:

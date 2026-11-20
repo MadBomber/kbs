@@ -98,6 +98,16 @@ scenarios = {
     work: ->((engine, payments), _n) { payments.each { |payment| engine.remove_fact(payment) } },
     operations: ->(n) { n }
   },
+  "negation retract: remove n payments that block n orders" => {
+    setup: lambda do |n|
+      engine = negation_engine
+      n.times { |i| engine.add_fact(:order, id: i) }
+      payments = Array.new(n) { |i| engine.add_fact(:payment, order_id: i) }
+      [engine, payments]
+    end,
+    work: ->((engine, payments), _n) { payments.each { |payment| engine.remove_fact(payment) } },
+    operations: ->(n) { n }
+  },
   "alpha: 2000 asserts against n rules on n fact types" => {
     setup: ->(n) { many_rules_engine(n) },
     work: ->(engine, n) { 2000.times { |i| engine.add_fact(:"type_#{i % n}", {}) } },

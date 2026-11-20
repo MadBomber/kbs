@@ -94,6 +94,16 @@ A pattern is hashed on its first attribute compared with a plain value. A
 pattern that only uses predicates or variables is tested for every fact of
 its type, so put a constant test in the pattern when the rule has one.
 
+`without` and `exists` conditions link each partial match to the facts that
+satisfy it, and each fact to the matches it affects. Retracting `n` payments
+that each block one order in a `without`:
+
+| n | Memory scan | Linked |
+|--:|------------:|-------:|
+| 500 | 21,668 facts/sec | 302,847 facts/sec |
+| 1000 | 10,445 facts/sec | 235,405 facts/sec |
+| 2000 | 4,915 facts/sec | 244,439 facts/sec |
+
 Only equality between two conditions is indexed. A condition with no shared
 variable, or one that only uses predicates, still scans its memories, so put
 a shared variable on the join where the data allows it.
