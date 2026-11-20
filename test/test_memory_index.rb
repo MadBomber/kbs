@@ -18,8 +18,8 @@ class TestMemoryIndex < Minitest::Test
   def test_add_files_items_by_key
     [@a, @b, @c].each { |fact| @index.add(fact) }
 
-    assert_equal [@a, @b], @index.lookup([1])
-    assert_equal [@c], @index.lookup([2])
+    assert_equal [@a, @b], @index.lookup([1]).to_a
+    assert_equal [@c], @index.lookup([2]).to_a
     assert_equal 3, @index.size
   end
 
@@ -28,7 +28,7 @@ class TestMemoryIndex < Minitest::Test
 
     @index.remove(@a)
 
-    assert_equal [@b], @index.lookup([1])
+    assert_equal [@b], @index.lookup([1]).to_a
     assert_equal 1, @index.size
   end
 
@@ -44,7 +44,7 @@ class TestMemoryIndex < Minitest::Test
     @index.add(@a)
     @index.remove(@c)
 
-    assert_equal [@a], @index.lookup([1])
+    assert_equal [@a], @index.lookup([1]).to_a
   end
 
   def test_remove_uses_the_key_from_when_the_item_was_added

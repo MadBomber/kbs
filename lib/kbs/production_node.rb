@@ -2,7 +2,7 @@
 
 module KBS
   class ProductionNode
-    attr_accessor :rule, :tokens
+    attr_accessor :rule
     attr_reader :order
 
     # @param agenda [KBS::Agenda, nil] where matches wait to fire; without
@@ -10,10 +10,16 @@ module KBS
     # @param order [Integer] the rule's position among the engine's rules
     def initialize(rule, agenda = nil, order: 0)
       @rule = rule
-      @tokens = []
+      @tokens = Set.new
       @agenda = agenda
       @order = order
       @activations = {}.compare_by_identity
+    end
+
+    # @return [Array<KBS::Token>] the rule's current matches, fired or
+    #   not, in the order they arrived. A copy.
+    def tokens
+      @tokens.to_a
     end
 
     # A complete match. The rule does not fire here: the activation waits

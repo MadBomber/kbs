@@ -144,8 +144,8 @@ class TestJoinNode < Minitest::Test
     successor = Object.new
     successor.define_singleton_method(:activate) { |token| emitted << token }
     @join_node.successors << successor
-    @alpha_memory.items << KBS::Fact.new(:person, name: "Alice")
-    @beta_memory.tokens << KBS::Token.new(nil, nil, nil)
+    @alpha_memory.add_item(KBS::Fact.new(:person, name: "Alice"))
+    @beta_memory.add_token(KBS::Token.new(nil, nil, nil))
 
     @join_node.left_unlink!
     @join_node.left_relink!

@@ -2,14 +2,33 @@
 
 module KBS
   class BetaMemory
-    attr_accessor :tokens, :successors
+    attr_accessor :successors
     attr_reader :linked
 
     def initialize
-      @tokens = []
+      @tokens = Set.new
       @successors = []
       @linked = true
       @indexes = {}
+    end
+
+    # @return [Array<KBS::Token>] the tokens in this memory, in the order
+    #   they arrived. A copy: use #add_token and #remove_token to change
+    #   the memory.
+    def tokens
+      @tokens.to_a
+    end
+
+    def each_token(&block)
+      @tokens.each(&block)
+    end
+
+    def size
+      @tokens.size
+    end
+
+    def include?(token)
+      @tokens.include?(token)
     end
 
     def unlink!

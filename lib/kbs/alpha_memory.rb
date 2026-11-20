@@ -2,15 +2,33 @@
 
 module KBS
   class AlphaMemory
-    attr_accessor :items, :successors, :pattern
+    attr_accessor :successors, :pattern
     attr_reader :linked
 
     def initialize(pattern = {})
-      @items = []
+      @items = Set.new
       @successors = []
       @pattern = pattern
       @linked = true
       @indexes = {}
+    end
+
+    # @return [Array] the facts in this memory, in the order they arrived.
+    #   A copy: use #add_item and #remove_item to change the memory.
+    def items
+      @items.to_a
+    end
+
+    def each_item(&block)
+      @items.each(&block)
+    end
+
+    def size
+      @items.size
+    end
+
+    def include?(fact)
+      @items.include?(fact)
     end
 
     def unlink!
