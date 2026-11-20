@@ -4,6 +4,11 @@
 - `benchmarks/regex_baseline.rb` measures regex pattern matching in the RETE network; results are in `docs/advanced/performance.md` (#4).
 
 ### Added
+- `Engine#watch(*items)` and `#unwatch`, as in CLIPS `watch`: write a line for each fact asserted or retracted (`:facts`), each activation added or withdrawn (`:activations`) and each rule firing (`:rules`). `Engine#trace_output=` chooses where the lines go. Also on `KnowledgeBase`. The lines are written by the new `KBS::Tracer`.
+- `Engine#matches(rule_name)`, as in CLIPS `matches`: for each condition of a rule, the facts that fit it and the partial matches up to it, to show which condition keeps a rule from firing. Also on `KnowledgeBase`.
+- `Engine#join_activity(rule_name)` and `#reset_join_activity`: activations, comparisons and matches counted per condition, to find the expensive condition of a rule. `Engine#network_stats` gives the size of the network.
+- `Agenda#listener`, `Activation#description`, and a public `Token#slots`.
+- `test/test_clips_conformance.rb`: cases from the CLIPS 6.4.2 feature tests (`exists.bat`, `firstjoin.bat`, `conres.clp`), compared against the traces CLIPS prints.
 - Truth maintenance, as in CLIPS `logical`. Conditions in a `logical do ... end` block (or `KBS::Condition.new(..., logical: true)`) support the facts the rule's action asserts: when those conditions stop matching, the facts are retracted, and facts derived from them in turn. Works on `KBS::Engine` and `KBS::Blackboard::Engine`. `Engine#logically_supported?`, `#dependencies` and `#dependents` show the links. See `docs/guides/truth-maintenance.md`.
 - `Engine#modify(fact, changes)` on both engines, and `KnowledgeBase#modify`: changes a fact's attributes and matches it again, as a retraction followed by an assertion. `KBS::Engine` keeps the same fact object; `KBS::Blackboard::Engine` keeps the uuid and logs an `UPDATE`, through the new `Blackboard::Memory#modify_fact` and `#find_fact`. Setting an attribute directly still does not re-match.
 - `fact_duplication:` on `KBS::Engine.new` and `KBS::Blackboard::Engine.new`, and `engine.fact_duplication=`. With it off, `add_fact` returns the existing fact instead of adding one with the same type and attributes. It is on by default, as before. `Engine#duplicate_of(type, attributes)` finds the existing fact.
@@ -15,6 +20,7 @@
 - `run(limit)` on both engines and on `KnowledgeBase` stops after `limit` firings, and `halt` stops a run from inside a rule action. `run` now returns the number of rules fired.
 
 ### Changed
+- `Activation#to_s` separates the matched facts with `; ` and shows `*` for a `without` or `exists` condition.
 - Rules that start with the same conditions now share the join, negation and exists nodes for those conditions, and their partial matches, as CLIPS does. 50 rules that begin with the same join of 2000 orders and 2000 payments assert those facts in 37 ms; it took 517 ms. `Engine#beta_nodes` lists the nodes. `ProductionNode#fired?(token)` records firings per rule, because rules with identical conditions now share their tokens; `Token#fired?` is still set but is no longer what stops a second firing.
 - The DSL keyword `exists` now means "at least one such fact": the rule matches once however many facts fit, the action receives no fact for that condition, and a variable first used in it is not bound for later conditions. `exists` used to be an alias for `on`, which matched once per fact. Use `on` for the old behaviour.
 - `without` conditions no longer search when a fact is added or retracted. `KBS::NegationNode` links each partial match to the facts that block it and each fact to the matches it blocks, as CLIPS does, and shares that code with `ExistsNode` through `KBS::QuantifierNode`. Retracting 2000 blocking facts takes 8 ms; it took 407 ms. `NegationNode#matched?`, `#facts_matching` and `#tokens_matched_by` expose the links.

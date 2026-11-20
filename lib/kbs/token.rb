@@ -40,6 +40,10 @@ module KBS
       @slots.compact
     end
 
+    # One entry per condition matched so far: the matched fact, or nil
+    # for a negated or exists condition. Frozen.
+    attr_reader :slots
+
     # The fact matched by the condition at `index` in the rule, or nil
     # when that condition is negated.
     def fact_at(index)
@@ -68,18 +72,14 @@ module KBS
       @retracted = true
     end
 
-    protected
-
-    attr_reader :slots
-
     private
 
     # One entry per condition matched so far, nil for a negated one. The
     # root dummy token (no parent, no fact) matches no condition.
     def build_slots
-      return @fact ? [@fact] : [] unless @parent
+      return (@fact ? [@fact] : []).freeze unless @parent
 
-      @parent.slots + [@fact]
+      (@parent.slots + [@fact]).freeze
     end
   end
 end

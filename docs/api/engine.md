@@ -883,6 +883,8 @@ end
 
 **Use Case**: Debugging why a rule didn't fire
 
+The engine also answers this directly. `engine.matches(rule_name)` reports how far each condition of a rule has matched, `engine.watch(:facts, :activations, :rules)` traces changes as they happen, `engine.join_activity(rule_name)` counts the work of each condition, and `engine.network_stats` sizes the network. See [Debugging](../advanced/debugging.md#built-in-tracing-and-inspection).
+
 ---
 
 ### Custom Working Memory Observer
