@@ -2,9 +2,12 @@
 
 module KBS
   class Engine
-    attr_reader :working_memory, :rules, :alpha_memories, :production_nodes
+    attr_reader :working_memory, :rules, :alpha_memories, :production_nodes, :agenda
 
-    def initialize
+    # @param strategy [Symbol] conflict resolution strategy; see KBS::Agenda
+    def initialize(strategy: :definition)
+      @agenda = Agenda.new(strategy: strategy)
+      @halted = false
       @working_memory = WorkingMemory.new
       @rules = []
       @alpha_memories = {}
@@ -49,12 +52,44 @@ module KBS
       end
     end
 
-    def run
-      prioritized_production_nodes.each do |node|
-        node.tokens.each do |token|
-          node.fire_rule(token)
-        end
+    # Fires activations from the agenda until it is empty: the highest
+    # priority first, then by the agenda's strategy. Facts that a rule
+    # asserts or retracts change the agenda before the next firing, so
+    # rules chain within one run. An activation fires once.
+    #
+    # @param limit [Integer, nil] stop after this many firings
+    # @return [Integer] the number of rules fired
+    def run(limit = nil)
+      @halted = false
+      fired = 0
+
+      until @halted || (limit && fired >= limit)
+        activation = @agenda.pop
+        break unless activation
+
+        fire_activation(activation)
+        fired += 1
       end
+
+      fired
+    end
+
+    # Stops the current run after the rule that is firing. Call it from a
+    # rule action.
+    def halt
+      @halted = true
+    end
+
+    def strategy
+      @agenda.strategy
+    end
+
+    def strategy=(strategy)
+      @agenda.strategy = strategy
+    end
+
+    def fire_activation(activation)
+      activation.node.fire_rule(activation.token)
     end
 
     # Production nodes in firing order: higher rule priority first, and
@@ -98,8 +133,9 @@ module KBS
         end
       end
 
-      # 3. Clear production node tokens
-      @production_nodes.each_value { |node| node.tokens.clear }
+      # 3. Clear production node tokens and their pending activations
+      @production_nodes.each_value(&:reset)
+      @agenda.clear
 
       # 4. Clear stale child references from the root dummy token
       @root_beta_memory.tokens.each { |t| t.children.clear }
@@ -138,7 +174,7 @@ module KBS
         end
       end
 
-      production_node = ProductionNode.new(rule)
+      production_node = ProductionNode.new(rule, @agenda, order: @rules.size)
       current_beta.successors << production_node
       @production_nodes[rule.name] = production_node
       unless rule.conditions.empty?

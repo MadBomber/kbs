@@ -3,7 +3,13 @@
 ### Added
 - `benchmarks/regex_baseline.rb` measures regex pattern matching in the RETE network; results are in `docs/advanced/performance.md` (#4).
 
+### Added
+- `KBS::Agenda` holds every rule match that has not fired yet, as CLIPS does. `engine.agenda` exposes it: `size`, `empty?`, `peek` and `to_a` (pending activations in firing order).
+- Conflict resolution strategies: `KBS::Engine.new(strategy:)`, `KBS::Blackboard::Engine.new(strategy:)` and `engine.strategy=` take `:definition` (the default, and the order used before), `:depth` (newest match first) or `:breadth` (oldest match first). Priority still comes first.
+- `run(limit)` on both engines and on `KnowledgeBase` stops after `limit` firings, and `halt` stops a run from inside a rule action. `run` now returns the number of rules fired.
+
 ### Changed
+- `run` now fires until no rule matches are left. A fact that a rule action asserts can fire any other rule in the same `run`, including one defined earlier or with a higher priority, and the highest-priority pending match always fires next. It used to walk the rules once in priority order, so a match created for a rule already passed waited for the next `run`. A rule set that keeps asserting facts that match its own rules now runs until `run(limit)` or `halt` stops it.
 - `KBS::Fact#to_s` and `KBS::Rule#to_s` now render DSL source, such as `fact :sensor, temp: 22` and a `rule "name" do ... end` block (#3).
 - `RedisStore#query_facts` and `HybridStore#query_facts` now raise `NotImplementedError` instead of returning every fact, since Redis cannot run SQL conditions (#16).
 - The gem now ships only the Ruby files under `lib/`, plus `README.md`, `CHANGELOG.md` and `LICENSE.txt`. It used to include `docs/`, `examples/`, `benchmarks/`, `.github/` and other repo files such as `Rakefile` and `mkdocs.yml`, which are still in the repository (#31).

@@ -9,8 +9,8 @@ module KBS
     class Engine < KBS::Engine
       attr_reader :blackboard
 
-      def initialize(db_path: ':memory:', store: nil)
-        super()
+      def initialize(db_path: ':memory:', store: nil, strategy: :definition)
+        super(strategy: strategy)
         @blackboard = Memory.new(db_path: db_path, store: store)
         @working_memory = @blackboard
         @blackboard.add_observer(self)
@@ -24,20 +24,17 @@ module KBS
         @blackboard.remove_fact(fact)
       end
 
-      def run
-        prioritized_production_nodes.each do |node|
-          node.tokens.each do |token|
-            # Only fire if not already fired
-            next if token.fired?
+      # Records the firing in the audit log, then fires the rule.
+      def fire_activation(activation)
+        unless activation.token.fired?
+          facts = activation.token.facts
+          fact_uuids = facts.map { |f| f.respond_to?(:uuid) ? f.uuid : f.object_id.to_s }
+          bindings = activation.rule.bindings_for(facts)
 
-            facts = token.facts
-            fact_uuids = facts.map { |f| f.respond_to?(:uuid) ? f.uuid : f.object_id.to_s }
-            bindings = node.rule.bindings_for(facts)
-
-            @blackboard.log_rule_firing(node.rule.name, fact_uuids, bindings)
-            node.fire_rule(token)
-          end
+          @blackboard.log_rule_firing(activation.rule.name, fact_uuids, bindings)
         end
+
+        super
       end
 
       def post_message(sender, topic, content, priority: 0)
