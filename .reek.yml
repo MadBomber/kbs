@@ -126,7 +126,7 @@ detectors:
   # Turning a database row or a Redis hash into the Hash callers receive
   # is about that row, and a driver's row has no class of ours to move
   # the code to. The decompiler's handlers work on the pass they are
-  # handed. An == compares against the other object by definition.
+  # handed. An == or eql? compares against the other object by definition.
   FeatureEnvy:
     exclude:
       - 'KBS::Blackboard::AuditLog'
@@ -138,15 +138,18 @@ detectors:
       - 'KBS::Decompiler'
       - "KBS::Blackboard::Fact#=="
       - "KBS::DSL::Variable#=="
+      - "KBS::DSL::Variable#eql?"
       # Logging or firing a match reads the activation or token it is handed.
       - "KBS::Blackboard::Engine#log_firing"
       - "KBS::ProductionNode#fire_rule"
 
   # A custom store is told apart by what it offers (connection or db), as
-  # docs/advanced/custom-persistence.md describes, so Memory has to ask.
+  # docs/advanced/custom-persistence.md describes, so Memory has to ask,
+  # both when it checks a store and when it builds on one.
   ManualDispatch:
     exclude:
       - 'KBS::Blackboard::Memory#build_components'
+      - 'KBS::Blackboard::Memory#self.check_store'
 
   # Each store method checks that the row or hash it fetched exists and
   # is not retracted before using it.

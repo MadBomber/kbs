@@ -34,25 +34,27 @@ module KBS
       end
 
       COMPARISONS.each do |operator|
-        define_method(operator) { |operand| constrain(operator, operand) }
+        define_method(operator) do |operand|
+          constrain(operator, operand) do
+            raise KBS::Error, "`#{attribute} #{operator} ...` only works inside a pattern block"
+          end
+        end
       end
 
       # Another Variable: whether both are the same variable. Any other
       # value in a pattern block: `value == 80` requires that value.
       def ==(other)
         return @name == other.name if other.is_a?(Variable)
-        return false unless @evaluator
 
-        constrain(:==, other)
+        constrain(:==, other) { false }
       end
 
       # Another Variable: whether they differ. Any other value in a
       # pattern block: `code != 3` requires a value other than that.
       def !=(other)
         return @name != other.name if other.is_a?(Variable)
-        return true unless @evaluator
 
-        constrain(:!=, other)
+        constrain(:!=, other) { true }
       end
 
       def eql?(other)
@@ -66,9 +68,10 @@ module KBS
       private
 
       # Records `attribute <operator> operand` as the attribute's pattern
-      # value in the evaluator and returns that value.
+      # value in the evaluator and returns that value. Outside a pattern
+      # block there is no evaluator, and the block's result is returned.
       def constrain(operator, operand)
-        raise KBS::Error, "`#{attribute} #{operator} ...` only works inside a pattern block" unless @evaluator
+        return yield unless @evaluator
 
         @evaluator.constrain(attribute, @evaluator.public_send(operator, operand))
       end
