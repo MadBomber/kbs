@@ -232,4 +232,71 @@ class TestBlackboardMemory < Minitest::Test
     stats = @memory.stats
     assert_equal 1, stats[:knowledge_sources]
   end
+
+  # Contract: blackboard/sqlite-message-queue-accepts-symbols
+  # Bug: the SQLite MessageQueue rejected Symbol topics and senders, which RedisMessageQueue accepts
+  def test_message_queue_accepts_symbol_topic_and_sender
+    @memory.post_message(:sensor, :readings, { temp: 22 })
+
+    assert_equal 1, @memory.peek_messages(:readings).size
+    message = @memory.consume_message(:readings, :consumer)
+    assert_equal 'sensor', message[:sender]
+    assert_equal 'readings', message[:topic]
+  end
+
+  # Contract: blackboard/store-base-interface
+  # Bug: the Store base class lacked session_id and register_knowledge_source, which Memory calls
+  def test_store_base_class_declares_session_id_and_register_knowledge_source
+    store = KBS::Blackboard::Persistence::Store.new
+
+    assert_nil store.session_id
+    assert_raises(NotImplementedError) { store.register_knowledge_source('ks') }
+  end
+
+  # Contract: blackboard/memory-rejects-unsuitable-store
+  # Bug: Memory.new(store: obj) raised NoMethodError for session_id before its own ArgumentError
+  def test_unsuitable_store_raises_argument_error
+    error = assert_raises(ArgumentError) { KBS::Blackboard::Memory.new(store: Object.new) }
+    assert_match(/:connection .* :db/, error.message)
+  end
+
+  # Contract: blackboard/memory-remove-fact-returns-fact
+  # Bug: Memory#remove_fact returned the observer array instead of the fact
+  def test_remove_fact_returns_the_removed_fact_or_nil
+    fact = @memory.add_fact(:sensor, { temp: 22 })
+
+    assert_equal fact, @memory.remove_fact(fact)
+    assert_nil @memory.remove_fact(fact)
+  end
+
+  def test_rolled_back_transaction_tells_observers_the_added_fact_is_gone
+    events = []
+    observer = Object.new
+    observer.define_singleton_method(:update) { |action, fact| events << [action, fact.uuid] }
+    @memory.add_observer(observer)
+    added = nil
+
+    assert_raises(RuntimeError) do
+      @memory.transaction do
+        added = @memory.add_fact(:sensor, { temp: 22 })
+        raise 'boom'
+      end
+    end
+
+    assert_equal [[:add, added.uuid], [:remove, added.uuid]], events
+    assert_empty @memory.get_facts(:sensor)
+  end
+
+  def test_withdraw_rolled_back_skips_facts_the_store_still_holds
+    stored = @memory.add_fact(:sensor, { temp: 22 })
+    gone = KBS::Blackboard::Fact.new('not-stored', :sensor, {})
+    removed = []
+    observer = Object.new
+    observer.define_singleton_method(:update) { |action, fact| removed << fact.uuid if action == :remove }
+    @memory.add_observer(observer)
+
+    @memory.withdraw_rolled_back([stored, gone])
+
+    assert_equal ['not-stored'], removed
+  end
 end

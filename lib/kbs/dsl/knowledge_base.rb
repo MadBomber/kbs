@@ -5,6 +5,8 @@ module KBS
     # The object the DSL block runs in: defines rules, asserts and retracts
     # facts, and runs the engine.
     class KnowledgeBase
+      include ConditionHelpers
+
       attr_reader :engine, :rules
 
       # @param engine [KBS::Engine, nil] engine to run on; a new KBS::Engine when nil
@@ -21,7 +23,7 @@ module KBS
       # @param priority [Integer, nil] rule priority; a `priority` call in the block wins
       def rule(name, priority: nil, &block)
         @rule_source_locations[name] = block.source_location if block
-        builder = RuleBuilder.new(name)
+        builder = RuleBuilder.new(name, knowledge_base: self)
         builder.priority(priority) unless priority.nil?
         builder.instance_eval(&block) if block_given?
         @rule_builders[name] = builder

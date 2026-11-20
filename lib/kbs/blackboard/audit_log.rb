@@ -53,7 +53,7 @@ module KBS
       def log_rule_firing(rule_name, fact_uuids, bindings = {})
         @db.execute(
           "INSERT INTO rules_fired (rule_name, fact_uuids, bindings, session_id) VALUES (?, ?, ?, ?)",
-          [rule_name, JSON.generate(fact_uuids), JSON.generate(bindings), @session_id]
+          [rule_name.to_s, JSON.generate(fact_uuids), JSON.generate(bindings), @session_id]
         )
       end
 
@@ -86,7 +86,7 @@ module KBS
         results = if rule_name
                     @db.execute(
                       "SELECT * FROM rules_fired WHERE rule_name = ? ORDER BY fired_at DESC LIMIT ?",
-                      [rule_name, limit]
+                      [rule_name.to_s, limit]
                     )
                   else
                     @db.execute(

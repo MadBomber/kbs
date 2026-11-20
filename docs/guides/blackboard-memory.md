@@ -353,7 +353,7 @@ end
 # No facts committed
 ```
 
-A rollback undoes the database writes only. Facts added inside the block were already matched by the rules, so they stay in the RETE network and can still fire. The Redis and hybrid stores do not roll back.
+A rollback undoes the database writes, and facts added inside the block that the store rolled back are removed from the RETE network as well, so their rules do not fire. Facts removed or modified inside the block are restored in the database only; the engine sees them again when it is rebuilt from the store. The Redis and hybrid stores do not roll back, so facts added there stay in the store and in the engine.
 
 ## Observers
 
@@ -514,7 +514,7 @@ kb = KBS.knowledge_base(engine: engine) do
     on :agent, name: :name?
     without :leader, {}
 
-    # self is the rule builder here, so assert through kb
+    # kb.fact and a bare fact both assert through the knowledge base
     perform do |facts, bindings|
       kb.fact :leader, name: bindings[:name?]
       puts "#{bindings[:name?]} is now leader"

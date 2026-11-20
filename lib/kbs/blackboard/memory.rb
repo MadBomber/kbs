@@ -14,10 +14,20 @@ module KBS
       attr_reader :session_id, :store, :message_queue, :audit_log
 
       def initialize(db_path: ':memory:', store: nil)
+        self.class.check_store(store) if store
         @session_id = store&.session_id || SecureRandom.uuid
         @observers = []
+        @added_in_transaction = nil
         @store = store || Persistence::SqliteStore.new(db_path: db_path, session_id: @session_id)
         @message_queue, @audit_log = build_components
+      end
+
+      # Raises ArgumentError unless the memory can build its message queue
+      # and audit log on `store`.
+      def self.check_store(store)
+        return if store.respond_to?(:connection) || store.respond_to?(:db)
+
+        raise ArgumentError, "Store must respond to either :connection (Redis) or :db (SQLite)"
       end
 
       private
@@ -31,10 +41,8 @@ module KBS
           hybrid_components
         elsif @store.respond_to?(:connection)
           redis_components
-        elsif @store.respond_to?(:db)
-          sqlite_components
         else
-          raise ArgumentError, "Store must respond to either :connection (Redis) or :db (SQLite)"
+          sqlite_components
         end
       end
 
@@ -77,22 +85,26 @@ module KBS
         end
 
         fact = Fact.new(uuid, type, attributes, self)
+        @added_in_transaction[uuid] = fact if @added_in_transaction
         notify_observers(:add, fact)
         fact
       end
 
+      # @return [KBS::Blackboard::Fact, nil] the removed fact, or nil when
+      #   it was not active
       def remove_fact(fact)
         uuid = uuid_of(fact)
 
         @store.transaction do
           result = @store.remove_fact(uuid)
+          next unless result
 
-          if result
-            @audit_log.log_fact_change(uuid, result[:type], result[:attributes], 'REMOVE')
+          @audit_log.log_fact_change(uuid, result[:type], result[:attributes], 'REMOVE')
 
-            fact_obj = Fact.new(uuid, result[:type], result[:attributes], self)
-            notify_observers(:remove, fact_obj)
-          end
+          fact_obj = Fact.new(uuid, result[:type], result[:attributes], self)
+          @added_in_transaction&.delete(uuid)
+          notify_observers(:remove, fact_obj)
+          fact_obj
         end
       end
 
@@ -203,8 +215,31 @@ module KBS
         @store.clear_session(@session_id)
       end
 
+      # Runs the block in a store transaction. When the block raises, the
+      # facts it added that the store rolled back are removed from the
+      # observers (an engine) as well. A store that cannot roll back, such
+      # as Redis, keeps them, and so do the observers. Facts the block
+      # removed or modified are not restored in the observers.
       def transaction(&)
-        @store.transaction(&)
+        return @store.transaction(&) if @added_in_transaction
+
+        @added_in_transaction = {}
+        begin
+          @store.transaction(&)
+        rescue StandardError
+          withdraw_rolled_back(@added_in_transaction.values)
+          raise
+        ensure
+          @added_in_transaction = nil
+        end
+      end
+
+      # Tells the observers each fact the store no longer holds was
+      # removed, newest first.
+      def withdraw_rolled_back(facts)
+        facts.reverse_each do |fact|
+          notify_observers(:remove, fact) unless @store.get_fact(fact.uuid)
+        end
       end
 
       # Statistics

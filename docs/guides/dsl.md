@@ -241,7 +241,7 @@ Queries facts by type and attributes.
 
 **Parameters**:
 - `type` (Symbol) - Fact type to match
-- `pattern` (Hash) - Attribute key-value pairs to match
+- `pattern` (Hash) - Attribute key-value pairs to match. A value can be a literal, a lambda (called with the attribute's value) or a [pattern helper](#pattern-helpers) such as `greater_than(80)`
 
 **Returns**: `Array<KBS::Fact>`
 
@@ -260,6 +260,10 @@ kb = KBS.knowledge_base do
   server_temps = query(:temperature, location: "server_room")
   puts server_temps.size  # => 1
   puts server_temps.first[:value]  # => 85
+
+  # Find hot temperature facts with a pattern helper
+  hot = query(:temperature, value: greater_than(80))
+  puts hot.size  # => 1
 end
 ```
 
@@ -501,12 +505,12 @@ on :status, code: one_of("pending", "processing", "completed")
 
 ### Block-Style Patterns
 
-Define patterns using a block. Each call `name value` sets the pattern for attribute `name`. Write variables as `:name?` symbols; a bare name such as `loc` produces a `KBS::DSL::Variable` object that the engine does not treat as a variable, so it never matches:
+Define patterns using a block. Each call `name value` sets the pattern for attribute `name`. A variable can be written as a `:name?` symbol or as a bare name (`location loc` is `location :loc?`). Comparing a bare name with a value sets that attribute's predicate: `value > 80`, `value < 80`, `value >= 80`, `value <= 80`, `code != 3`, and `code == 3` (a literal match):
 
 ```ruby
 on :temperature do
-  value greater_than(80)  # Predicate
-  location :loc?          # Binds variable
+  value > 80              # Predicate (same as: value greater_than(80))
+  location loc            # Binds variable (same as: location :loc?)
   sensor_id 42            # Literal match
 end
 
@@ -526,7 +530,7 @@ A block pattern is merged over a hash pattern given in the same call.
 - `any(*values)` - Match any of the values
 - `all(*predicates)` - Every predicate (or literal) must hold
 
-Operator forms such as `value > 80` do **not** work: `value` evaluates to a variable, which has no `>` method, and `status in [...]` is parsed as Ruby pattern matching and silently adds nothing. Use the helpers instead.
+`status in [...]` does **not** work: it is parsed as Ruby pattern matching and silently adds nothing. Use `status one_of(...)` instead.
 
 **Example**:
 ```ruby
@@ -542,7 +546,7 @@ end
 
 ## Pattern Helpers
 
-Helper methods available in rule conditions (from `ConditionHelpers` module).
+Helper methods available in rule conditions and in `query` patterns (from the `ConditionHelpers` module, which both `RuleBuilder` and `KnowledgeBase` include).
 
 ### Comparison Helpers
 
@@ -937,9 +941,18 @@ perform do |facts, bindings|
 end
 ```
 
-2. **Access the knowledge base** (via closure):
+2. **Change working memory**:
 
-The action runs with the rule builder as `self`, not the knowledge base, so call the knowledge base through a local. A bare `fact` inside `perform` adds a condition to the already-built rule instead of asserting a fact, and bare `query`, `retract` and `assert` raise `NoMethodError`.
+The action runs with the rule builder as `self`. Once the rule is built, the builder forwards `fact`, `assert`, `retract`, `modify`, `query`, `facts`, `halt` and `engine` to the knowledge base, so they work bare inside `perform` (facts asserted from a rule with `logical` conditions get logical support either way). Condition keywords such as `on` or `without` raise `KBS::RuleBuiltError` there. A builder made with `RuleBuilder.new` and no knowledge base raises `KBS::NoKnowledgeBaseError` for these calls.
+
+```ruby
+perform do |facts|
+  fact :process, status: "running"
+  retract facts.first
+end
+```
+
+Calling the knowledge base through a local works too:
 
 ```ruby
 kb = KBS.knowledge_base do

@@ -100,6 +100,44 @@ class TestHybridStore < Minitest::Test
     assert_equal 25, fact[:attributes][:temp]
   end
 
+  # Contract: blackboard/register-knowledge-source-without-description
+  # Bug: HybridStore#register_knowledge_source raised TypeError when description was nil
+  def test_register_knowledge_source_without_description
+    @store.register_knowledge_source('TempMonitor')
+
+    assert_equal 1, @store.stats[:knowledge_sources]
+  end
+
+  # Contract: blackboard/hybrid-audit-records
+  # Bug: HybridStore#stats[:audit_records] counted the unused SQLite facts table, so it was always 0
+  def test_audit_records_counts_the_audit_log
+    memory = KBS::Blackboard::Memory.new(store: @store)
+    fact = memory.add_fact(:sensor, { temp: 22 })
+    memory.remove_fact(fact)
+    memory.log_rule_firing('r', [fact.uuid])
+
+    assert_equal 3, memory.stats[:audit_records]
+  end
+
+  def test_audit_records_is_zero_before_the_audit_log_exists
+    assert_equal 0, @store.stats[:audit_records]
+  end
+
+  # A Redis-backed store cannot roll back, so a fact added in a failed
+  # transaction stays in the store and in the engine.
+  def test_failed_transaction_keeps_facts_the_store_kept
+    engine = KBS::Blackboard::Engine.new(store: @store)
+
+    assert_raises(RuntimeError) do
+      engine.blackboard.transaction do
+        engine.add_fact(:sensor, { temp: 22 })
+        raise 'boom'
+      end
+    end
+
+    assert_equal 1, engine.facts.size
+  end
+
   def test_memory_clear_session_without_session_id
     store = KBS::Blackboard::Persistence::HybridStore.new(redis: @redis, db_path: ':memory:')
     memory = KBS::Blackboard::Memory.new(store: store)

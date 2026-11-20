@@ -22,14 +22,26 @@ module KBS
 
       def method_missing(method, *args, &block)
         if args.empty? && !block_given?
-          Variable.new(method)
+          Variable.new(method, self)
         elsif args.length == 1 && !block_given?
-          @pattern[method] = args.first
+          @pattern[method] = pattern_value(args.first)
         elsif block_given?
           @pattern[method] = block
         else
           super
         end
+      end
+
+      # Sets the pattern value of `attribute`, as `value > 80` does.
+      # @return the value
+      def constrain(attribute, value)
+        @pattern[attribute] = value
+      end
+
+      # A Variable given as a value (`location loc`) is its ?variable
+      # symbol; any other value is used as is.
+      def pattern_value(value)
+        value.is_a?(Variable) ? value.to_sym : value
       end
 
       def >(other)

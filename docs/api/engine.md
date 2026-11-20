@@ -244,7 +244,7 @@ again = engine.add_fact(:sensor, id: 1)   # not added
 again.equal?(first)                        # => true
 ```
 
-With duplication off, `add_fact` returns the existing fact instead of adding an equal one, and no rule is activated a second time. `modify` that would make a fact equal to another removes the modified fact and returns the other. Turning it off later keeps any duplicates already in working memory.
+With duplication off, `add_fact` returns the existing fact instead of adding an equal one, and no rule is activated a second time. `modify` that would make a fact equal to another removes the modified fact and returns the other. Turning it off later keeps any duplicates already in working memory. A `KBS::Blackboard::Engine` created with `fact_duplication: false` on a database that already holds facts checks new facts against those too.
 
 ---
 
@@ -744,7 +744,7 @@ Removes a persistent fact from the blackboard.
 **Parameters**:
 - `fact` (KBS::Blackboard::Fact) - Fact to remove
 
-**Returns**: no meaningful value
+**Returns**: the removed `KBS::Blackboard::Fact`, or `nil` when the fact was not active, as `KBS::Engine#remove_fact` returns the fact
 
 **Side Effects**:
 - Marks fact as inactive in store
@@ -796,7 +796,7 @@ Each entry has `:rule_name`, `:fact_uuids`, `:bindings`, `:fired_at` and `:sessi
 - Logs every rule firing
 - Records fact UUIDs and variable bindings in audit
 
-**Caution**: With the SQLite store, give rules String names. A rule named with a Symbol (`KBS::Rule.new(:my_rule, ...)`) raises `RuntimeError: can't prepare Symbol` when it fires, because the audit log passes the name straight to SQLite. DSL rule names are usually Strings.
+A rule named with a Symbol (`KBS::Rule.new(:my_rule, ...)`) is logged under its String name (`"my_rule"`); `get_rule_firings` takes either.
 
 ---
 
@@ -885,7 +885,7 @@ Returns blackboard statistics.
 - `:unconsumed_messages` (Integer) - Messages still queued
 - `:rules_fired` (Integer) - Rule firings in the audit log
 
-The Redis store reports the same keys; the hybrid store adds `:audit_records`.
+The Redis store reports the same keys; the hybrid store adds `:audit_records`, the rows in its SQLite audit log (fact changes plus rule firings).
 
 **Example**:
 ```ruby
@@ -1000,14 +1000,14 @@ engine.blackboard.transaction do
   fact1 = engine.add_fact(:order, id: 1, status: "pending")
   fact2 = engine.add_fact(:inventory, item: "ABC", quantity: 100)
 
-  # If error occurs here, both facts are rolled back in the store
+  # If error occurs here, both facts are rolled back in the store and the engine
   raise "Validation failed" if invalid_order?(fact1)
 end
 ```
 
 **Database Support**: The SQLite store wraps the block in a SQLite transaction (nested calls join the outer one). The Redis and hybrid stores just run the block: there is nothing to roll back.
 
-**Note**: The rollback covers the store only. Facts added inside the block were already matched by the engine, and stay in its network until removed or until `reset`.
+**Note**: When the block raises, the facts it added that the store rolled back are also removed from the engine, so their rules do not fire. With the Redis and hybrid stores the facts stay, in the store and in the engine. Facts the block removed or modified are restored in the store only: the engine does not see them again until it is rebuilt from the store (a new engine on the same database).
 
 ---
 

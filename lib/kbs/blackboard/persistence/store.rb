@@ -5,6 +5,16 @@ module KBS
     module Persistence
       # Abstract interface for fact persistence
       class Store
+        # The session the store files new facts under. nil by default: a
+        # Memory given a store without one makes its own.
+        def session_id
+          nil
+        end
+
+        def register_knowledge_source(name, description: nil, topics: [])
+          raise NotImplementedError, "#{self.class} must implement #register_knowledge_source"
+        end
+
         def add_fact(uuid, type, attributes)
           raise NotImplementedError, "#{self.class} must implement #add_fact"
         end

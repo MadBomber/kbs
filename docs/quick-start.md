@@ -204,8 +204,8 @@ kb = KBS.knowledge_base do
     without :state, current: "ready"
 
     perform do |facts|
-      # Simplified: to change the state, capture the knowledge base
-      # (kb = self) and call kb.modify from the action
+      # Simplified: to change the state, call modify on the matched
+      # :state fact (facts.first); working-memory calls work bare in perform
       puts "Transitioning to ready state"
     end
   end

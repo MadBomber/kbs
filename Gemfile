@@ -17,3 +17,6 @@ gem 'debug_me'
 
 # The CSV trading examples require csv, a bundled (not default) gem since Ruby 3.4.
 gem "csv"
+
+# The scripts in benchmarks/ require benchmark, a bundled (not default) gem since Ruby 3.5.
+gem "benchmark"

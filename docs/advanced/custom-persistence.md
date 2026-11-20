@@ -11,6 +11,14 @@ module KBS
   module Blackboard
     module Persistence
       class Store
+        def session_id
+          nil
+        end
+
+        def register_knowledge_source(name, description: nil, topics: [])
+          raise NotImplementedError, "#{self.class} must implement #register_knowledge_source"
+        end
+
         def add_fact(uuid, type, attributes)
           raise NotImplementedError, "#{self.class} must implement #add_fact"
         end
@@ -78,9 +86,9 @@ end
 | `stats` | `engine.stats` | a Hash; it is merged with the message queue's and audit log's stats |
 | `vacuum`, `close` | `blackboard.vacuum`, `engine.close` | ignored |
 | `transaction { ... }` | around every add, remove, update and message consume | the block's value |
-| `session_id` | `Memory.new`, to share the store's session | a String |
+| `session_id` | `Memory.new`, to share the store's session | a String, or `nil` (the base class default) to let `Memory` make one |
 
-Note that `register_knowledge_source` and `session_id` are not defined on the base class, but `Memory` calls them, so a custom store has to define both.
+The base class's `register_knowledge_source` raises `NotImplementedError`, like the other abstract methods. When a `Memory#transaction` block raises, `Memory` calls `get_fact` for each fact the block added and tells the engine about those that are gone, so a store that rolls back keeps the engine in step.
 
 ### Messages and the Audit Log
 

@@ -337,7 +337,7 @@ end
 - Should be idempotent if possible (safe to run multiple times)
 - Should not modify facts directly with `fact[:key] = value` (use `engine.add_fact` / `engine.remove_fact` / `engine.modify` instead)
 - May add/remove/modify facts (the agenda changes before the next firing, so rules chain within one `run`)
-- In the DSL, `self` inside a `perform` block is the rule builder, not the knowledge base: reach the knowledge base through a local (`kb = KBS.knowledge_base do ... end`, or `kb = self` at the top of the block) and call `kb.assert(...)`, `kb.retract(...)`, `kb.modify(...)`, `kb.query(...)`. A bare `assert`, `retract` or `query` raises `NoMethodError`, and a bare `fact :x` is worse: it is the builder's alias for `on`, so it silently adds a condition to the already-built rule and asserts nothing
+- In the DSL, `self` inside a `perform` block is the rule builder. Once the rule is built, the builder forwards `fact`, `assert`, `retract`, `modify`, `query`, `facts`, `halt` and `engine` to the knowledge base, so bare calls work, as do calls through a local (`kb.assert(...)`). Condition keywords (`on`, `without`, `exists`, `logical`, `perform` and their aliases) raise `KBS::RuleBuiltError` once the rule is built; a builder created without a knowledge base raises `KBS::NoKnowledgeBaseError` for the working-memory calls
 
 ---
 
@@ -503,13 +503,13 @@ end
 
 An attribute whose name is already a method (`load`, `print`, `display`, `format`, ...) can't be set this way; put it in the hash pattern instead.
 
-Write variables as `:name?` symbols. A bare name with no arguments returns a `KBS::DSL::Variable`, but a pattern value that is a `Variable` object (`id sensor_id`) is compared with `==` and never matches a fact; and `temp > 90` raises `NoMethodError`, since a `Variable` has no `>`.
+Write variables as `:name?` symbols or as bare names: `id sensor_id` is `id :sensor_id?`. A bare name compared with a value sets that attribute's predicate: `temp > 90`, `<`, `>=`, `<=` and `!=` build predicates, and `temp == 90` is a literal match.
 
 Inside the block, `between(min, max)`, `matches(regexp)`, `any(*values)` and `all(*predicates)` return predicates (as does `self.in(collection)`; a bare `in` is Ruby syntax), along with the condition helpers below.
 
 ### Condition helpers
 
-Available in a rule block and in condition blocks. Each returns a predicate lambda to use as a pattern value, except `equals`, which returns the value itself.
+Available in a rule block, in condition blocks and on the knowledge base (for `query`). Each returns a predicate lambda to use as a pattern value, except `equals`, which returns the value itself.
 
 | Helper | Matches when the attribute value... |
 |---|---|
@@ -522,7 +522,7 @@ Available in a rule block and in condition blocks. Each returns a predicate lamb
 | `matches(regexp)` | matches the pattern |
 | `satisfies { \|v\| ... }` | makes the block return truthy |
 
-A predicate is not called when the attribute is missing or `nil`: the condition simply does not match. The helpers exist only while building rules; `kb.query` takes literal values or lambdas you write yourself.
+A predicate is not called when the attribute is missing or `nil`: the condition simply does not match. The helpers are also methods of the knowledge base, so `kb.query(:sensor, temp: kb.greater_than(90))` (or a bare `greater_than` inside the `KBS.knowledge_base` block) filters with them.
 
 ---
 

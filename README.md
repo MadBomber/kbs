@@ -382,7 +382,7 @@ The Redis store tests are skipped unless `KBS_TEST_REDIS_URL` names a disposable
 
 ### DSL Helpers
 
-Use these as attribute values in the hash form of `on`, for example `on :reading, value: greater_than(100)`. The block form of `on` has its own operators; see [Block-Style Patterns](docs/guides/dsl.md#block-style-patterns).
+Use these as attribute values in the hash form of `on`, for example `on :reading, value: greater_than(100)`, and in `kb.query` patterns. The block form of `on` has its own operators; see [Block-Style Patterns](docs/guides/dsl.md#block-style-patterns).
 
 - `greater_than(n)` - Match values > n
 - `less_than(n)` - Match values < n

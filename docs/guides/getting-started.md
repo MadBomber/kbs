@@ -147,7 +147,7 @@ end
 
 **Negated condition** (`without`): Rule fires only when NO `:alert` fact exists for this sensor.
 
-Inside `perform`, `self` is the rule builder, not the knowledge base, so a bare `fact` there would add a condition instead of a fact. Call knowledge base methods through `kb`. (The action runs during `kb.run`, after `kb` has been assigned.)
+Inside `perform`, `fact`, `assert`, `retract`, `modify` and `query` change or read working memory, whether you write them bare or through `kb`. (The action runs during `kb.run`, after `kb` has been assigned.)
 
 **Flow:**
 
@@ -243,7 +243,7 @@ class TemperatureMonitor
     monitor = self
 
     KBS.knowledge_base(engine: engine) do
-      kb = self   # rule actions run with the rule builder as self
+      kb = self   # the knowledge base, for use inside actions
 
       # Rule 1: Send alert when temp exceeds threshold
       rule "temperature_alert", priority: 50 do

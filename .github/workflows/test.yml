@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The gemspec floor is 3.2.
+        # The gemspec floor is 4.0.
         ruby: ['4.0']
 
     # A disposable Redis for the Redis store tests, which flush the database

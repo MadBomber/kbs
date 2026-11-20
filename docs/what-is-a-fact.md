@@ -319,7 +319,7 @@ rule "derive_alert" do
   without :alert, location: :loc?  # No existing alert
 
   perform do |facts, bindings|
-    # Add derived fact (kb is the knowledge base; inside perform, self is the rule builder)
+    # Add derived fact (kb is the knowledge base; a bare `fact` works here too)
     kb.fact :alert,
          location: bindings[:loc?],
          level: "high",

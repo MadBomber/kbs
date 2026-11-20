@@ -92,6 +92,15 @@ class TestRedisStore < Minitest::Test
     assert_equal 1, stats[:knowledge_sources]
   end
 
+  # Contract: blackboard/register-knowledge-source-without-description
+  # Bug: RedisStore#register_knowledge_source raised TypeError when description was nil
+  def test_register_knowledge_source_without_description
+    @store.register_knowledge_source('TempMonitor', topics: ['readings'])
+
+    assert_equal 1, @store.stats[:knowledge_sources]
+    refute @redis.hexists('ks:TempMonitor', 'description')
+  end
+
   def test_stats
     @store.add_fact('uuid-1', :sensor, { temp: 22 })
     @store.add_fact('uuid-2', :alert, { level: 'warning' })

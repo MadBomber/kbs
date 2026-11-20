@@ -121,6 +121,7 @@ module KBS
           raise NotImplementedError, "#{self.class} does not support SQL queries"
         end
 
+        # A nil description is left out of the hash: Redis cannot store nil.
         def register_knowledge_source(name, description: nil, topics: [])
           topics_json = JSON.generate(topics)
 
@@ -130,7 +131,7 @@ module KBS
             'topics' => topics_json,
             'active' => '1',
             'registered_at' => Time.now.to_f
-          })
+          }.compact)
 
           @redis.sadd('knowledge_sources:active', name)
         end

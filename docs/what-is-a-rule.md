@@ -139,8 +139,8 @@ engine.run
 Actions execute, potentially creating new facts:
 
 ```ruby
-# kb is the knowledge base; inside perform, self is the rule builder,
-# so knowledge base methods are called through kb
+# kb is the knowledge base. Inside perform, bare fact/assert/retract/
+# modify/query calls reach it as well.
 perform do |facts, bindings|
   # Can add derived facts
   kb.fact :signal, type: "golden_cross", timestamp: Time.now

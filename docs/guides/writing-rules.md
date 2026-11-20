@@ -115,7 +115,7 @@ end
 
 `facts` holds one fact per positive condition, in order; `without` and `exists` conditions contribute none. `bindings` maps each `?variable` to its value.
 
-**`self` inside `perform`:** the action block runs with the rule builder as `self`, not the knowledge base. Calling `fact`, `assert` or `engine` bare inside `perform` does not reach working memory (`fact` would silently add a condition to the already-built rule). Capture the knowledge base in a local and call it explicitly:
+**Working memory inside `perform`:** the action block runs with the rule builder as `self`. Once the rule is built, the builder forwards `fact`, `assert`, `retract`, `modify`, `query`, `facts`, `halt` and `engine` to the knowledge base, so bare calls work. Condition keywords (`on`, `without`, `exists`, `logical`, `perform` and their aliases) raise `KBS::RuleBuiltError` there, since they can no longer change the rule. Calling the knowledge base through a local works as well:
 
 ```ruby
 kb = KBS.knowledge_base do
@@ -131,7 +131,7 @@ kb.fact :sensor, temp: 28
 kb.run   # call run after `kb` is assigned
 ```
 
-The examples below follow this pattern.
+The examples below use either form.
 
 ## Condition Ordering
 
@@ -857,22 +857,22 @@ end
 
 As a safety net while developing, `kb.run(100)` stops after 100 firings, and `kb.halt` called from an action stops the current run.
 
-### 2. Calling DSL Methods Inside `perform`
+### 2. Writing Conditions Inside `perform`
 
 ```ruby
-# Bad: self in the action is the rule builder, not the knowledge base
+# Bad: the rule is already built when the action runs
 kb = KBS.knowledge_base do
   rule "derive" do
     on :reading, {}
-    perform { fact :derived, {} }   # Adds a condition to the built rule; no fact is asserted
+    perform { on :other }   # raises KBS::RuleBuiltError during run
   end
 end
 
-# Fix: Call the knowledge base explicitly
+# Fine: working-memory calls, bare or through kb
 kb = KBS.knowledge_base do
   rule "derive" do
     on :reading, {}
-    perform { kb.fact :derived, {} }
+    perform { fact :derived, {} }   # same as kb.fact :derived, {}
   end
 end
 ```

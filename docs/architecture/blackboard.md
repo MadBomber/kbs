@@ -75,8 +75,7 @@ kb = KBS.knowledge_base(engine: engine) do
 
     perform do |facts, bindings|
       if bindings[:price?] < bindings[:max?]
-        # Write new fact to blackboard. Inside perform, self is the
-        # rule builder, so a bare `fact` would not assert anything.
+        # Write new fact to blackboard (a bare `fact` works too)
         kb.fact :order,
           symbol: bindings[:sym?],
           action: "BUY",
@@ -417,7 +416,7 @@ memory.transaction do
 end
 ```
 
-**Nested transactions** are supported via a depth counter: only the outermost `transaction` opens a database transaction. The rollback covers the store only: observers (a RETE engine) were already told of the facts. `RedisStore#transaction` just runs the block; it does not roll back.
+**Nested transactions** are supported via a depth counter: only the outermost `transaction` opens a database transaction. Observers (a RETE engine) are told of each fact as it is added; when `Memory#transaction` rolls back, they are told the added facts the store no longer holds were removed. Removes and modifies inside the block are undone in the store only. `RedisStore#transaction` just runs the block; it does not roll back.
 
 ## Best Practices
 

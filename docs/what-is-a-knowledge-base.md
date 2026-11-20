@@ -233,7 +233,7 @@ kb = KBS.knowledge_base do
 
     perform do |facts, b|
       order = facts.first
-      kb.modify(order, status: "shipping")   # inside perform, call the knowledge base through kb
+      kb.modify(order, status: "shipping")   # a bare modify(...) works here too
     end
   end
 end

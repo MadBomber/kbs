@@ -22,8 +22,6 @@ module KBS
       @variable_bindings = extract_variables(pattern)
     end
 
-    # Whether the condition adds a fact to the rule's match. Negated and
-    # exists conditions test for facts but contribute none.
     # One line for listings: the type and pattern, marked NOT or EXISTS.
     def summary
       prefix = { "without" => "NOT ", "exists" => "EXISTS " }.fetch(keyword, "")
@@ -36,6 +34,8 @@ module KBS
       @variable_bindings.transform_values { |field| attributes[field] }
     end
 
+    # Whether the condition adds a fact to the rule's match. Negated and
+    # exists conditions test for facts but contribute none.
     def binds_fact?
       !@negated && !@exists
     end

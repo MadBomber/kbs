@@ -205,7 +205,7 @@ Removes a fact from the blackboard.
 **Parameters**:
 - `fact` (KBS::Blackboard::Fact or String) - Fact object or UUID
 
-**Returns**: No meaningful value
+**Returns**: the removed `KBS::Blackboard::Fact`, or `nil` when the fact was not active
 
 **Side Effects** (only when the fact is active; otherwise nothing happens):
 - Marks fact as inactive in store
@@ -372,8 +372,8 @@ recent_errors = memory.query_facts(
 Posts a message to the blackboard message queue.
 
 **Parameters**:
-- `sender` (String) - Sender identifier (e.g., agent name)
-- `topic` (String) - Message topic (channel/category)
+- `sender` (String or Symbol) - Sender identifier (e.g., agent name); stored as a String
+- `topic` (String or Symbol) - Message topic (channel/category); stored as a String
 - `content` (Hash or String) - Message payload. A Hash is stored as JSON and comes back with Symbol keys; a String is stored as is
 - `priority` (Integer, optional) - Message priority (default: 0, higher = more urgent)
 
@@ -411,8 +411,8 @@ memory.post_message(
 Retrieves and removes the highest priority message from a topic.
 
 **Parameters**:
-- `topic` (String) - Topic to consume from
-- `consumer` (String) - Consumer identifier (for audit trail)
+- `topic` (String or Symbol) - Topic to consume from
+- `consumer` (String or Symbol) - Consumer identifier (for audit trail)
 
 **Returns**: `Hash` or `nil` - Message hash with `:id`, `:sender`, `:topic`, `:content`, `:priority`, `:posted_at`, or `nil` if queue empty
 
@@ -585,7 +585,7 @@ Registers an agent/knowledge source.
 **Side Effects**:
 - Stores knowledge source metadata in the store (registering the same name again replaces it)
 
-**Note**: With a Redis or Hybrid store, pass a `description`; the default `nil` makes the Redis client raise `TypeError`.
+With a Redis or Hybrid store, a `nil` description is left out of the knowledge source's hash.
 
 **Example**:
 ```ruby
@@ -692,7 +692,7 @@ Executes block within database transaction.
 - Commits on success
 - Rolls back on exception
 
-Redis and Hybrid stores just run the block: there is no rollback. Observers are notified as each fact is added, before the transaction commits.
+Redis and Hybrid stores just run the block: there is no rollback. Observers are notified as each fact is added, before the transaction commits. When the block raises, the observers (a `KBS::Blackboard::Engine`) are told each added fact the store rolled back was removed, so it leaves the RETE network too. Facts the block removed or modified are restored in the store only; the observers are not told.
 
 **Example**:
 ```ruby
@@ -724,7 +724,7 @@ Returns blackboard statistics.
 - `:total_messages` (Integer) - Total messages (consumed + unconsumed)
 - `:unconsumed_messages` (Integer) - Unconsumed messages
 - `:rules_fired` (Integer) - Total rule firings
-- `:audit_records` (Integer) - Hybrid store only; currently the row count of the SQLite `facts` table, which the hybrid store does not write to, so it is always 0
+- `:audit_records` (Integer) - Hybrid store only; rows in the SQLite audit log (`fact_history` plus `rules_fired`), or 0 before a `Memory` has created those tables
 
 Counts cover the whole database (or Redis DB), not just this session.
 
@@ -1005,7 +1005,7 @@ Retracted facts stay in the store, marked retracted; `get_fact` and `get_facts` 
 
 ### `KBS::Blackboard::Persistence::Store`
 
-Abstract base class. Every method above except `vacuum`, `transaction` and `register_knowledge_source` raises `NotImplementedError` until a subclass defines it; `vacuum` does nothing and `transaction` just yields. `register_knowledge_source` is not defined on the base class, but `Memory#register_knowledge_source` calls it. `Memory` also needs a store to respond to `session_id` and to `db` (SQLite) or `connection` (Redis). See [Custom Persistence](../advanced/custom-persistence.md).
+Abstract base class. Every method above except `vacuum` and `transaction` raises `NotImplementedError` until a subclass defines it; `vacuum` does nothing and `transaction` just yields. `session_id` returns `nil`, so a `Memory` given the store makes its own session id. `Memory` also needs a store to respond to `db` (SQLite) or `connection` (Redis); `Memory.new(store:)` raises `ArgumentError` for one that does neither. See [Custom Persistence](../advanced/custom-persistence.md).
 
 ### `KBS::Blackboard::Persistence::SqliteStore`
 

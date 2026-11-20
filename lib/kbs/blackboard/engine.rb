@@ -14,6 +14,8 @@ module KBS
         @blackboard = Memory.new(db_path: db_path, store: store)
         @working_memory = @blackboard
         @blackboard.add_observer(self)
+        # Files the facts already stored, so duplicates of them are refused.
+        self.fact_duplication = fact_duplication
       end
 
       # Writes the fact to the blackboard, which tells this engine to
