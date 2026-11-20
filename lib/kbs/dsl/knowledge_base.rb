@@ -42,8 +42,14 @@ module KBS
         @engine.remove_fact(fact)
       end
 
-      def run
-        @engine.run
+      # @param limit [Integer, nil] stop after this many rule firings
+      # @return [Integer] the number of rules fired
+      def run(limit = nil)
+        @engine.run(limit)
+      end
+
+      def halt
+        @engine.halt
       end
 
       def reset

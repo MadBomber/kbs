@@ -33,6 +33,42 @@ class TestProductionNode < Minitest::Test
     assert @fired, "Rule should have fired"
   end
 
+  def test_activate_puts_an_activation_on_the_agenda
+    agenda = KBS::Agenda.new
+    node = KBS::ProductionNode.new(@rule, agenda, order: 4)
+    token = KBS::Token.new(nil, KBS::Fact.new(:person, name: "Alice"), nil)
+
+    node.activate(token)
+
+    assert_equal 4, node.order
+    assert_equal 1, agenda.size
+    assert_same token, agenda.peek.token
+    assert_equal 4, agenda.peek.rule_order
+  end
+
+  def test_deactivate_takes_the_activation_off_the_agenda
+    agenda = KBS::Agenda.new
+    node = KBS::ProductionNode.new(@rule, agenda)
+    token = KBS::Token.new(nil, KBS::Fact.new(:person, name: "Alice"), nil)
+    node.activate(token)
+
+    node.deactivate(token)
+
+    assert agenda.empty?
+    assert_empty node.tokens
+  end
+
+  def test_reset_forgets_tokens_and_pending_activations
+    agenda = KBS::Agenda.new
+    node = KBS::ProductionNode.new(@rule, agenda)
+    2.times { node.activate(KBS::Token.new(nil, KBS::Fact.new(:person), nil)) }
+
+    node.reset
+
+    assert agenda.empty?
+    assert_empty node.tokens
+  end
+
   def test_deactivate_removes_token
     fact = KBS::Fact.new(:person, name: "Alice")
     token = KBS::Token.new(nil, fact, nil)

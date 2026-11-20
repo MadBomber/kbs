@@ -357,22 +357,23 @@ end
 The final phase is `engine.run()`:
 
 ```ruby
-def run
-  prioritized_production_nodes.each do |node|
-    node.tokens.each do |token|
-      node.fire_rule(token)
-    end
-  end
-end
+def run(limit = nil)
+  @halted = false
+  fired = 0
 
-# Production nodes in firing order: higher rule priority first, and
-# definition order among rules of equal priority.
-def prioritized_production_nodes
-  @production_nodes.values.sort_by.with_index { |node, index| [-node.rule.priority, index] }
+  until @halted || (limit && fired >= limit)
+    activation = @agenda.pop
+    break unless activation
+
+    fire_activation(activation)
+    fired += 1
+  end
+
+  fired
 end
 ```
 
-Each production node fires its accumulated tokens. The `fired?` flag prevents duplicate firing.
+A production node does not fire when a token reaches it. It puts an *activation* on the agenda (`KBS::Agenda`), and takes it off again if the token is retracted before it fires. `run` pops one activation at a time: higher rule priority first, then the agenda's strategy (`:definition`, `:depth` or `:breadth`). Because the agenda is read again after every firing, facts asserted by one rule can fire another in the same run, and the run ends when the agenda is empty. Popping removes the activation, so a match fires once.
 
 **Implementation**: `KBS::Engine#run` in `lib/kbs/engine.rb`
 

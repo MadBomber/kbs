@@ -3,16 +3,25 @@
 module KBS
   class ProductionNode
     attr_accessor :rule, :tokens
+    attr_reader :order
 
-    def initialize(rule)
+    # @param agenda [KBS::Agenda, nil] where matches wait to fire; without
+    #   one the node only collects tokens
+    # @param order [Integer] the rule's position among the engine's rules
+    def initialize(rule, agenda = nil, order: 0)
       @rule = rule
       @tokens = []
+      @agenda = agenda
+      @order = order
+      @activations = {}.compare_by_identity
     end
 
+    # A complete match. The rule does not fire here: the activation waits
+    # on the agenda until Engine#run, so a later retraction can still
+    # take it back.
     def activate(token)
       @tokens << token
-      # Don't fire immediately - wait for run() to fire rules
-      # This allows negation nodes to deactivate tokens before they fire
+      @activations[token] = @agenda.add(self, token, rule_order: @order) if @agenda
     end
 
     def fire_rule(token)
@@ -23,6 +32,14 @@ module KBS
 
     def deactivate(token)
       @tokens.delete(token)
+      @agenda&.remove(@activations.delete(token))
+    end
+
+    # Forgets every match, fired or pending.
+    def reset
+      @activations.each_value { |activation| @agenda&.remove(activation) }
+      @activations.clear
+      @tokens.clear
     end
   end
 end
