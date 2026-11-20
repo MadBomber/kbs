@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 module KBS
+  # One condition of a rule: a fact type and a pattern its attributes must
+  # fit, optionally negated, existential or logical.
   class Condition
     attr_reader :type, :pattern, :variable_bindings, :negated, :exists, :logical
 
@@ -18,6 +20,18 @@ module KBS
       @exists = exists
       @logical = logical
       @variable_bindings = extract_variables(pattern)
+    end
+
+    # One line for listings: the type and pattern, marked NOT or EXISTS.
+    def summary
+      prefix = { "without" => "NOT ", "exists" => "EXISTS " }.fetch(keyword, "")
+      "#{prefix}#{@type}(#{RuleSource.pattern_source(@pattern)})"
+    end
+
+    # The value each of this condition's variables takes from `fact`.
+    def bindings_from(fact)
+      attributes = fact.attributes
+      @variable_bindings.transform_values { |field| attributes[field] }
     end
 
     # Whether the condition adds a fact to the rule's match. Negated and

@@ -236,7 +236,10 @@ class TestProductionNodeFiredRecord < Minitest::Test
     node = KBS::ProductionNode.new(KBS::Rule.new("a"))
     token = KBS::Token.new(nil, KBS::Fact.new(:x), nil)
     other = KBS::Token.new(nil, KBS::Fact.new(:x), nil)
-    [token, other].each { |each_token| node.activate(each_token); node.fire_rule(each_token) }
+    [token, other].each do |each_token|
+      node.activate(each_token)
+      node.fire_rule(each_token)
+    end
 
     node.deactivate(token)
     refute node.fired?(token)

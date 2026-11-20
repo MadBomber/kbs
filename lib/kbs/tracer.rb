@@ -27,13 +27,13 @@ module KBS
 
     # Starts watching the given items, or every item when none is given.
     def watch(*items)
-      @watched.merge(validated(items))
+      @watched.merge(self.class.validated(items))
       self
     end
 
     # Stops watching the given items, or every item when none is given.
     def unwatch(*items)
-      @watched.subtract(validated(items))
+      @watched.subtract(self.class.validated(items))
       self
     end
 
@@ -66,9 +66,9 @@ module KBS
       @output.puts "FIRE #{@firings} #{activation.description}" if watching?(:rules)
     end
 
-    private
-
-    def validated(items)
+    # The items named, or every item when none is; raises ArgumentError
+    # for an item that cannot be watched.
+    def self.validated(items)
       return ITEMS if items.empty?
 
       unknown = items - ITEMS

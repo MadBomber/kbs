@@ -14,41 +14,63 @@ module KBS
       attr_reader :session_id, :store, :message_queue, :audit_log
 
       def initialize(db_path: ':memory:', store: nil)
-        @session_id = (store.session_id if store.respond_to?(:session_id)) || SecureRandom.uuid
+        self.class.check_store(store) if store
+        @session_id = store&.session_id || SecureRandom.uuid
         @observers = []
+        @added_in_transaction = nil
+        @store = store || Persistence::SqliteStore.new(db_path: db_path, session_id: @session_id)
+        @message_queue, @audit_log = build_components
+      end
 
-        # Use provided store or create default SqliteStore
-        @store = store || Persistence::SqliteStore.new(
-          db_path: db_path,
-          session_id: @session_id
-        )
+      # Raises ArgumentError unless the memory can build its message queue
+      # and audit log on `store`.
+      def self.check_store(store)
+        return if store.respond_to?(:connection) || store.respond_to?(:db)
 
-        # Initialize composed components based on store type
-        setup_components
+        raise ArgumentError, "Store must respond to either :connection (Redis) or :db (SQLite)"
       end
 
       private
 
-      def setup_components
-        # Detect store type and create appropriate MessageQueue and AuditLog
+      # The message queue and audit log that go with the store. A store is
+      # told apart by what it offers: a hybrid store keeps messages in
+      # Redis and the audit log in SQLite, a store with a connection is
+      # Redis, and one with a db is SQLite.
+      def build_components
         if @store.respond_to?(:hybrid?) && @store.hybrid?
-          # Hybrid store: Redis for messages, SQLite for audit
-          require_relative 'redis_message_queue'
-          @message_queue = RedisMessageQueue.new(@store.connection)
-          @audit_log = AuditLog.new(@store.db, @session_id)
+          hybrid_components
         elsif @store.respond_to?(:connection)
-          # Pure Redis store
-          require_relative 'redis_message_queue'
-          require_relative 'redis_audit_log'
-          @message_queue = RedisMessageQueue.new(@store.connection)
-          @audit_log = RedisAuditLog.new(@store.connection, @session_id)
-        elsif @store.respond_to?(:db)
-          # Pure SQLite store
-          @message_queue = MessageQueue.new(@store.db)
-          @audit_log = AuditLog.new(@store.db, @session_id)
+          redis_components
         else
-          raise ArgumentError, "Store must respond to either :connection (Redis) or :db (SQLite)"
+          sqlite_components
         end
+      end
+
+      def hybrid_components
+        require_relative 'redis_message_queue'
+        [RedisMessageQueue.new(@store.connection), AuditLog.new(@store.db, @session_id)]
+      end
+
+      def redis_components
+        require_relative 'redis_message_queue'
+        require_relative 'redis_audit_log'
+        connection = @store.connection
+        [RedisMessageQueue.new(connection), RedisAuditLog.new(connection, @session_id)]
+      end
+
+      def sqlite_components
+        database = @store.db
+        [MessageQueue.new(database), AuditLog.new(database, @session_id)]
+      end
+
+      # A fact's uuid, given the fact or the uuid itself.
+      def uuid_of(fact)
+        fact.is_a?(Fact) ? fact.uuid : fact
+      end
+
+      # The Fact for a row the store returned.
+      def fact_from(data)
+        Fact.new(*data.values_at(:uuid, :type, :attributes), self)
       end
 
       public
@@ -63,27 +85,31 @@ module KBS
         end
 
         fact = Fact.new(uuid, type, attributes, self)
+        @added_in_transaction[uuid] = fact if @added_in_transaction
         notify_observers(:add, fact)
         fact
       end
 
+      # @return [KBS::Blackboard::Fact, nil] the removed fact, or nil when
+      #   it was not active
       def remove_fact(fact)
-        uuid = fact.is_a?(Fact) ? fact.uuid : fact
+        uuid = uuid_of(fact)
 
         @store.transaction do
           result = @store.remove_fact(uuid)
+          next unless result
 
-          if result
-            @audit_log.log_fact_change(uuid, result[:type], result[:attributes], 'REMOVE')
+          @audit_log.log_fact_change(uuid, result[:type], result[:attributes], 'REMOVE')
 
-            fact_obj = Fact.new(uuid, result[:type], result[:attributes], self)
-            notify_observers(:remove, fact_obj)
-          end
+          fact_obj = Fact.new(uuid, result[:type], result[:attributes], self)
+          @added_in_transaction&.delete(uuid)
+          notify_observers(:remove, fact_obj)
+          fact_obj
         end
       end
 
       def update_fact(fact, new_attributes)
-        uuid = fact.is_a?(Fact) ? fact.uuid : fact
+        uuid = uuid_of(fact)
 
         @store.transaction do
           fact_type = @store.update_fact(uuid, new_attributes)
@@ -98,7 +124,7 @@ module KBS
       #
       # @param fact [KBS::Blackboard::Fact, String] a fact or its uuid
       def find_fact(fact)
-        uuid = fact.is_a?(Fact) ? fact.uuid : fact
+        uuid = uuid_of(fact)
         data = @store.get_fact(uuid)
         data && Fact.new(uuid, data[:type], data[:attributes], self)
       end
@@ -116,11 +142,8 @@ module KBS
         # A Fact passed in still has its attributes as they were given;
         # the store's copy has been through JSON, which turns Symbol
         # values into Strings.
-        attributes = (fact.is_a?(Fact) ? fact.attributes : current.attributes).merge(changes)
-        @store.transaction do
-          @store.update_fact(current.uuid, attributes)
-          @audit_log.log_fact_change(current.uuid, current.type, attributes, 'UPDATE')
-        end
+        attributes = (fact.is_a?(Fact) ? fact : current).attributes.merge(changes)
+        update_fact(current, attributes)
 
         notify_observers(:remove, current)
         modified = Fact.new(current.uuid, current.type, attributes, self)
@@ -131,9 +154,7 @@ module KBS
       def get_facts(type = nil, pattern = {})
         fact_data = @store.get_facts(type, pattern)
 
-        fact_data.map do |data|
-          Fact.new(data[:uuid], data[:type], data[:attributes], self)
-        end
+        fact_data.map { |data| fact_from(data) }
       end
 
       # Alias for compatibility with WorkingMemory interface
@@ -144,9 +165,7 @@ module KBS
       def query_facts(sql_conditions = nil, params = [])
         fact_data = @store.query_facts(sql_conditions, params)
 
-        fact_data.map do |data|
-          Fact.new(data[:uuid], data[:type], data[:attributes], self)
-        end
+        fact_data.map { |data| fact_from(data) }
       end
 
       # Message Queue delegation
@@ -196,8 +215,31 @@ module KBS
         @store.clear_session(@session_id)
       end
 
-      def transaction(&block)
-        @store.transaction(&block)
+      # Runs the block in a store transaction. When the block raises, the
+      # facts it added that the store rolled back are removed from the
+      # observers (an engine) as well. A store that cannot roll back, such
+      # as Redis, keeps them, and so do the observers. Facts the block
+      # removed or modified are not restored in the observers.
+      def transaction(&)
+        return @store.transaction(&) if @added_in_transaction
+
+        @added_in_transaction = {}
+        begin
+          @store.transaction(&)
+        rescue StandardError
+          withdraw_rolled_back(@added_in_transaction.values)
+          raise
+        ensure
+          @added_in_transaction = nil
+        end
+      end
+
+      # Tells the observers each fact the store no longer holds was
+      # removed, newest first.
+      def withdraw_rolled_back(facts)
+        facts.reverse_each do |fact|
+          notify_observers(:remove, fact) unless @store.get_fact(fact.uuid)
+        end
       end
 
       # Statistics
@@ -219,7 +261,7 @@ module KBS
       end
 
       # For backward compatibility with ReteEngine
-      alias_method :db, :store
+      alias db store
     end
   end
 end

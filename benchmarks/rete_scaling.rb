@@ -32,24 +32,24 @@ end
 def join_engine
   engine = KBS::Engine.new
   engine.add_rule(KBS::Rule.new(
-    "paid",
-    conditions: [
-      KBS::Condition.new(:order, { id: :id? }),
-      KBS::Condition.new(:payment, { order_id: :id? })
-    ]
-  ))
+                    "paid",
+                    conditions: [
+                      KBS::Condition.new(:order, { id: :id? }),
+                      KBS::Condition.new(:payment, { order_id: :id? })
+                    ]
+                  ))
   engine
 end
 
 def negation_engine
   engine = KBS::Engine.new
   engine.add_rule(KBS::Rule.new(
-    "unpaid",
-    conditions: [
-      KBS::Condition.new(:order, { id: :id? }),
-      KBS::Condition.new(:payment, { order_id: :id? }, negated: true)
-    ]
-  ))
+                    "unpaid",
+                    conditions: [
+                      KBS::Condition.new(:order, { id: :id? }),
+                      KBS::Condition.new(:payment, { order_id: :id? }, negated: true)
+                    ]
+                  ))
   engine
 end
 
@@ -77,13 +77,13 @@ def shared_prefix_engine(count)
   engine = KBS::Engine.new
   count.times do |i|
     engine.add_rule(KBS::Rule.new(
-      "rule_#{i}",
-      conditions: [
-        KBS::Condition.new(:order, { id: :id? }),
-        KBS::Condition.new(:payment, { order_id: :id? }),
-        KBS::Condition.new(:"flag_#{i}", {})
-      ]
-    ))
+                      "rule_#{i}",
+                      conditions: [
+                        KBS::Condition.new(:order, { id: :id? }),
+                        KBS::Condition.new(:payment, { order_id: :id? }),
+                        KBS::Condition.new(:"flag_#{i}", {})
+                      ]
+                    ))
   end
   engine
 end

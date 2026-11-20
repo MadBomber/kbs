@@ -41,6 +41,11 @@ module KBS
       @right_index = @left_index = nil
       return if keyed.empty? || alpha_memory.nil? || beta_memory.nil?
 
+      index_memories(keyed)
+    end
+
+    # Indexes both memories on the fields that the `keyed` tests compare.
+    def index_memories(keyed)
       @fact_fields = keyed.map { |test| test[:fact_field] }
       @token_specs = keyed.map { |test| [test[:token_field_index], test[:token_field]] }
       @right_index = alpha_memory.index_on(@fact_fields)

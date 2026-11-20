@@ -5,7 +5,10 @@ Complete API reference for rule classes in KBS.
 ## Table of Contents
 
 - [KBS::Rule](#kbsrule) - Production rule with conditions and action
+- [DSL Rule Builder](#dsl-rule-builder) - `rule`, `on`, `without`, `exists`, `logical`, `perform`, condition helpers
 - [Rule Lifecycle](#rule-lifecycle)
+
+`KBS::Condition` is documented in the [Facts API](facts.md#kbscondition).
 - [Rule Patterns](#rule-patterns)
 - [Best Practices](#best-practices)
 
@@ -47,17 +50,19 @@ rule = KBS::Rule.new(:high_temperature)
 rule = KBS::Rule.new(
   :high_temperature,
   conditions: [
-    KBS::Condition.new(:temperature, value: ->(v) { v > 80 })
+    KBS::Condition.new(:temperature, { value: ->(v) { v > 80 } })
   ],
   action: ->(facts) { puts "High temperature detected!" },
   priority: 10
 )
 ```
 
+Write a condition's pattern as a braced Hash: `KBS::Condition.new(:temperature, value: 85)` without braces passes `value:` as a keyword and raises `ArgumentError: unknown keyword: :value`.
+
 **Example - Low-level API (Block Configuration)**:
 ```ruby
 rule = KBS::Rule.new(:high_temperature) do |r|
-  r.conditions << KBS::Condition.new(:temperature, value: ->(v) { v > 80 })
+  r.conditions << KBS::Condition.new(:temperature, { value: ->(v) { v > 80 } })
   r.action = ->(facts) { puts "High temperature: #{facts[0][:value]}" }
 end
 ```
@@ -73,8 +78,7 @@ kb = KBS.knowledge_base do
   end
 end
 
-# Add to engine
-kb.rules.each { |r| engine.add_rule(r) }
+# Already added to kb.engine; the KBS::Rule is kb.rules["high_temperature"]
 ```
 
 ---
@@ -104,8 +108,10 @@ kb = KBS.knowledge_base do
   end
 end
 
-puts kb.rules.first.name  # => "high_temperature"
+puts kb.engine.rules.first.name  # => "high_temperature"
 ```
+
+`kb.rules` is a Hash of rule name → `KBS::Rule`; `kb.engine.rules` is an Array.
 
 **Best Practice**: Use descriptive names that indicate the rule's purpose:
 ```ruby
@@ -152,7 +158,8 @@ end
 
 **Priority Semantics**:
 - Higher priority rules fire first in both `KBS::Engine` and `KBS::Blackboard::Engine`
-- Rules with equal priority fire in the order they were defined
+- Rules with equal priority fire in the order they were defined (with the default `:definition` strategy; see [Engine API](engine.md#runlimit-nil))
+- In the DSL, a `priority 100` call inside the rule block wins over the `priority:` keyword
 
 **Common Priority Ranges**:
 ```ruby
@@ -174,7 +181,11 @@ priority: -10
 
 **Example - Priority Ordering**:
 ```ruby
-kb = KBS.knowledge_base do
+require 'kbs/blackboard'
+
+engine = KBS::Blackboard::Engine.new
+
+kb = KBS.knowledge_base(engine: engine) do
   rule "log_temperature", priority: 0 do
     on :temperature, value: :temp?
     perform { |facts, b| puts "Logged: #{b[:temp?]}" }
@@ -191,8 +202,6 @@ kb = KBS.knowledge_base do
   end
 end
 
-engine = KBS::Blackboard::Engine.new
-kb.rules.each { |r| engine.add_rule(r) }
 engine.add_fact(:temperature, value: 110)
 engine.run
 
@@ -215,8 +224,8 @@ engine.run
 **Example - Low-level API**:
 ```ruby
 rule = KBS::Rule.new(:temperature_alert)
-rule.conditions << KBS::Condition.new(:temperature, value: ->(v) { v > 80 })
-rule.conditions << KBS::Condition.new(:sensor, status: "active")
+rule.conditions << KBS::Condition.new(:temperature, { value: ->(v) { v > 80 } })
+rule.conditions << KBS::Condition.new(:sensor, { status: "active" })
 
 puts rule.conditions.size  # => 2
 ```
@@ -231,8 +240,10 @@ kb = KBS.knowledge_base do
   end
 end
 
-puts kb.rules.first.conditions.size  # => 2
+puts kb.rules["temperature_alert"].conditions.size  # => 2
 ```
+
+Conditions written inside a DSL `logical do ... end` block come first and are marked logical; `KBS::Engine#add_rule` raises `ArgumentError` for a rule whose logical conditions do not all come before the others.
 
 **Condition Order Matters** (for performance):
 
@@ -240,14 +251,14 @@ puts kb.rules.first.conditions.size  # => 2
 ```ruby
 # Good - Most selective condition first
 rule.conditions = [
-  KBS::Condition.new(:sensor, id: 42),             # Filters to 1 fact
-  KBS::Condition.new(:temperature, value: :temp?)  # Then match temperature
+  KBS::Condition.new(:sensor, { id: 42 }),             # Filters to 1 fact
+  KBS::Condition.new(:temperature, { value: :temp? })  # Then match temperature
 ]
 
 # Less optimal - Less selective first
 rule.conditions = [
-  KBS::Condition.new(:temperature, value: :temp?),  # Matches many facts
-  KBS::Condition.new(:sensor, id: 42)               # Could have filtered first
+  KBS::Condition.new(:temperature, { value: :temp? }),  # Matches many facts
+  KBS::Condition.new(:sensor, { id: 42 })               # Could have filtered first
 ]
 ```
 
@@ -282,10 +293,10 @@ See [Performance Guide](../advanced/performance.md) for condition ordering strat
 
 **Signature**: `action.call`, `action.call(facts)`, or `action.call(facts, bindings)` (all supported)
 
-Zero-argument actions are called without arguments.
+The action's arity picks the call: arity 0 is called without arguments, arity 1 or -1 (such as `->(facts)` or `proc { |*args| }`) with the facts only, and any other arity (such as `->(facts, bindings)` or a block `|facts, bindings|`) with facts and bindings.
 
 **Parameters**:
-- `facts` (Array<KBS::Fact>) - Array of matched facts, one per non-negated condition, in condition order (negated conditions have no entry)
+- `facts` (Array<KBS::Fact>) - Array of matched facts, one per condition that binds a fact, in condition order (`without` and `exists` conditions have no entry)
 - `bindings` (Hash, optional) - Variable bindings extracted from facts
 
 **Example - Low-level API (Facts Parameter)**:
@@ -302,7 +313,7 @@ end
 ```ruby
 # Rule with variable bindings
 rule = KBS::Rule.new(:temperature_alert) do |r|
-  r.conditions << KBS::Condition.new(:temperature, value: :temp?, location: :loc?)
+  r.conditions << KBS::Condition.new(:temperature, { value: :temp?, location: :loc? })
   r.action = ->(facts, bindings) do
     # bindings: {:temp? => 85, :loc? => "server_room"}
     puts "#{bindings[:loc?]}: #{bindings[:temp?]}°F"
@@ -322,10 +333,11 @@ end
 ```
 
 **Action Requirements**:
-- Must be a Proc (lambda or proc)
+- Must respond to `call` and `arity` (a lambda, proc or Method); a rule with no action fires but does nothing
 - Should be idempotent if possible (safe to run multiple times)
-- Should not modify facts directly (use `engine.add_fact` / `engine.remove_fact` instead)
-- May add/remove facts (triggers new rule evaluation)
+- Should not modify facts directly with `fact[:key] = value` (use `engine.add_fact` / `engine.remove_fact` / `engine.modify` instead)
+- May add/remove/modify facts (the agenda changes before the next firing, so rules chain within one `run`)
+- In the DSL, `self` inside a `perform` block is the rule builder. Once the rule is built, the builder forwards `fact`, `assert`, `retract`, `modify`, `query`, `facts`, `halt` and `engine` to the knowledge base, so bare calls work, as do calls through a local (`kb.assert(...)`). Condition keywords (`on`, `without`, `exists`, `logical`, `perform` and their aliases) raise `KBS::RuleBuiltError` once the rule is built; a builder created without a knowledge base raises `KBS::NoKnowledgeBaseError` for the working-memory calls
 
 ---
 
@@ -336,7 +348,7 @@ end
 Executes the rule's action with matched facts.
 
 **Parameters**:
-- `facts` (Array<KBS::Fact>) - Matched facts, one per non-negated condition, in condition order. Negated (`without`) conditions match no fact and have no entry.
+- `facts` (Array<KBS::Fact>) - Matched facts, one per condition that binds a fact, in condition order. Negated (`without`) and `exists` conditions match no fact and have no entry.
 
 **Returns**: Result of action lambda, or `nil` if no action
 
@@ -348,7 +360,7 @@ Executes the rule's action with matched facts.
 **Example - Low-level API**:
 ```ruby
 rule = KBS::Rule.new(:log_temperature) do |r|
-  r.conditions << KBS::Condition.new(:temperature, value: :temp?)
+  r.conditions << KBS::Condition.new(:temperature, { value: :temp? })
   r.action = ->(facts, bindings) do
     puts "Temperature: #{bindings[:temp?]}"
   end
@@ -375,14 +387,14 @@ end
 # Output: Temperature: 85
 ```
 
-**Note**: Typically called by the RETE engine, not user code. Users call `engine.run` which fires all activated rules.
+**Note**: Typically called by the RETE engine, not user code. Users call `engine.run` which fires all activated rules. The engine fires each match (token) at most once.
 
 #### `bindings_for(facts)`
 
 Returns the variable bindings for a set of matched facts. `fire` passes these to any action whose arity is not 1 or -1, and `KBS::Blackboard::Engine` records them in its audit log.
 
 **Parameters**:
-- `facts` (Array<KBS::Fact>) - Matched facts in the same shape `fire` takes: one per non-negated condition, in condition order
+- `facts` (Array<KBS::Fact>) - Matched facts in the same shape `fire` takes: one per condition that binds a fact, in condition order
 
 **Returns**: `Hash` mapping each variable (such as `:temp?`) to its value in the matched facts
 
@@ -397,6 +409,120 @@ rule = KBS::Rule.new(:check, conditions: [
 rule.bindings_for([KBS::Fact.new(:sensor, id: 7), KBS::Fact.new(:reading, value: 85)])
 # => {id?: 7, value?: 85}
 ```
+
+#### `logical_count`
+
+**Returns**: `Integer` - the number of leading conditions that are logical. Facts the rule's action asserts are supported by the match of those conditions.
+
+#### `logical_conditions_first?`
+
+**Returns**: `Boolean` - whether no logical condition follows a non-logical one. `KBS::Engine#add_rule` raises `ArgumentError` when this is false.
+
+```ruby
+rule = KBS::Rule.new(:r, conditions: [
+  KBS::Condition.new(:sensor, {}, logical: true),
+  KBS::Condition.new(:trigger)
+])
+rule.logical_count               # => 1
+rule.logical_conditions_first?   # => true
+```
+
+#### `to_s`
+
+**Returns**: `String` - the rule written as DSL source, rebuilt from its parts. Predicates and the action are decompiled from bytecode, so they read as equivalent code, not necessarily the code you wrote; one that can't be decompiled shows a `<decompilation failed: ...>` placeholder. A rule built without the DSL has no `desc` line.
+
+```ruby
+kb = KBS.knowledge_base do
+  rule "high_temperature", priority: 10 do
+    on :temperature, location: "server_room", value: greater_than(80)
+    perform { |facts, bindings| }
+  end
+end
+
+puts kb.rules["high_temperature"].to_s
+# rule "high_temperature" do
+#   priority 10
+#   on :temperature, location: "server_room", value: ->(v) { v > 80 }
+#   perform { |facts, bindings| nil }
+# end
+```
+
+---
+
+## DSL Rule Builder
+
+`KBS.knowledge_base(engine: nil) { ... }` evaluates its block in a `KBS::DSL::KnowledgeBase` and returns it. Inside, `rule` builds each rule with a `KBS::DSL::RuleBuilder` and adds it to the engine.
+
+### `KnowledgeBase#rule(name, priority: nil, &block)` / `defrule`
+
+Evaluates the block in a new `RuleBuilder`, builds the `KBS::Rule`, stores it in `kb.rules[name]` and calls `engine.add_rule`. Returns the builder. `defrule` is an alias. A `priority` call in the block wins over the `priority:` keyword.
+
+`kb.rule_source(name)` returns the rule's source, read from its file when it can be found there, otherwise rebuilt like `Rule#to_s`; `kb.print_rule_source(name)` and `kb.print_rules` print them.
+
+### `RuleBuilder` methods
+
+| Method | Description |
+|---|---|
+| `desc(text)` | Sets the description (shown by `print_rules` and `rule_source`; not kept on `KBS::Rule`) |
+| `priority(level = nil)` | Sets the priority; with no argument, returns it |
+| `on(type, pattern = {}, &block)` | Adds a condition. Aliases: `given`, `matches`, `fact` |
+| `without(type = nil, pattern = {}, &block)` | Adds a negated condition: matches while no fact fits. `without.on(type, ...)` also works. Aliases: `absent`, `missing`, `lacks` |
+| `exists(type, pattern = {}, &block)` | Matches once while at least one fact fits, however many do. Contributes no fact to the action, and a variable first used here is not bound for later conditions |
+| `logical(&block)` | Marks the conditions written in the block as logical: facts the action asserts are retracted when those conditions stop matching. Must come before the rule's other conditions |
+| `perform(&block)` | Sets the action. Aliases: `action`, `execute`, `then` |
+| `name`, `description`, `conditions`, `action_block` | Readers for what was collected |
+| `source`, `summary_lines`, `build` | The rule as DSL source, the lines `print_rules` shows, and the `KBS::Rule` |
+
+```ruby
+kb = KBS.knowledge_base do
+  rule "overheating" do
+    desc "A hot sensor raises a warning while it stays hot"
+    priority 10
+    logical do
+      on :sensor, id: :id?, temp: greater_than(90)
+    end
+    without :maintenance, sensor_id: :id?
+    exists :operator, on_duty: true
+    perform { |facts, bindings| kb.assert(:warning, sensor_id: bindings[:id?]) }
+  end
+end
+```
+
+### Block form of a condition
+
+`on`, `without` and `exists` also take a block, merged into the pattern. Each call in the block names an attribute: with one argument it sets that attribute's value, and with a block it sets a predicate.
+
+```ruby
+on :sensor do
+  id :sensor_id?                       # variable
+  temp greater_than(90)                # helper predicate
+  status one_of("active", "standby")
+  pressure { |v| v < 30 }              # block predicate
+end
+```
+
+An attribute whose name is already a method (`load`, `print`, `display`, `format`, ...) can't be set this way; put it in the hash pattern instead.
+
+Write variables as `:name?` symbols or as bare names: `id sensor_id` is `id :sensor_id?`. A bare name compared with a value sets that attribute's predicate: `temp > 90`, `<`, `>=`, `<=` and `!=` build predicates, and `temp == 90` is a literal match.
+
+Inside the block, `between(min, max)`, `matches(regexp)`, `any(*values)` and `all(*predicates)` return predicates (as does `self.in(collection)`; a bare `in` is Ruby syntax), along with the condition helpers below.
+
+### Condition helpers
+
+Available in a rule block, in condition blocks and on the knowledge base (for `query`). Each returns a predicate lambda to use as a pattern value, except `equals`, which returns the value itself.
+
+| Helper | Matches when the attribute value... |
+|---|---|
+| `greater_than(x)` / `less_than(x)` | is `> x` / `< x` (false when it can't be compared) |
+| `between(min, max)` / `range(min, max)` / `range(a..b)` | is within the bounds, inclusive (or within the Range) |
+| `equals(x)` | equals `x` (same as writing `x`) |
+| `not_equal(x)` | is not `x` |
+| `one_of(*values)` | is one of `values` |
+| `any(*values)` | is one of `values`; with no arguments, anything |
+| `matches(regexp)` | matches the pattern |
+| `satisfies { \|v\| ... }` | makes the block return truthy |
+
+A predicate is not called when the attribute is missing or `nil`: the condition simply does not match. The helpers are also methods of the knowledge base, so `kb.query(:sensor, temp: kb.greater_than(90))` (or a bare `greater_than` inside the `KBS.knowledge_base` block) filters with them.
 
 ---
 
@@ -416,7 +542,7 @@ end
 # Or programmatically
 rule = KBS::Rule.new(
   :my_rule,
-  conditions: [KBS::Condition.new(:temperature, value: :temp?)],
+  conditions: [KBS::Condition.new(:temperature, { value: :temp? })],
   action: ->(facts) { puts facts[0][:value] },
   priority: 10
 )
@@ -432,10 +558,13 @@ engine.add_rule(rule)
 # - Adds rule to @rules array
 # - Compiles rule into RETE network
 # - Creates alpha memories for condition patterns
-# - Creates join nodes (or negation nodes)
+# - Creates join nodes (or negation / exists nodes)
 # - Creates production node for rule
-# - Activates existing facts through new network
+# - Matches existing facts through new network, putting complete
+#   matches on the agenda
 ```
+
+With the DSL, `rule` does this for you on the knowledge base's engine.
 
 ---
 
@@ -448,8 +577,10 @@ engine.add_fact(:temperature, value: 85)
 # - Propagates through join nodes
 # - Creates tokens in beta memories
 # - Token reaches production node
-# - Rule is "activated" (ready to fire)
+# - An activation (rule + token) is put on engine.agenda (ready to fire)
 ```
+
+Removing a fact before `run` takes back the activations it was part of.
 
 ---
 
@@ -458,16 +589,17 @@ engine.add_fact(:temperature, value: 85)
 ```ruby
 engine.run
 # Internally (KBS::Engine):
-# - Iterates production nodes
-# - For each token in production node:
-#   - Calls rule.fire(token.facts)
-#   - Executes action lambda
+# - Pops the next activation from the agenda (highest priority first,
+#   then by strategy)
+# - Calls rule.fire(token.facts), which executes the action
+# - Marks the token as fired (an activation fires once)
+# - Facts the action adds/removes update the agenda before the next pop
+# - Repeats until the agenda is empty, halt is called, or the limit is hit
 
 # Internally (KBS::Blackboard::Engine):
 # - Same as above, but:
 #   - Logs rule firing to audit trail
-#   - Marks token as fired (prevents duplicate firing)
-#   - Records variable bindings
+#   - Records fact UUIDs and variable bindings
 ```
 
 ---
@@ -543,7 +675,7 @@ Match when fact is absent:
 ```ruby
 rule "all_clear" do
   on :system, status: "running"
-  negated :alert, level: "critical"  # Fire when NO critical alerts exist
+  without :alert, level: "critical"  # Fire when NO critical alerts exist
   perform do
     puts "All systems normal"
   end
@@ -561,16 +693,18 @@ rule "pending_to_processing" do
   on :order, id: :order_id?, status: "pending"
   on :worker, status: "available", id: :worker_id?
   perform do |facts, bindings|
-    # Transition order to processing
-    order = find_order(bindings[:order_id?])
-    order.update(status: "processing", worker_id: bindings[:worker_id?])
+    order, worker = facts
+
+    # Transition order to processing (re-matched, so this rule won't match it again)
+    kb.modify(order, status: "processing", worker_id: bindings[:worker_id?])
 
     # Update worker
-    worker = find_worker(bindings[:worker_id?])
-    worker.update(status: "busy")
+    kb.modify(worker, status: "busy")
   end
 end
 ```
+
+Use `modify`, not `fact[:status] = ...` or `Blackboard::Fact#update`: only `modify` makes the rules see the new values.
 
 ---
 
@@ -581,12 +715,13 @@ Low-priority rules that clean up old facts:
 ```ruby
 rule "expire_old_temperatures", priority: 0 do
   on :temperature, timestamp: less_than(Time.now - 3600)
-  perform do |facts, bindings|
-    fact = bindings[:matched_fact?]
-    fact.retract  # Remove old temperature reading
+  perform do |facts|
+    kb.retract(facts.first)  # Remove old temperature reading
   end
 end
 ```
+
+`Time.now - 3600` is evaluated once, when the rule is defined, and the predicate is tested only when a fact is matched; see [Engine API: Memory Growth](engine.md#memory-growth).
 
 ---
 
@@ -598,15 +733,13 @@ Collect multiple facts and compute aggregate:
 rule "daily_temperature_summary", priority: 5 do
   on :trigger, event: "end_of_day"
   perform do
-    temps = engine.working_memory.facts
-      .select { |f| f.type == :temperature }
-      .map { |f| f[:value] }
+    temps = kb.query(:temperature).map { |f| f[:value] }
 
     avg = temps.sum / temps.size.to_f
     max = temps.max
     min = temps.min
 
-    engine.add_fact(:daily_summary, avg: avg, max: max, min: min, date: Date.today)
+    kb.assert(:daily_summary, avg: avg, max: max, min: min, date: Date.today)
   end
 end
 ```
@@ -644,16 +777,16 @@ Rule that adds facts triggering other rules:
 ```ruby
 rule "calculate_fibonacci" do
   on :fib_request, n: :n?
-  negated :fib_result, n: :n?  # Not already calculated
+  without :fib_result, n: :n?  # Not already calculated
   perform do |facts, bindings|
     n = bindings[:n?]
 
     if n <= 1
-      engine.add_fact(:fib_result, n: n, value: n)
+      kb.assert(:fib_result, n: n, value: n)
     else
       # Request sub-problems
-      engine.add_fact(:fib_request, n: n - 1)
-      engine.add_fact(:fib_request, n: n - 2)
+      kb.assert(:fib_request, n: n - 1)
+      kb.assert(:fib_request, n: n - 2)
 
       # Wait for sub-results in another rule...
     end
@@ -667,7 +800,7 @@ rule "combine_fibonacci" do
   # ... (complex join test: ?n_minus_1 == ?n - 1, etc.)
   perform do |facts, bindings|
     result = bindings[:val1?] + bindings[:val2?]
-    engine.add_fact(:fib_result, n: bindings[:n?], value: result)
+    kb.assert(:fib_result, n: bindings[:n?], value: result)
   end
 end
 ```
@@ -841,11 +974,11 @@ require 'minitest/autorun'
 
 class TestHighTemperatureRule < Minitest::Test
   def setup
-    @engine = KBS::Blackboard::Engine.new
+    @engine = KBS::Engine.new
     @fired = false
 
     @rule = KBS::Rule.new(:high_temp) do |r|
-      r.conditions << KBS::Condition.new(:temperature, value: ->(v) { v > 80 })
+      r.conditions << KBS::Condition.new(:temperature, { value: ->(v) { v > 80 } })
       r.action = ->(facts) { @fired = true }
     end
 
@@ -874,7 +1007,7 @@ end
 # Good - Negation ensures system ready
 rule "start_processing" do
   on :work_item, status: "pending"
-  negated :system_error  # Don't process if system has errors
+  without :system_error  # Don't process if system has errors
   perform { process_work_item }
 end
 
@@ -899,9 +1032,8 @@ end
 # Good - Cleanup rule prevents unbounded growth
 rule "expire_old_facts", priority: 0 do
   on :temperature, timestamp: less_than(Time.now - 3600)
-  perform do |facts, bindings|
-    fact = bindings[:matched_fact?]
-    fact.retract
+  perform do |facts|
+    kb.retract(facts.first)
   end
 end
 
@@ -948,6 +1080,9 @@ priority: 0
 ### Action Signatures
 
 ```ruby
+# 0. No arguments
+action: -> { puts "fired" }
+
 # 1. Facts only
 action: ->(facts) do
   temp_fact = facts[0]
@@ -985,7 +1120,10 @@ on :temperature, location: :loc?, value: :temp?
 on :temperature, value: ->(v) { v > 80 && v < 100 }
 
 # Negation
-negated :alert, level: "critical"
+without :alert, level: "critical"
+
+# Existence (matches once, however many operators are on duty)
+exists :operator, on_duty: true
 
 # Collection membership
 on :order, status: one_of("pending", "processing", "completed")
@@ -1008,14 +1146,14 @@ engine.add_rule(rule)
 
 ```ruby
 # Good
-kb.rules.each { |r| engine.add_rule(r) }  # Compile all rules first
+rules.each { |r| engine.add_rule(r) }  # Compile all rules first
 facts.each { |f| engine.add_fact(f.type, f.attributes) }  # Then add facts
 engine.run
 
 # Less optimal
 facts.each do |f|
   engine.add_fact(f.type, f.attributes)
-  kb.rules.each { |r| engine.add_rule(r) }  # Recompiling for each fact!
+  rules.each { |r| engine.add_rule(r) }  # Recompiling for each fact!
   engine.run
 end
 ```
@@ -1089,8 +1227,8 @@ def debug_rule(engine, rule_name)
   rule.conditions.each_with_index do |cond, i|
     matching_facts = engine.working_memory.facts.select { |f| f.matches?(cond.pattern.merge(type: cond.type)) }
 
-    puts "  #{i + 1}. #{cond.type} #{cond.pattern}"
-    puts "     Negated: #{cond.negated}"
+    puts "  #{i + 1}. #{cond.summary}"
+    puts "     Negated: #{cond.negated}  Exists: #{cond.exists}  Logical: #{cond.logical}"
     puts "     Matching facts: #{matching_facts.size}"
 
     if matching_facts.empty?
@@ -1106,13 +1244,15 @@ def debug_rule(engine, rule_name)
   # Check production node
   prod_node = engine.production_nodes[rule.name]
   if prod_node
-    puts "Production node activations: #{prod_node.tokens.size}"
+    puts "Production node matches: #{prod_node.tokens.size}"
+    pending = engine.agenda.to_a.count { |activation| activation.rule.equal?(rule) }
+    puts "Activations waiting on the agenda: #{pending}"
   else
     puts "Production node not found (rule not compiled?)"
   end
 end
 
-debug_rule(engine, :high_temperature)
+debug_rule(engine, "high_temperature")  # the name exactly as given (String for DSL rules)
 ```
 
 ---

@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 module KBS
+  # The partial matches (tokens) of a rule up to one condition. Passes each
+  # new token on to the nodes for the next condition.
   class BetaMemory
     attr_accessor :successors
     attr_reader :linked
@@ -24,8 +26,8 @@ module KBS
       @tokens.to_a
     end
 
-    def each_token(&block)
-      @tokens.each(&block)
+    def each_token(&)
+      @tokens.each(&)
     end
 
     def size
@@ -38,34 +40,22 @@ module KBS
 
     def unlink!
       @linked = false
-      @successors.each { |s| s.left_unlink! if s.respond_to?(:left_unlink!) }
+      @successors.each(&:left_unlink!)
     end
 
     def relink!
       @linked = true
-      @successors.each { |s| s.left_relink! if s.respond_to?(:left_relink!) }
+      @successors.each(&:left_relink!)
     end
 
     def activate(token)
       add_token(token)
-      @successors.each do |s|
-        if s.respond_to?(:left_activate)
-          s.left_activate(token)
-        elsif s.respond_to?(:activate)
-          s.activate(token)
-        end
-      end
+      @successors.each { |successor| successor.left_activate(token) }
     end
 
     def deactivate(token)
       remove_token(token)
-      @successors.each do |s|
-        if s.respond_to?(:left_deactivate)
-          s.left_deactivate(token)
-        elsif s.respond_to?(:deactivate)
-          s.deactivate(token)
-        end
-      end
+      @successors.each { |successor| successor.left_deactivate(token) }
     end
 
     def add_token(token)

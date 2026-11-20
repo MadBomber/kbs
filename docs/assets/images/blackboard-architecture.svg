@@ -90,9 +90,9 @@
   <rect x="100" y="500" width="220" height="150" class="storage-box" rx="5"/>
   <text x="210" y="525" class="component-title" text-anchor="middle">SQLite Store</text>
   <text x="210" y="550" class="label" text-anchor="middle">Tables:</text>
-  <text x="210" y="570" class="code" text-anchor="middle">• facts</text>
-  <text x="210" y="587" class="code" text-anchor="middle">• messages</text>
-  <text x="210" y="604" class="code" text-anchor="middle">• audit_log</text>
+  <text x="210" y="567" class="code" text-anchor="middle">• facts, knowledge_sources</text>
+  <text x="210" y="584" class="code" text-anchor="middle">• blackboard_messages</text>
+  <text x="210" y="601" class="code" text-anchor="middle">• fact_history, rules_fired</text>
   <text x="210" y="625" class="comment" text-anchor="middle">✓ ACID transactions</text>
   <text x="210" y="642" class="comment" text-anchor="middle">✓ Durable</text>
 
@@ -102,8 +102,8 @@
   <text x="460" y="550" class="label" text-anchor="middle">Data Structures:</text>
   <text x="460" y="570" class="code" text-anchor="middle">• fact:{uuid} (hash)</text>
   <text x="460" y="587" class="code" text-anchor="middle">• facts:type:{t} (set)</text>
-  <text x="460" y="604" class="code" text-anchor="middle">• messages (zset)</text>
-  <text x="460" y="625" class="comment" text-anchor="middle">✓ 100x faster</text>
+  <text x="460" y="604" class="code" text-anchor="middle">• messages:{topic} (zset)</text>
+  <text x="460" y="625" class="comment" text-anchor="middle">✓ In-memory speed</text>
   <text x="460" y="642" class="comment" text-anchor="middle">✓ Distributed</text>
 
   <!-- Hybrid Store -->
@@ -111,9 +111,9 @@
   <text x="710" y="525" class="component-title" text-anchor="middle">Hybrid Store</text>
   <text x="710" y="550" class="label" text-anchor="middle">Best of Both:</text>
   <text x="710" y="570" class="code" text-anchor="middle">• Redis for facts</text>
-  <text x="710" y="587" class="code" text-anchor="middle">• SQLite for audit</text>
-  <text x="710" y="604" class="code" text-anchor="middle">• Fast + durable</text>
-  <text x="710" y="625" class="comment" text-anchor="middle">✓ </text>
+  <text x="710" y="587" class="code" text-anchor="middle">• Redis for messages</text>
+  <text x="710" y="604" class="code" text-anchor="middle">• SQLite for audit</text>
+  <text x="710" y="625" class="comment" text-anchor="middle">✓ Fast + durable</text>
   <text x="710" y="642" class="comment" text-anchor="middle">✓ Full audit trail</text>
 
   <!-- Arrows from Blackboard to Storage -->

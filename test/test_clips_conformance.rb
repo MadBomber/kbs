@@ -21,8 +21,8 @@ class TestClipsConformance < Minitest::Test
     @fired = []
   end
 
-  def condition(type, pattern = {}, **options)
-    KBS::Condition.new(type, pattern, **options)
+  def condition(type, pattern = {}, **)
+    KBS::Condition.new(type, pattern, **)
   end
 
   def rule(name, conditions, priority: 0, &action)
@@ -111,7 +111,7 @@ class TestClipsConformance < Minitest::Test
      [[:a, {}], [:b, { v: 2 }], 1], [[:b, { v: 2 }], [:a, {}], 1]].each do |first, second, expected|
       engine = KBS::Engine.new
       engine.add_rule(KBS::Rule.new("detect", conditions: [condition(:b, { v: ->(v) { v == 2 } }),
-                                                             condition(:a, {}, exists: true)]))
+                                                           condition(:a, {}, exists: true)]))
       engine.add_fact(*first)
       engine.add_fact(*second)
 
@@ -249,7 +249,10 @@ class TestClipsConformance < Minitest::Test
   # fires, so a higher salience rule it activates goes first.
   def test_agenda_is_reordered_while_running
     engine = @engine
-    rule("start", [condition(:go)]) { |_facts| @fired << ["start"]; engine.add_fact(:urgent, v: 1) }
+    rule("start", [condition(:go)]) do |_facts|
+      @fired << ["start"]
+      engine.add_fact(:urgent, v: 1)
+    end
     rule("later", [condition(:go)], priority: -1)
     rule("urgent", [condition(:urgent)], priority: 5)
     @engine.add_fact(:go, v: 0)
@@ -263,7 +266,10 @@ class TestClipsConformance < Minitest::Test
   # fires.
   def test_retracting_a_fact_cancels_its_pending_activation
     engine = @engine
-    rule("first", [condition(:n)], priority: 1) { |facts| @fired << ["first"]; engine.remove_fact(facts.first) }
+    rule("first", [condition(:n)], priority: 1) do |facts|
+      @fired << ["first"]
+      engine.remove_fact(facts.first)
+    end
     rule("second", [condition(:n)])
     @engine.add_fact(:n, v: 1)
 

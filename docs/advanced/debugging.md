@@ -12,56 +12,65 @@ Common debugging scenarios:
 4. **Incorrect bindings** - Variables bound to wrong values
 5. **Network structure** - Understanding compilation
 
+The examples below print their diagnostics with the [debug_me](https://github.com/madbomber/debug_me) gem (`debug_me "message"`, `debug_me { :variable }`) where they log events, and with `puts` where they print a report.
+
 ## Enable Debug Output
 
 ### Basic Logging
 
+The engine has no debug flag. Subclass it to log fact changes:
+
 ```ruby
 require 'kbs'
+require 'debug_me'
+include DebugMe
 
-engine = KBS::Engine.new
-
-# Enable debug output
-engine.instance_variable_set(:@debug, true)
-
-# Or create debug wrapper
 class DebugEngine < KBS::Engine
   def add_fact(type, attributes = {})
     fact = super
-    puts "[FACT ADDED] #{fact.type}: #{fact.attributes.inspect}"
+    # add_fact returns nil when a logically supported fact loses its support
+    # before it is added
+    debug_me "[FACT ADDED] #{fact.type}: #{fact.attributes.inspect}" if fact
     fact
   end
 
   def remove_fact(fact)
-    puts "[FACT REMOVED] #{fact.type}: #{fact.attributes.inspect}"
+    debug_me "[FACT REMOVED] #{fact.type}: #{fact.attributes.inspect}"
     super
   end
 end
+
+engine = DebugEngine.new
 ```
 
 ### Rule Execution Logging
 
+`Engine#run` pops activations off the agenda and fires each one through `fire_activation`, so that is the place to record firings. `run` returns the number of rules fired.
+
 ```ruby
 class LoggingEngine < KBS::Engine
-  def initialize
+  def initialize(**options)
     super
     @rule_log = []
   end
 
-  def run
-    puts "\n=== Engine Run Started ==="
-    puts "Facts: #{facts.size}"
-    puts "Rules: #{@rules.size}"
+  def fire_activation(activation)
+    @rule_log << { rule: activation.rule.name, timestamp: Time.now }
+    debug_me "[RULE FIRING] #{activation}"
+    super
+  end
 
-    result = super
+  def run(limit = nil)
+    debug_me "=== Engine Run Started: #{facts.size} facts, #{rules.size} rules, #{agenda.size} activations ==="
 
-    puts "\n=== Engine Run Completed ==="
-    puts "Rules fired: #{@rule_log.size}"
-    @rule_log.each_with_index do |entry, i|
-      puts "  #{i + 1}. #{entry[:rule]} (#{entry[:timestamp]})"
+    fired = super
+
+    debug_me "=== Engine Run Completed: #{fired} rules fired ==="
+    @rule_log.last(fired).each_with_index do |entry, i|
+      debug_me "  #{i + 1}. #{entry[:rule]} (#{entry[:timestamp]})"
     end
 
-    result
+    fired
   end
 
   attr_reader :rule_log
@@ -84,8 +93,7 @@ def inspect_facts(engine)
     facts.each_with_index do |fact, i|
       puts "  #{i + 1}. #{fact.attributes.inspect}"
       if fact.is_a?(KBS::Blackboard::Fact)
-        puts "     ID: #{fact.id}"
-        puts "     Created: #{fact.created_at}"
+        puts "     UUID: #{fact.uuid}"
       end
     end
   end
@@ -97,19 +105,23 @@ end
 inspect_facts(engine)
 ```
 
+A `KBS::DSL::KnowledgeBase` has `print_facts` and `print_rules` built in.
+
 ### Query Fact History (Blackboard)
 
+The blackboard's audit log records every ADD, UPDATE and REMOVE of a fact, newest first.
+
 ```ruby
-def inspect_fact_history(engine, fact_id)
+def inspect_fact_history(engine, fact_uuid)
   return unless engine.is_a?(KBS::Blackboard::Engine)
 
-  puts "\n=== Fact History: #{fact_id} ==="
+  puts "\n=== Fact History: #{fact_uuid} ==="
 
-  history = engine.fact_history(fact_id)
+  history = engine.blackboard.get_history(fact_uuid)
 
   history.each do |entry|
     puts "\n#{entry[:timestamp]}"
-    puts "  Operation: #{entry[:operation]}"
+    puts "  Action: #{entry[:action]}"
     puts "  Attributes: #{entry[:attributes].inspect}"
   end
 end
@@ -240,6 +252,8 @@ kb.engine.network_stats
 
 ### Trace Rule Execution
 
+`engine.rules` lists the rules, and `Rule#action` can be replaced. An action that takes two arguments receives the matched facts and the variable bindings.
+
 ```ruby
 class RuleTracer
   def initialize(engine)
@@ -248,7 +262,7 @@ class RuleTracer
   end
 
   def wrap_rules
-    @engine.instance_variable_get(:@rules).each do |rule|
+    @engine.rules.each do |rule|
       wrap_rule(rule)
     end
   end
@@ -264,16 +278,16 @@ class RuleTracer
         bindings: bindings.dup
       }
 
-      puts "\n[RULE FIRING] #{rule.name}"
-      puts "  Facts: #{facts.map(&:type).join(', ')}"
-      puts "  Bindings: #{bindings.inspect}"
+      debug_me "[RULE FIRING] #{rule.name}"
+      debug_me "  Facts: #{facts.map(&:type).join(', ')}"
+      debug_me "  Bindings: #{bindings.inspect}"
 
-      result = original_action.call(facts, bindings)
+      result = original_action&.call(facts, bindings)
 
       trace[:duration] = (Time.now - trace[:timestamp])
       @traces << trace
 
-      puts "  Duration: #{trace[:duration]}s"
+      debug_me "  Duration: #{trace[:duration]}s"
 
       result
     end
@@ -286,31 +300,35 @@ end
 tracer = RuleTracer.new(engine)
 tracer.wrap_rules
 engine.run
-puts "\nTotal rule firings: #{tracer.traces.size}"
+debug_me "Total rule firings: #{tracer.traces.size}"
 ```
 
 ### Test Individual Conditions
 
+A condition's `pattern` holds only the attribute tests; its fact type is `condition.type`. A helper that checks one fact against one condition, the way the alpha network does, makes the other tools below simple. Predicates such as `greater_than(25)` are Procs inside the pattern and are called by the match.
+
 ```ruby
+# Whether `fact` fits `condition` on its own, ignoring the joins on
+# ?variables shared with other conditions.
+def condition_matches?(fact, condition)
+  fact.type == condition.type &&
+    condition.pattern.all? do |key, expected|
+      KBS::PatternMatching.value_matches?(fact[key], expected)
+    end
+end
+
 def test_condition(engine, condition)
   puts "\n=== Testing Condition ==="
-  puts "Type: #{condition.pattern[:type]}"
+  puts "Type: #{condition.type}"
   puts "Pattern: #{condition.pattern.inspect}"
 
   # Find matching facts
-  matches = engine.facts.select do |fact|
-    fact.matches?(condition.pattern)
-  end
+  matches = engine.facts.select { |fact| condition_matches?(fact, condition) }
 
   puts "\nMatching facts: #{matches.size}"
   matches.each do |fact|
     puts "  #{fact.attributes.inspect}"
-
-    # Test predicate if present
-    if condition.predicate
-      predicate_result = condition.predicate.call(fact)
-      puts "  Predicate: #{predicate_result}"
-    end
+    puts "  Bindings: #{condition.bindings_from(fact).inspect}"
   end
 
   matches
@@ -319,47 +337,41 @@ end
 # Usage
 condition = KBS::Condition.new(:sensor, {
   type: "temperature",
-  value: :v?
-}, predicate: lambda { |f| f[:value] > 25 })
+  value: ->(v) { v > 25 }
+})
 
 test_condition(engine, condition)
 ```
 
 ### Why Did Rule Fire?
 
+Each rule ends in a production node, `engine.production_nodes[rule_name]`, that holds the rule's current complete matches as tokens. A token knows its facts and whether it has fired.
+
 ```ruby
 def why_rule_fired(engine, rule_name)
-  rule = engine.instance_variable_get(:@rules).find { |r| r.name == rule_name }
+  node = engine.production_nodes[rule_name]
 
-  return unless rule
+  return unless node
 
   puts "\n=== Why '#{rule_name}' Fired ==="
 
-  # Check each condition
-  rule.conditions.each_with_index do |condition, i|
-    puts "\nCondition #{i + 1}: #{condition.pattern[:type]}"
-    puts "  Pattern: #{condition.pattern.inspect}"
-    puts "  Negated: #{condition.negated?}"
-
-    matches = engine.facts.select { |f| f.matches?(condition.pattern) }
-
-    if condition.predicate
-      matches = matches.select { |f| condition.predicate.call(f) }
+  node.tokens.each_with_index do |token, i|
+    puts "\nMatch #{i + 1} (#{token.fired? ? 'fired' : 'waiting on the agenda'}):"
+    token.facts.each do |fact|
+      puts "    - #{fact.type}: #{fact.attributes.inspect}"
     end
-
-    puts "  Matches: #{matches.size} facts"
-    matches.each do |fact|
-      puts "    - #{fact.attributes.inspect}"
-    end
+    puts "  Bindings: #{node.rule.bindings_for(token.facts).inspect}"
   end
 end
 ```
 
 ### Why Didn't Rule Fire?
 
+This checks each condition on its own with `condition_matches?`, so a `without` condition is reported as blocked by any fact that fits it, even one whose `?variables` differ from the facts matched before it.
+
 ```ruby
 def why_rule_didnt_fire(engine, rule_name)
-  rule = engine.instance_variable_get(:@rules).find { |r| r.name == rule_name }
+  rule = engine.rules.find { |r| r.name == rule_name }
 
   return unless rule
 
@@ -369,11 +381,11 @@ def why_rule_didnt_fire(engine, rule_name)
   failing_condition = nil
 
   rule.conditions.each_with_index do |condition, i|
-    puts "\nCondition #{i + 1}: #{condition.pattern[:type]}"
+    puts "\nCondition #{i + 1}: #{condition.summary}"
 
-    matches = engine.facts.select { |f| f.matches?(condition.pattern) }
+    matches = engine.facts.select { |f| condition_matches?(f, condition) }
 
-    if condition.negated?
+    if condition.negated
       puts "  Negated condition"
       if matches.empty?
         puts "  ✓ PASSED (no matching facts)"
@@ -384,36 +396,20 @@ def why_rule_didnt_fire(engine, rule_name)
           puts "    Blocking fact: #{fact.attributes.inspect}"
         end
       end
-    else
-      if matches.empty?
-        puts "  ✗ FAILED (no matching facts)"
-        failing_condition = i
+    elsif matches.empty?
+      puts "  ✗ FAILED (no matching facts)"
+      failing_condition = i
 
-        # Suggest similar facts
-        similar = engine.facts.select { |f| f.type == condition.pattern[:type] }
-        if similar.any?
-          puts "  Similar facts (#{similar.size}):"
-          similar.first(3).each do |fact|
-            puts "    - #{fact.attributes.inspect}"
-          end
-        end
-      else
-        # Check predicate
-        if condition.predicate
-          pred_matches = matches.select { |f| condition.predicate.call(f) }
-          if pred_matches.empty?
-            puts "  ✗ FAILED (#{matches.size} facts match pattern, but predicate failed)"
-            failing_condition = i
-            matches.first(3).each do |fact|
-              puts "    - #{fact.attributes.inspect} (predicate: false)"
-            end
-          else
-            puts "  ✓ PASSED (#{pred_matches.size} facts)"
-          end
-        else
-          puts "  ✓ PASSED (#{matches.size} facts)"
+      # Suggest similar facts
+      similar = engine.facts.select { |f| f.type == condition.type }
+      if similar.any?
+        puts "  Similar facts (#{similar.size}):"
+        similar.first(3).each do |fact|
+          puts "    - #{fact.attributes.inspect}"
         end
       end
+    else
+      puts "  ✓ PASSED (#{matches.size} facts)"
     end
 
     break if failing_condition
@@ -422,7 +418,13 @@ def why_rule_didnt_fire(engine, rule_name)
   if failing_condition
     puts "\n⚠️  Rule failed at condition #{failing_condition + 1}"
   else
-    puts "\n✓ All conditions passed (rule should fire on next run)"
+    puts <<~MSG
+
+      ✓ Every condition has matching facts on its own. If the rule still
+        has not fired, check that ?variables shared between conditions hold
+        equal values, and whether it already fired for these facts: an
+        activation fires once (see why_rule_fired).
+    MSG
   end
 end
 
@@ -430,9 +432,34 @@ end
 why_rule_didnt_fire(engine, "detect_high_temperature")
 ```
 
+### Inspect the Agenda
+
+Matches wait on the agenda until `engine.run` fires them. `engine.agenda.to_a` lists the pending activations in firing order; each prints as its priority, rule name and facts.
+
+```ruby
+def inspect_agenda(engine)
+  puts "\n=== Agenda (#{engine.agenda.size} pending, strategy: #{engine.strategy}) ==="
+  engine.agenda.to_a.each_with_index do |activation, i|
+    puts "  #{i + 1}. #{activation}"
+  end
+end
+```
+
+### Logical Support
+
+A fact asserted by a rule with `logical` conditions is retracted when the match of those conditions goes away. To see why such a fact exists, or why it vanished:
+
+```ruby
+engine.logically_supported?(fact)  # asserted under logical conditions?
+engine.dependencies(fact)          # the matches supporting it, each an array of facts
+engine.dependents(fact)            # facts that lose a support if this one is retracted
+```
+
 ## Network Visualization
 
 ### Print Network Structure
+
+`engine.alpha_memories` maps each condition pattern (with its fact type under `:type`) to the alpha memory that holds the facts fitting it.
 
 ```ruby
 def visualize_network(engine)
@@ -440,24 +467,22 @@ def visualize_network(engine)
 
   # Alpha network
   puts "\nALPHA NETWORK:"
-  alpha_memories = []
-
-  engine.instance_eval do
-    @alpha_network.each do |pattern, memory|
-      puts "  #{pattern.inspect}"
-      puts "    Items: #{memory.items.size}"
-      alpha_memories << memory
-    end
+  engine.alpha_memories.each do |pattern, memory|
+    puts "  #{pattern.inspect}"
+    puts "    Items: #{memory.items.size}"
   end
 
-  # Beta network
-  puts "\nBETA NETWORK:"
-  # Simplified - actual inspection depends on implementation
+  # Production nodes
+  puts "\nPRODUCTION NODES:"
+  engine.production_nodes.each do |name, node|
+    puts "  #{name}: #{node.tokens.size} matches"
+  end
 
   puts "\nSTATISTICS:"
-  puts "  Alpha memories: #{alpha_memories.size}"
+  puts "  Alpha memories: #{engine.alpha_memories.size}"
   puts "  Total facts: #{engine.facts.size}"
-  puts "  Rules: #{engine.instance_variable_get(:@rules).size}"
+  puts "  Rules: #{engine.rules.size}"
+  puts "  Pending activations: #{engine.agenda.size}"
 end
 ```
 
@@ -472,17 +497,15 @@ def export_to_graphviz(engine, filename = "network.dot")
 
     # Alpha nodes
     f.puts "\n  // Alpha Network"
-    engine.instance_eval do
-      @alpha_network.each_with_index do |(pattern, memory), i|
-        node_id = "alpha_#{i}"
-        label = "#{pattern[:type]}\\n#{memory.items.size} facts"
-        f.puts "  #{node_id} [label=\"#{label}\", style=filled, fillcolor=lightblue];"
-      end
+    engine.alpha_memories.each_with_index do |(pattern, memory), i|
+      node_id = "alpha_#{i}"
+      label = "#{pattern[:type]}\\n#{memory.items.size} facts"
+      f.puts "  #{node_id} [label=\"#{label}\", style=filled, fillcolor=lightblue];"
     end
 
     # Production nodes
     f.puts "\n  // Production Nodes"
-    engine.instance_variable_get(:@rules).each_with_index do |rule, i|
+    engine.rules.each_with_index do |rule, i|
       node_id = "rule_#{i}"
       label = "#{rule.name}\\n#{rule.priority}"
       f.puts "  #{node_id} [label=\"#{label}\", style=filled, fillcolor=lightgreen];"
@@ -506,6 +529,8 @@ export_to_graphviz(engine)
 
 ### Trace Token Propagation
 
+An alpha memory receives a new fact through `activate(fact)` and passes it on to its join nodes through `right_activate(fact)`.
+
 ```ruby
 class TokenTracer
   def initialize
@@ -520,7 +545,7 @@ class TokenTracer
       token: token.inspect
     }
 
-    puts "[#{node_type}] #{node_id}: #{token.inspect}"
+    debug_me "[#{node_type}] #{node_id}: #{token.inspect}"
   end
 
   def print_trace
@@ -539,9 +564,11 @@ end
 tracer = TokenTracer.new
 
 # Wrap alpha activation
-alpha_memory.define_singleton_method(:right_activate) do |fact|
-  tracer.log_activation("AlphaMemory", object_id, fact)
-  super(fact)
+engine.alpha_memories.each_value do |alpha_memory|
+  alpha_memory.define_singleton_method(:activate) do |fact|
+    tracer.log_activation("AlphaMemory", object_id, fact)
+    super(fact)
+  end
 end
 ```
 
@@ -558,9 +585,9 @@ class DebugConsole
   def start
     loop do
       print "\nkbs> "
-      input = gets.chomp
+      input = gets&.chomp
 
-      break if input == "exit"
+      break if input.nil? || input == "exit"
 
       case input
       when "facts"
@@ -568,8 +595,8 @@ class DebugConsole
       when "rules"
         list_rules
       when "run"
-        @engine.run
-        puts "Engine ran successfully"
+        fired = @engine.run
+        puts "Engine ran successfully (#{fired} rules fired)"
       when /^add (\w+) (.+)$/
         type = $1.to_sym
         attrs = eval($2)  # UNSAFE: eval user input (for demo only)
@@ -592,7 +619,7 @@ class DebugConsole
 
   def list_rules
     puts "\n=== Rules ==="
-    @engine.instance_variable_get(:@rules).each_with_index do |rule, i|
+    @engine.rules.each_with_index do |rule, i|
       puts "#{i}. #{rule.name} (priority: #{rule.priority}, conditions: #{rule.conditions.size})"
     end
   end
@@ -621,12 +648,18 @@ console.start
 
 ### Step-Through Debugger
 
+The debugger wraps every rule's action when it is created. It stops at the rules with a breakpoint, or at every rule in step mode.
+
 ```ruby
 class StepDebugger
   def initialize(engine)
     @engine = engine
     @breakpoints = []
     @step_mode = false
+
+    @engine.rules.each do |rule|
+      wrap_rule_with_breakpoint(rule)
+    end
   end
 
   def add_breakpoint(rule_name)
@@ -636,10 +669,6 @@ class StepDebugger
 
   def enable_step_mode
     @step_mode = true
-
-    @engine.instance_variable_get(:@rules).each do |rule|
-      wrap_rule_with_breakpoint(rule)
-    end
   end
 
   def wrap_rule_with_breakpoint(rule)
@@ -652,7 +681,7 @@ class StepDebugger
         puts "Bindings: #{bindings.inspect}"
 
         print "Continue? [y/n/i(nspect)] "
-        response = gets.chomp
+        response = gets.to_s.chomp
 
         case response
         when 'n'
@@ -663,7 +692,7 @@ class StepDebugger
         end
       end
 
-      original_action.call(facts, bindings)
+      original_action&.call(facts, bindings)
     end
   end
 
@@ -687,13 +716,15 @@ end
 # Usage
 debugger = StepDebugger.new(engine)
 debugger.add_breakpoint("high_temperature_alert")
-debugger.enable_step_mode
+# debugger.enable_step_mode  # stop at every rule
 engine.run
 ```
 
 ## Common Debugging Patterns
 
 ### Verify Pattern Matching
+
+`Fact#matches?` takes a pattern whose `:type` key, if present, is the fact type. A Proc in the pattern is called with the attribute's value, and a `?variable` matches any value.
 
 ```ruby
 def verify_pattern_match(fact, pattern)
@@ -709,7 +740,7 @@ def verify_pattern_match(fact, pattern)
     next if key == :type
 
     actual = fact[key]
-    match = (expected == actual || expected.is_a?(Symbol))
+    match = KBS::PatternMatching.value_matches?(actual, expected)
 
     puts "\n  #{key}:"
     puts "    Expected: #{expected.inspect}"
@@ -728,8 +759,8 @@ def diagnose_join(engine, condition1, condition2)
   puts "\n=== Join Diagnosis ==="
 
   # Find matches for each condition
-  matches1 = engine.facts.select { |f| f.matches?(condition1.pattern) }
-  matches2 = engine.facts.select { |f| f.matches?(condition2.pattern) }
+  matches1 = engine.facts.select { |f| condition_matches?(f, condition1) }
+  matches2 = engine.facts.select { |f| condition_matches?(f, condition2) }
 
   puts "\nCondition 1 matches: #{matches1.size}"
   matches1.first(3).each { |f| puts "  - #{f.attributes.inspect}" }
@@ -738,9 +769,7 @@ def diagnose_join(engine, condition1, condition2)
   matches2.first(3).each { |f| puts "  - #{f.attributes.inspect}" }
 
   # Find join variables
-  vars1 = condition1.pattern.values.select { |v| v.is_a?(Symbol) && v.to_s.end_with?('?') }
-  vars2 = condition2.pattern.values.select { |v| v.is_a?(Symbol) && v.to_s.end_with?('?') }
-  join_vars = vars1 & vars2
+  join_vars = condition1.variable_bindings.keys & condition2.variable_bindings.keys
 
   puts "\nJoin variables: #{join_vars.inspect}"
 
@@ -752,8 +781,8 @@ def diagnose_join(engine, condition1, condition2)
     matches1.each do |f1|
       matches2.each do |f2|
         # Extract bindings
-        bindings1 = extract_bindings(f1, condition1.pattern)
-        bindings2 = extract_bindings(f2, condition2.pattern)
+        bindings1 = condition1.bindings_from(f1)
+        bindings2 = condition2.bindings_from(f2)
 
         # Check join
         if join_vars.all? { |v| bindings1[v] == bindings2[v] }
@@ -781,11 +810,9 @@ def track_memory_usage(engine)
 
   # Alpha memories
   alpha_size = 0
-  engine.instance_eval do
-    @alpha_network.each do |_, memory|
-      alpha_size += ObjectSpace.memsize_of(memory)
-      alpha_size += memory.items.sum { |f| ObjectSpace.memsize_of(f) }
-    end
+  engine.alpha_memories.each_value do |memory|
+    alpha_size += ObjectSpace.memsize_of(memory)
+    alpha_size += memory.items.sum { |f| ObjectSpace.memsize_of(f) }
   end
   puts "Alpha network: #{(alpha_size / 1024.0).round(2)} KB"
 
@@ -801,11 +828,12 @@ end
 - [ ] Test predicates independently
 - [ ] Ensure variables are bound correctly across conditions
 - [ ] Check negated conditions for blocking facts
-- [ ] Verify rule priorities
+- [ ] Verify rule priorities and the agenda's strategy
+- [ ] Inspect the agenda for pending activations
 - [ ] Inspect network structure
 - [ ] Trace rule execution
 - [ ] Monitor memory usage
-- [ ] Check for infinite loops
+- [ ] Check for infinite loops (`engine.run(limit)` stops after `limit` firings)
 
 ## Next Steps
 

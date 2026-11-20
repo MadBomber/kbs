@@ -1,7 +1,11 @@
 # frozen_string_literal: true
 
 module KBS
+  # The RETE rule engine: builds the network for each rule, matches facts
+  # as they are added and removed, and fires the activated rules.
   class Engine
+    include Introspection
+
     attr_reader :working_memory, :rules, :alpha_memories, :production_nodes, :agenda, :tracer
 
     # @param strategy [Symbol] conflict resolution strategy; see KBS::Agenda
@@ -204,100 +208,6 @@ module KBS
       end
     end
 
-    # Starts writing a line for each change to the watched items, or to
-    # every item when none is given: :facts, :activations, :rules. Lines
-    # go to #trace_output, $stdout by default. See KBS::Tracer.
-    def watch(*items)
-      @tracer.watch(*items)
-      listen_to_agenda
-      self
-    end
-
-    def unwatch(*items)
-      @tracer.unwatch(*items)
-      listen_to_agenda
-      self
-    end
-
-    # The agenda reports to the tracer only while activations are
-    # watched, so an unwatched engine pays nothing for it.
-    def listen_to_agenda
-      @agenda.listener = @tracer.watching?(:activations) ? @tracer : nil
-    end
-
-    def trace_output
-      @tracer.output
-    end
-
-    def trace_output=(output)
-      @tracer.output = output
-    end
-
-    # How far each condition of a rule has matched: the facts that fit
-    # the condition on its own, and the partial matches of the rule up to
-    # and including it. The first condition whose partial_matches is zero
-    # is the one that keeps the rule from firing.
-    #
-    # @return [Hash, nil] { rule:, conditions: [{ keyword:, type:,
-    #   alpha_matches:, partial_matches: }], matches:, activations: };
-    #   nil for an unknown rule
-    def matches(rule_name)
-      path = @rule_paths[rule_name]
-      return nil unless path
-
-      node = @production_nodes[rule_name]
-      tokens = node.tokens
-      {
-        rule: rule_name,
-        conditions: path.map do |step|
-          { keyword: step[:condition].keyword, type: step[:condition].type,
-            alpha_matches: step[:alpha_memory].size, partial_matches: step[:beta_memory].size }
-        end,
-        matches: tokens.size,
-        activations: tokens.count { |token| !node.fired?(token) }
-      }
-    end
-
-    # The work each condition of a rule has cost so far. See
-    # KBS::JoinIndexing::Activity. Rules that share a node report the
-    # same counts for it.
-    #
-    # @return [Array<Hash>, nil] one Hash per condition; nil for an
-    #   unknown rule
-    def join_activity(rule_name)
-      path = @rule_paths[rule_name]
-      return nil unless path
-
-      path.map do |step|
-        { keyword: step[:condition].keyword, type: step[:condition].type,
-          indexed: step[:node].indexed?, **step[:node].activity.to_h }
-      end
-    end
-
-    def reset_join_activity
-      @beta_nodes.each(&:reset_activity)
-    end
-
-    # The size of the network and of what it holds.
-    def network_stats
-      {
-        rules: @rules.size,
-        facts: @working_memory.facts.size,
-        alpha_memories: @alpha_memories.size,
-        beta_nodes: @beta_nodes.size,
-        conditions: @rules.sum { |rule| rule.conditions.size },
-        partial_matches: @beta_nodes.sum { |node| node.successors.grep(BetaMemory).sum(&:size) },
-        activations: @agenda.size
-      }
-    end
-
-    # Every join, negation and exists node in the network. Rules that
-    # start with the same conditions share nodes, so there can be fewer
-    # nodes than conditions.
-    def beta_nodes
-      @beta_nodes.dup
-    end
-
     # Whether the engine is matching a fact right now.
     def matching?
       @matching
@@ -424,72 +334,91 @@ module KBS
     # This method clears all four levels directly while preserving the
     # root beta memory's dummy token (needed for first-condition joins).
     def reset
-      # 1. Clear working memory directly (bypass observer — we clear everything)
-      @working_memory.clear if @working_memory.respond_to?(:clear)
+      clear_working_memory
+      clear_fact_records
+      clear_network_memories
+      @production_nodes.each_value(&:reset)
+      @agenda.clear
+      @root_beta_memory.each_token(&:clear_children)
+      restore_leading_negations
+    end
+
+    # Releases what the engine holds open. An in-memory engine holds
+    # nothing; an engine with a store closes it.
+    def close; end
+
+    private
+
+    # Empties working memory directly, without telling the observers:
+    # everything is being cleared.
+    def clear_working_memory
+      @working_memory.clear
+    end
+
+    # Forgets what the engine records about each fact.
+    def clear_fact_records
       @fact_memories.clear
       @fact_registry.clear
       @truth_maintenance.clear
       @pending_retractions.clear
-
-      # 2. Clear alpha memories and their downstream beta memories
-      @alpha_memories.each_value do |alpha_mem|
-        alpha_mem.clear
-
-        # Each alpha memory successor is a JoinNode or NegationNode.
-        # Their successors are intermediate BetaMemory nodes.
-        # The root beta memory is never a join node successor, so
-        # its dummy token is preserved.
-        alpha_mem.successors.each do |join_node|
-          join_node.reset if join_node.respond_to?(:reset)
-          next unless join_node.respond_to?(:successors)
-          join_node.successors.each do |beta_or_prod|
-            beta_or_prod.clear if beta_or_prod.is_a?(BetaMemory)
-          end
-        end
-      end
-
-      # 3. Clear production node tokens and their pending activations
-      @production_nodes.each_value(&:reset)
-      @agenda.clear
-
-      # 4. Clear stale child references from the root dummy token
-      @root_beta_memory.each_token { |t| t.clear_children }
-
-      # 5. Restore leading negation matches for the now-empty working memory
-      @root_beta_memory.successors.grep(NegationNode).each do |node|
-        @root_beta_memory.tokens.each { |token| node.left_activate(token) }
-      end
     end
 
-    private
+    # Empties every alpha memory, every node's own records and the beta
+    # memory below each node. The root beta memory is below no node, so
+    # its dummy token stays.
+    def clear_network_memories
+      @alpha_memories.each_value(&:clear)
+      @alpha_memories.each_value.flat_map(&:successors).uniq.each { |node| clear_node(node) }
+    end
+
+    def clear_node(node)
+      node.reset
+      node.successors.grep(BetaMemory).each(&:clear)
+    end
+
+    # A rule that starts with a negated condition matches while working
+    # memory is empty, so its match is rebuilt after a reset.
+    def restore_leading_negations
+      @root_beta_memory.successors.grep(NegationNode).each { |node| replay_tokens(@root_beta_memory, node) }
+    end
+
+    # Hands a node every token already in the memory above it.
+    def replay_tokens(beta_memory, node)
+      beta_memory.tokens.each { |token| node.left_activate(token) }
+    end
 
     def build_network_for_rule(rule)
-      current_beta = @root_beta_memory
-
       join_tests = JoinTestBuilder.new(rule.conditions).tests
-      logical_count = rule.logical_count
-
+      last_logical = rule.logical_count - 1
       path = @rule_paths[rule.name] = []
-
+      beta_memory = @root_beta_memory
       rule.conditions.each_with_index do |condition, index|
-        # Build alpha memory pattern - merge condition type
-        pattern = condition.pattern.merge(type: condition.type)
-        alpha_memory = get_or_create_alpha_memory(pattern)
-        tests = join_tests[index]
-
-        node = shareable_node(current_beta, node_class_for(condition), alpha_memory, tests) ||
-               build_node(current_beta, node_class_for(condition), alpha_memory, tests)
-        current_beta = node.successors.grep(BetaMemory).first
-        current_beta.listener = self if index == logical_count - 1
-        path << { condition: condition, alpha_memory: alpha_memory, node: node, beta_memory: current_beta }
+        node = add_condition_node(beta_memory, condition, join_tests[index])
+        beta_memory = node.successors.grep(BetaMemory).first
+        beta_memory.listener = self if index == last_logical
+        path << RuleStep.new(condition, node.alpha_memory, node, beta_memory)
       end
+      add_production_node(rule, beta_memory)
+    end
 
-      production_node = ProductionNode.new(rule, @agenda, order: @rules.size)
-      current_beta.successors << production_node
-      @production_nodes[rule.name] = production_node
-      unless rule.conditions.empty?
-        current_beta.tokens.each { |token| production_node.activate(token) }
-      end
+    # The node for `condition` below `beta_memory`: one that is already
+    # there doing the same work, or a new one brought up to date.
+    #
+    # @return [KBS::JoinNode, KBS::QuantifierNode]
+    def add_condition_node(beta_memory, condition, tests)
+      alpha_memory = get_or_create_alpha_memory(condition.pattern.merge(type: condition.type))
+      node_class = node_class_for(condition)
+      shareable_node(beta_memory, node_class, alpha_memory, tests) ||
+        build_node(beta_memory, node_class, alpha_memory, tests)
+    end
+
+    # Ends the rule's path with its production node. A rule with no
+    # conditions never matches.
+    def add_production_node(rule, beta_memory)
+      node = ProductionNode.new(rule, @agenda, order: @rules.size)
+      beta_memory.successors << node
+      @production_nodes[rule.name] = node
+      replay_tokens(beta_memory, node) unless rule.conditions.empty?
     end
 
     # A node already below `beta_memory` that does the same work: the
@@ -508,7 +437,7 @@ module KBS
       node = node_class.new(alpha_memory, beta_memory, tests)
       node.successors << BetaMemory.new
       @beta_nodes << node
-      beta_memory.tokens.each { |token| node.left_activate(token) }
+      replay_tokens(beta_memory, node)
       node
     end
 
@@ -523,13 +452,15 @@ module KBS
     # Facts go straight into its items: the memory has no successors yet,
     # and existing alpha memories already hold their facts.
     def get_or_create_alpha_memory(pattern)
-      @alpha_network.fetch(pattern) do |memory|
-        @working_memory.facts.each do |fact|
-          next unless fact.matches?(pattern)
+      @alpha_network.fetch(pattern) { |memory| seed_alpha_memory(memory, pattern) }
+    end
 
-          memory.add_item(fact)
-          (@fact_memories[fact] ||= []) << memory
-        end
+    def seed_alpha_memory(memory, pattern)
+      @working_memory.facts.each do |fact|
+        next unless fact.matches?(pattern)
+
+        memory.add_item(fact)
+        (@fact_memories[fact] ||= []) << memory
       end
     end
   end

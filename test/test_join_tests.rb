@@ -70,9 +70,9 @@ class TestJoinTests < Minitest::Test
 
   def test_all_tests_must_pass
     host = Host.new([
-      { token_field_index: 0, token_field: :id, fact_field: :sensor_id, operation: :eq },
-      { token_field_index: 0, token_field: :temp, fact_field: :temp, operation: :eq }
-    ])
+                      { token_field_index: 0, token_field: :id, fact_field: :sensor_id, operation: :eq },
+                      { token_field_index: 0, token_field: :temp, fact_field: :temp, operation: :eq }
+                    ])
 
     assert host.perform_join_tests(@token, KBS::Fact.new(:alert, sensor_id: 1, temp: 30))
     refute host.perform_join_tests(@token, KBS::Fact.new(:alert, sensor_id: 1, temp: 31))

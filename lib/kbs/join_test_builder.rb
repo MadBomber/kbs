@@ -22,7 +22,7 @@ module KBS
       @conditions.each_with_index.map do |condition, index|
         local = {}
         tests = type_tests(condition, index) + variable_tests(condition, bound, local)
-        local.each { |variable, field| bound[variable] ||= [index, field] } if condition.binds_fact?
+        remember_bindings(bound, local, index) if condition.binds_fact?
         tests
       end
     end
@@ -32,6 +32,12 @@ module KBS
     end
 
     private
+
+    # Records where each variable of a condition is first bound: the
+    # condition's index and the field.
+    def remember_bindings(bound, local, index)
+      local.each { |variable, field| bound[variable] ||= [index, field] }
+    end
 
     # Condition#type is merged over a user attribute named :type in the
     # alpha pattern, so a constant or Proc on that attribute is tested here.
@@ -54,16 +60,21 @@ module KBS
       condition.pattern.filter_map do |field, value|
         next unless self.class.variable?(value)
 
-        if local.key?(value)
-          { fact_field: field, other_fact_field: local[value], operation: :eq }
-        else
-          local[value] = field
-          next unless bound.key?(value)
+        first_field = local[value]
+        next { fact_field: field, other_fact_field: first_field, operation: :eq } if first_field
 
-          index, token_field = bound[value]
-          { token_field_index: index, token_field: token_field, fact_field: field, operation: :eq }
-        end
+        local[value] = field
+        token_test(bound[value], field)
       end
+    end
+
+    # The test of `field` against the earlier condition that bound the
+    # variable, or nil when none did.
+    def token_test(binding, field)
+      return unless binding
+
+      index, token_field = binding
+      { token_field_index: index, token_field: token_field, fact_field: field, operation: :eq }
     end
   end
 end

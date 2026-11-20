@@ -131,7 +131,7 @@ class StockTradingExpertSystem
   end
   
   def clear_facts
-    @engine.working_memory.facts.clear
+    @engine.reset
   end
 end
 

@@ -54,8 +54,8 @@ kb.fact :cooling, id: "server_rack", status: "offline"
 ```ruby
 kb.run
 # Output:
-# => ⚠️  HIGH TEMP Alert: Sensor server_rack at 82°F
 # => 🚨 CRITICAL: Sensor server_rack at 82°F with cooling OFFLINE!
+# => ⚠️  HIGH TEMP Alert: Sensor server_rack at 82°F
 ```
 
 ## Understanding What Happened
@@ -63,7 +63,9 @@ kb.run
 1. **Knowledge Base Creation**: `KBS.knowledge_base do...end` creates the RETE network and defines rules
 2. **Rule Definition**: Rules are compiled into the discrimination network using the DSL
 3. **Fact Assertion**: `kb.fact` adds facts that propagate through the network, creating partial matches
-4. **Rule Firing**: `kb.run` executes actions for all complete matches
+4. **Rule Firing**: `kb.run` fires every complete match waiting on the agenda, highest priority first, until none are left, and returns the number of rules fired
+
+`critical_condition` fires first because its priority (10) is higher than the default (0).
 
 The critical rule fires because:
 - Sensor "server_rack" temp (82°F) > 75
@@ -202,8 +204,8 @@ kb = KBS.knowledge_base do
     without :state, current: "ready"
 
     perform do |facts|
-      # Note: For state transitions, you'd typically use engine methods
-      # This is a simplified example
+      # Simplified: to change the state, call modify on the matched
+      # :state fact (facts.first); working-memory calls work bare in perform
       puts "Transitioning to ready state"
     end
   end

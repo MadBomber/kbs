@@ -14,10 +14,12 @@ require_relative 'store'
 module KBS
   module Blackboard
     module Persistence
+      # Keeps blackboard facts in Redis.
       class RedisStore < Store
         attr_reader :redis, :session_id
 
         def initialize(url: 'redis://localhost:6379/0', session_id: nil, redis: nil)
+          super()
           @session_id = session_id || SecureRandom.uuid
           @redis = redis || connect(url)
           @transaction_depth = 0
@@ -91,10 +93,10 @@ module KBS
         def get_facts(type = nil, pattern = {})
           # Get UUIDs from appropriate index
           uuids = if type
-            @redis.sinter('facts:active', "facts:type:#{type}")
-          else
-            @redis.smembers('facts:active')
-          end
+                    @redis.sinter('facts:active', "facts:type:#{type}")
+                  else
+                    @redis.smembers('facts:active')
+                  end
 
           # Fetch and filter facts
           facts = []
@@ -104,22 +106,22 @@ module KBS
 
             attributes = JSON.parse(fact_data['attributes'], symbolize_names: true)
 
-            if matches_pattern?(attributes, pattern)
-              facts << {
-                uuid: fact_data['uuid'],
-                type: fact_data['type'].to_sym,
-                attributes: attributes
-              }
-            end
+            next unless matches_pattern?(attributes, pattern)
+            facts << {
+              uuid: fact_data['uuid'],
+              type: fact_data['type'].to_sym,
+              attributes: attributes
+            }
           end
 
           facts
         end
 
-        def query_facts(conditions = nil, params = [])
+        def query_facts(_conditions = nil, _params = [])
           raise NotImplementedError, "#{self.class} does not support SQL queries"
         end
 
+        # A nil description is left out of the hash: Redis cannot store nil.
         def register_knowledge_source(name, description: nil, topics: [])
           topics_json = JSON.generate(topics)
 
@@ -129,7 +131,7 @@ module KBS
             'topics' => topics_json,
             'active' => '1',
             'registered_at' => Time.now.to_f
-          })
+          }.compact)
 
           @redis.sadd('knowledge_sources:active', name)
         end
@@ -144,27 +146,15 @@ module KBS
           @redis.del("facts:session:#{session_id}")
         end
 
+        # How long a retracted fact is kept before vacuum removes it.
+        RETENTION_SECONDS = 30 * 24 * 60 * 60
+
+        # Removes retracted facts older than RETENTION_SECONDS from Redis
+        # to free memory.
         def vacuum
-          # Remove retracted facts from Redis to free memory
-          all_uuids = @redis.smembers('facts:all')
-
-          all_uuids.each do |uuid|
+          @redis.smembers('facts:all').each do |uuid|
             fact_data = @redis.hgetall("fact:#{uuid}")
-            if fact_data['retracted'] == '1'
-              # Calculate if fact is old enough to remove (e.g., > 30 days)
-              retracted_at = fact_data['retracted_at'].to_f
-              if Time.now.to_f - retracted_at > (30 * 24 * 60 * 60)
-                type = fact_data['type']
-                session_id = fact_data['session_id']
-
-                @redis.multi do |pipeline|
-                  pipeline.del("fact:#{uuid}")
-                  pipeline.srem('facts:all', uuid)
-                  pipeline.srem("facts:type:#{type}", uuid)
-                  pipeline.srem("facts:session:#{session_id}", uuid) if session_id
-                end
-              end
-            end
+            purge_fact(uuid, fact_data) if expired?(fact_data)
           end
         end
 
@@ -180,16 +170,12 @@ module KBS
           }
         end
 
-        def transaction(&block)
+        def transaction(&)
           @transaction_depth += 1
           begin
-            if @transaction_depth == 1
-              # Redis MULTI/EXEC happens in individual operations
-              # This provides a consistent interface
-              yield
-            else
-              yield
-            end
+            # Redis MULTI/EXEC happens in individual operations; this
+            # provides a consistent interface.
+            yield
           ensure
             @transaction_depth -= 1
           end
@@ -212,13 +198,26 @@ module KBS
           Redis.new(url: url)
         end
 
+        # Whether a fact's hash says it was retracted long enough ago.
+        def expired?(fact_data, now = Time.now.to_f)
+          fact_data['retracted'] == '1' && now - fact_data['retracted_at'].to_f > RETENTION_SECONDS
+        end
+
+        # Deletes a fact's hash and takes its uuid out of every index.
+        def purge_fact(uuid, fact_data)
+          session_id = fact_data['session_id']
+          @redis.multi do |pipeline|
+            pipeline.del("fact:#{uuid}")
+            pipeline.srem('facts:all', uuid)
+            pipeline.srem("facts:type:#{fact_data['type']}", uuid)
+            pipeline.srem("facts:session:#{session_id}", uuid) if session_id
+          end
+        end
+
         def matches_pattern?(attributes, pattern)
           pattern.all? do |key, value|
-            if value.is_a?(Proc)
-              attributes[key] && value.call(attributes[key])
-            else
-              attributes[key] == value
-            end
+            actual = attributes[key]
+            value.is_a?(Proc) ? actual && value.call(actual) : actual == value
           end
         end
       end

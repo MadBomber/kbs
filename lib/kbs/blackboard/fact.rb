@@ -4,6 +4,8 @@ module KBS
   module Blackboard
     # A fact in the blackboard with persistence capabilities
     class Fact
+      include PatternMatching
+
       attr_reader :uuid, :type, :attributes
 
       def initialize(uuid, type, attributes, blackboard = nil)
@@ -31,34 +33,16 @@ module KBS
 
       def []=(key, value)
         @attributes[key] = value
-        @blackboard.update_fact(self, @attributes) if @blackboard
+        @blackboard&.update_fact(self, @attributes)
       end
 
       def update(new_attributes)
         @attributes.merge!(new_attributes)
-        @blackboard.update_fact(self, @attributes) if @blackboard
+        @blackboard&.update_fact(self, @attributes)
       end
 
       def retract
-        @blackboard.remove_fact(self) if @blackboard
-      end
-
-      def matches?(pattern)
-        return false if pattern[:type] && pattern[:type] != @type
-
-        pattern.each do |key, value|
-          next if key == :type
-
-          if value.is_a?(Proc)
-            return false unless @attributes[key] && value.call(@attributes[key])
-          elsif value.is_a?(Symbol) && value.to_s.end_with?('?')
-            next
-          else
-            return false unless @attributes[key] == value
-          end
-        end
-
-        true
+        @blackboard&.remove_fact(self)
       end
 
       def to_s

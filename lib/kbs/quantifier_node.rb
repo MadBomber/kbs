@@ -10,6 +10,7 @@ module KBS
   # tokens it matches. Adding or removing a fact follows those links to
   # the affected tokens, so neither memory is searched.
   class QuantifierNode
+    include NetworkNode
     include JoinTests
     include JoinIndexing
 
@@ -125,14 +126,14 @@ module KBS
     def emit(token)
       new_token = Token.new(token, nil, self)
       token.add_child(new_token)
-      @successors.each { |s| s.activate(new_token) }
+      activate_successors(new_token)
     end
 
     # Takes back what this node passed on for `token`.
     def retract(token)
       token.children.select { |child| child.node.equal?(self) }.each do |child|
         token.remove_child(child)
-        @successors.each { |s| s.deactivate(child) if s.respond_to?(:deactivate) }
+        deactivate_successors(child)
       end
     end
   end

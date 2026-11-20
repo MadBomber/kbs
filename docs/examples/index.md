@@ -1,6 +1,6 @@
 # Examples
 
-Real-world applications demonstrating KBS capabilities. Each example is available in both low-level API and DSL versions.
+Real-world applications demonstrating KBS capabilities. Each example except the IoT demo is available in both low-level API and DSL versions.
 
 ## Getting Started
 
@@ -19,12 +19,12 @@ Simple trading system demonstrating the basics of KBS with momentum signals, vol
 ### Advanced Example
 **Files:** [`advanced_example.rb`](https://github.com/madbomber/kbs/blob/main/examples/advanced_example.rb) | [`advanced_example_dsl.rb`](https://github.com/madbomber/kbs/blob/main/examples/advanced_example_dsl.rb)
 
-More complex patterns including multi-condition rules, variable bindings, and negation patterns. Shows advanced RETE features and rule chaining.
+Two expert systems in one file: stock trading (bull market buys, oversold bounces, stop losses, earnings surprises, price/volume divergence) and network diagnostics (DDoS, bandwidth saturation, latency anomalies).
 
 **Features:**
 
 - Multi-condition pattern matching
-- Variable binding and join tests
+- Lambda predicates
 - Negation (NOT conditions)
 - Rule priorities
 
@@ -102,7 +102,9 @@ High-performance trading system using Redis for fast in-memory fact storage, ide
 - Redis-backed persistence
 - High-frequency market data processing
 - Fast fact lookup and updates
-- Distributed knowledge base support
+- Hybrid store: Redis facts with a SQLite audit trail
+
+The demo flushes Redis databases 1 and 2 on `localhost:6379`.
 
 ## Expert Systems
 
@@ -158,7 +160,7 @@ Integration with Large Language Models (LLMs) for AI-powered sentiment analysis,
 Demonstrates persistent blackboard architecture with SQLite storage, message queues, audit logs, and fact history tracking.
 
 **Features:**
-+
+
 - SQLite-backed persistence
 - UUID-based fact tracking
 - Message queue (priority-based)
@@ -169,43 +171,47 @@ Demonstrates persistent blackboard architecture with SQLite storage, message que
 ### Concurrent Inference Patterns
 **Files:** [`concurrent_inference_demo.rb`](https://github.com/madbomber/kbs/blob/main/examples/concurrent_inference_demo.rb) | [`concurrent_inference_demo_dsl.rb`](https://github.com/madbomber/kbs/blob/main/examples/concurrent_inference_demo_dsl.rb)
 
-Advanced patterns for multi-threaded knowledge bases including reactive engines, background inference, and event-driven architectures.
+Advanced patterns for multi-threaded knowledge bases including reactive engines, background inference, event-driven callbacks and queue-based batches. Each pattern is a `KBS::Engine` subclass defined in the example.
 
 **Features:**
 
 - Auto-inference mode (reactive)
 - Background thread inference
 - Event-driven processing
-- Thread-safe fact addition
+- Fact addition guarded by a `Mutex` (the engine has no locking of its own)
 - Continuous reasoning loops
 
 ## Running Examples
 
 ### Run Individual Examples
 
-Each example is executable from the command line:
+Run examples from inside `examples/`: the CSV and portfolio examples read `sample_stock_data.csv` from the current directory, and the blackboard demo writes `knowledge_base.db` there.
 
 ```bash
+cd examples
+
 # Run a specific example
-ruby examples/working_demo.rb
+bundle exec ruby working_demo.rb
 
 # Run DSL version
-ruby examples/working_demo_dsl.rb
+bundle exec ruby working_demo_dsl.rb
 
-# Run AI-enhanced example (requires Ollama)
-OLLAMA_MODEL=gpt-oss:latest ruby examples/ai_enhanced_kbs.rb
+# Run AI-enhanced example (requires Ollama, ruby_llm and ruby_llm-mcp)
+OLLAMA_MODEL=gpt-oss:latest ruby ai_enhanced_kbs.rb
 ```
 
 ### Run All Examples
 
-Run all examples at once:
+Run all examples at once. These include the Redis demo, which flushes Redis databases 1 and 2, and the AI demo, which needs Ollama:
 
 ```bash
+cd examples
+
 # Run all low-level API examples
-ruby examples/run_all.rb
+bundle exec ruby run_all.rb
 
 # Run all DSL examples
-ruby examples/run_all_dsl.rb
+bundle exec ruby run_all_dsl.rb
 ```
 
 ## Example Organization

@@ -8,9 +8,9 @@ This directory contains comprehensive examples demonstrating the capabilities of
 - [Basic Examples](#basic-examples)
   - [car_diagnostic.rb](#car_diagnosticrb)
   - [working_demo.rb](#working_demorb)
+  - [trading_demo.rb](#trading_demorb)
 - [DSL Examples](#dsl-examples)
   - [iot_demo_using_dsl.rb](#iot_demo_using_dslrb)
-  - [trading_demo.rb](#trading_demorb)
 - [Advanced Trading Examples](#advanced-trading-examples)
   - [advanced_example.rb](#advanced_examplerb)
   - [stock_trading_advanced.rb](#stock_trading_advancedrb)
@@ -27,17 +27,18 @@ This directory contains comprehensive examples demonstrating the capabilities of
 
 ## Getting Started
 
-All examples can be run directly:
+Run the examples from inside `examples/`, since `csv_trading_system.rb` and `portfolio_rebalancing_system.rb` read `sample_stock_data.csv` from the current directory and `blackboard_demo.rb` writes `knowledge_base.db` there:
 
 ```bash
-./examples/example_name.rb
-# or
-ruby examples/example_name.rb
+cd examples
+bundle exec ruby example_name.rb
 ```
 
+Every example except `iot_demo_using_dsl.rb` also has a DSL version, `example_name_dsl.rb`. `rule_source_demo.rb` shows rule source introspection, and `run_all.rb` / `run_all_dsl.rb` run each set in turn.
+
 Some examples require additional dependencies:
-- **redis_trading_demo.rb**: Requires Redis server running (`redis-server`)
-- **ai_enhanced_kbs.rb**: Requires Ollama with a model installed
+- **redis_trading_demo.rb**: Requires Redis server running (`redis-server`); it flushes Redis databases 1 and 2
+- **ai_enhanced_kbs.rb**: Requires Ollama with a model installed, and the `ruby_llm` and `ruby_llm-mcp` gems
 
 ---
 
@@ -50,7 +51,7 @@ Some examples require additional dependencies:
 **Demonstrates:**
 - Basic rule creation with `KBS::Rule.new`
 - Condition matching with `KBS::Condition`
-- Fact assertion and retraction
+- Fact assertion
 - Negated conditions (absence of facts)
 - Simple forward-chaining inference
 
@@ -75,15 +76,14 @@ Diagnoses car problems based on symptoms:
 - Multiple conditions per rule
 - Hash-based pattern matching
 - Lambda predicates for dynamic conditions
-- Rule priority
-- Working memory management
+- Several rules firing on the same fact
 
 **What It Does:**
 Generates trading signals based on:
 - Golden cross patterns (moving average crossovers)
-- High volume confirmation
-- Price breakouts with momentum
-- Risk management rules
+- Momentum with high volume
+- Significant price moves
+- RSI overbought and oversold levels
 
 **Key Concepts:**
 - Forward-chaining inference
@@ -92,25 +92,49 @@ Generates trading signals based on:
 
 ---
 
+### trading_demo.rb
+
+**Description:** A trading system with eight rules written with `KBS::Rule` and `KBS::Condition`.
+
+**Demonstrates:**
+- Multiple trading rules
+- Multi-condition rules across fact types
+- Lambda predicates for dynamic conditions
+
+**What It Does:**
+Implements various trading strategies:
+- Golden cross and momentum buys
+- Oversold buys
+- Earnings volatility plays
+- Stop losses and concentration risk warnings
+- News catalysts and sector rotation
+
+**Key Concepts:**
+- Strategy combination
+- Complex condition logic
+
+---
+
 ## DSL Examples
 
 ### iot_demo_using_dsl.rb
 
-**Description:** IoT sensor monitoring system using the declarative KBS DSL. Shows how to write rules in a more natural, readable syntax.
+**Description:** A small expert system written with the declarative KBS DSL. Shows how to write rules in a more natural, readable syntax.
 
 **Demonstrates:**
 - Declarative DSL with `KBS.knowledge_base`
-- Helper functions: `greater_than`, `less_than`, `range`
-- Rule descriptions and metadata
+- Helper functions: `greater_than`, `less_than`, `satisfies`
+- Block-form `on` conditions
+- Rule descriptions and priorities
 - Multi-fact pattern matching
-- Negative patterns with `without`
+- Negative patterns with `without` and `absent`
+- `print_rules` and `print_facts`
 
 **What It Does:**
-Monitors IoT sensors and triggers alerts:
-- Temperature warnings
-- Humidity alerts
-- Combined sensor analysis
-- System health monitoring
+Fires three rules:
+- High temperature alert for a reactor sensor reading
+- Low inventory warning for essential items
+- VIP upgrade for long-standing, high-spending customers
 
 **Key Concepts:**
 - DSL-based rule definition
@@ -120,54 +144,26 @@ Monitors IoT sensors and triggers alerts:
 
 ---
 
-### trading_demo.rb
-
-**Description:** Comprehensive trading system demonstrating the full DSL capabilities with multiple trading strategies.
-
-**Demonstrates:**
-- Full DSL syntax
-- Multiple trading rules
-- Priority-based rule execution
-- Complex pattern matching
-- Condition helpers (greater_than, one_of, range)
-
-**What It Does:**
-Implements various trading strategies:
-- Momentum breakouts
-- Mean reversion
-- Volume analysis
-- Multi-timeframe analysis
-
-**Key Concepts:**
-- Strategy combination
-- Priority-based firing
-- Complex condition logic
-
----
-
 ## Advanced Trading Examples
 
 ### advanced_example.rb
 
-**Description:** Advanced trading patterns with golden cross detection and technical analysis.
+**Description:** Two expert systems in one file: a stock trading system and a network diagnostic system.
 
 **Demonstrates:**
 - Complex multi-condition rules
-- Moving average crossover detection
-- Volume confirmation
-- Historical data analysis
-- State tracking across facts
+- Rule priority
+- Negated conditions
+- Lambda predicates
 
 **What It Does:**
-- Detects golden cross patterns (50-MA > 200-MA)
-- Validates with volume confirmation
-- Generates buy signals with context
-- Tracks previous state for crossover detection
+- Trading: bull market buys, oversold bounces, stop losses, earnings surprises and price/volume divergence
+- Network: DDoS detection, bandwidth saturation and latency anomalies
 
 **Key Concepts:**
 - Technical indicator analysis
-- Crossover pattern detection
 - Multi-factor validation
+- One engine per domain
 
 ---
 
@@ -176,8 +172,8 @@ Implements various trading strategies:
 **Description:** Production-grade trading system with position management, stop losses, and portfolio tracking.
 
 **Demonstrates:**
-- Position sizing
-- Stop loss management
+- Position sizing (Kelly criterion)
+- Trailing stops
 - Portfolio state tracking
 - Risk management rules
 - Trade execution simulation
@@ -186,8 +182,8 @@ Implements various trading strategies:
 - Manages open positions
 - Implements trailing stops
 - Calculates position sizes
-- Tracks P&L
-- Simulates realistic trading
+- Takes profits on winning positions
+- Simulates market ticks for several symbols
 
 **Key Concepts:**
 - Position management
@@ -281,15 +277,15 @@ Implements various trading strategies:
 - SQLite persistence
 - Fact history tracking
 - Message passing
-- Knowledge source registration
 - Audit logging
+- Database statistics
 
 **What It Does:**
-- Stores facts in SQLite database
-- Tracks fact lifecycle (add/update/retract)
-- Implements message queue
+- Stores facts, with UUIDs, in a SQLite database (`knowledge_base.db`)
+- Tracks fact lifecycle (add/update)
+- Posts messages with priorities and consumes the highest-priority one
 - Maintains audit trail
-- Demonstrates multi-agent coordination
+- Queries facts by type
 
 **Key Concepts:**
 - Blackboard architecture
@@ -299,9 +295,7 @@ Implements various trading strategies:
 
 **Persistence Features:**
 - Durable fact storage
-- Query history
-- Session management
-- Transactional updates
+- Fact history
 
 ---
 
@@ -335,7 +329,7 @@ Implements various trading strategies:
 - Hybrid: Fast reads + durable audit
 - Message queue for inter-component communication
 
-**Requirements:** Redis server running on localhost:6379
+**Requirements:** Redis server running on localhost:6379. The demo flushes databases 1 and 2 there.
 
 ---
 
@@ -343,19 +337,18 @@ Implements various trading strategies:
 
 ### concurrent_inference_demo.rb
 
-**Description:** Demonstrates concurrent rule execution and automatic inference with background threads.
+**Description:** Four ways to run inference automatically, each a subclass of `KBS::Engine` defined in the example. The engine itself has no auto-inference mode or locking; these subclasses add them.
 
 **Demonstrates:**
-- Auto-inference mode
-- Background inference threads
-- Thread-safe fact assertion
-- Concurrent rule firing
-- Blackboard-based coordination
+- Reactive auto-inference (run after each fact is added)
+- A background inference thread
+- Event-driven callbacks when rules fire
+- Queue-based batch processing
+- Guarding the engine with a `Mutex`
 
 **What It Does:**
 - Runs inference in background
 - Allows concurrent fact updates
-- Demonstrates thread safety
 - Shows async processing patterns
 
 **Key Concepts:**
@@ -407,13 +400,13 @@ Implements various trading strategies:
 
 **Requirements:**
 - Ollama installed with a model (e.g., `gpt-oss:latest`)
-- Model configured via `OLLAMA_MODEL` environment variable
-- RubyLLM gem
+- Model configured via `OLLAMA_MODEL` environment variable (default `gpt-oss:latest`); server via `OLLAMA_API_BASE` (default `http://localhost:11434`)
+- `ruby_llm` and `ruby_llm-mcp` gems
 
 **Configuration:**
 ```bash
 export OLLAMA_MODEL=gpt-oss:latest
-./examples/ai_enhanced_kbs.rb
+cd examples && ruby ai_enhanced_kbs.rb
 ```
 
 ---
@@ -469,25 +462,28 @@ export OLLAMA_MODEL=gpt-oss:latest
 
 ### Basic Usage
 ```bash
+cd examples
+
 # Simple examples
-./examples/car_diagnostic.rb
-./examples/working_demo.rb
+bundle exec ruby car_diagnostic.rb
+bundle exec ruby working_demo.rb
+bundle exec ruby trading_demo.rb
 
 # DSL examples
-./examples/iot_demo_using_dsl.rb
-./examples/trading_demo.rb
+bundle exec ruby iot_demo_using_dsl.rb
+bundle exec ruby trading_demo_dsl.rb
 
 # Advanced trading
-./examples/advanced_example.rb
-./examples/stock_trading_advanced.rb
+bundle exec ruby advanced_example.rb
+bundle exec ruby stock_trading_advanced.rb
 
-# Persistence (requires Redis)
+# Persistence (requires Redis; flushes databases 1 and 2)
 redis-server &
-./examples/redis_trading_demo.rb
+bundle exec ruby redis_trading_demo.rb
 
-# AI integration (requires Ollama)
+# AI integration (requires Ollama, ruby_llm and ruby_llm-mcp)
 export OLLAMA_MODEL=gpt-oss:latest
-./examples/ai_enhanced_kbs.rb
+ruby ai_enhanced_kbs.rb
 ```
 
 ### Viewing Output

@@ -164,13 +164,13 @@ class TestIndexedJoinSemantics < Minitest::Test
     @fired = []
     fired = @fired
     @engine.add_rule(KBS::Rule.new(
-      "paid",
-      conditions: [
-        KBS::Condition.new(:order, { id: :id?, region: :region? }),
-        KBS::Condition.new(:payment, { order_id: :id?, region: :region? })
-      ],
-      action: ->(facts) { fired << facts.map { |fact| fact[:id] || fact[:order_id] } }
-    ))
+                       "paid",
+                       conditions: [
+                         KBS::Condition.new(:order, { id: :id?, region: :region? }),
+                         KBS::Condition.new(:payment, { order_id: :id?, region: :region? })
+                       ],
+                       action: ->(facts) { fired << facts.map { |fact| fact[:id] || fact[:order_id] } }
+                     ))
   end
 
   def test_join_on_two_variables
@@ -200,13 +200,13 @@ class TestIndexedJoinSemantics < Minitest::Test
     @engine.add_fact(:refund, order_id: 5)
     fired = @fired
     @engine.add_rule(KBS::Rule.new(
-      "refunded",
-      conditions: [
-        KBS::Condition.new(:order, { id: :id? }),
-        KBS::Condition.new(:refund, { order_id: :id? })
-      ],
-      action: ->(_facts) { fired << :refunded }
-    ))
+                       "refunded",
+                       conditions: [
+                         KBS::Condition.new(:order, { id: :id? }),
+                         KBS::Condition.new(:refund, { order_id: :id? })
+                       ],
+                       action: ->(_facts) { fired << :refunded }
+                     ))
 
     @engine.run
 

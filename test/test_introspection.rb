@@ -47,7 +47,7 @@ module IntrospectionTests
     fact = @engine.add_fact(:order, id: 1)
     @engine.remove_fact(fact)
 
-    assert_equal %w[==> <==], out.string.lines.map { |line| line[0, 3] }
+    assert_equal(%w[==> <==], out.string.lines.map { |line| line[0, 3] })
   end
 
   def test_matches_shows_where_a_rule_stops
@@ -78,7 +78,7 @@ module IntrospectionTests
 
     report = @engine.matches("paid")
 
-    assert_equal [2, 2, 2], report[:conditions].map { |condition| condition[:partial_matches] }
+    assert_equal([2, 2, 2], report[:conditions].map { |condition| condition[:partial_matches] })
     assert_equal 2, report[:matches]
     assert_equal 1, report[:activations]
   end

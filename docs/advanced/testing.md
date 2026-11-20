@@ -19,8 +19,9 @@ Rule-based systems require testing at multiple levels:
 ```ruby
 # Gemfile
 group :test do
-  gem 'minitest', '~> 5.0'
+  gem 'minitest', '~> 5.16'
   gem 'simplecov', require: false  # Coverage
+  gem 'benchmark'                  # A bundled gem since Ruby 3.5; used by the performance tests
 end
 ```
 
@@ -33,6 +34,7 @@ SimpleCov.start
 
 require 'minitest/autorun'
 require 'kbs'
+require 'kbs/blackboard'  # Only needed for the blackboard persistence tests
 
 class Minitest::Test
   def assert_rule_fired(kb, rule_name)
@@ -50,33 +52,37 @@ end
 
 ### Test Single Rule
 
+A predicate such as `greater_than(30)` is the value of the attribute it tests; there is no separate `predicate:` key. A `perform` block runs with the rule builder as `self`, so a rule that asserts facts calls the knowledge base explicitly (`kb.fact`), and the test calls `kb.run` after `kb` is assigned.
+
 ```ruby
 require 'test_helper'
 
 class TestTemperatureRule < Minitest::Test
-  def test_fires_when_temperature_high
-    fired = false
-
+  def build_kb(fired)
     kb = KBS.knowledge_base do
       rule "high_temp_alert", priority: 100 do
         on :sensor,
           type: "temperature",
-          value: :temp?,
-          predicate: greater_than(30)
+          value: greater_than(30)
 
         perform do |facts, bindings|
-          fired = true
-          fact :alert,
+          fired << true
+          kb.fact :alert,
             type: "high_temperature",
-            temperature: bindings[:temp?]
+            temperature: facts[0][:value]
         end
       end
-
-      fact :sensor, type: "temperature", value: 35
-      run
     end
+  end
 
-    assert fired, "Rule should fire for high temperature"
+  def test_fires_when_temperature_high
+    fired = []
+    kb = build_kb(fired)
+
+    kb.fact :sensor, type: "temperature", value: 35
+    kb.run
+
+    assert fired.any?, "Rule should fire for high temperature"
 
     alerts = kb.engine.facts.select { |f| f.type == :alert }
     assert_equal 1, alerts.size
@@ -84,54 +90,27 @@ class TestTemperatureRule < Minitest::Test
   end
 
   def test_does_not_fire_when_temperature_normal
-    fired = false
+    fired = []
+    kb = build_kb(fired)
 
-    kb = KBS.knowledge_base do
-      rule "high_temp_alert", priority: 100 do
-        on :sensor,
-          type: "temperature",
-          value: :temp?,
-          predicate: greater_than(30)
+    kb.fact :sensor, type: "temperature", value: 25
+    kb.run
 
-        perform do |facts, bindings|
-          fired = true
-          fact :alert,
-            type: "high_temperature",
-            temperature: bindings[:temp?]
-        end
-      end
-
-      fact :sensor, type: "temperature", value: 25
-      run
-    end
-
-    refute fired, "Rule should not fire for normal temperature"
+    assert_empty fired, "Rule should not fire for normal temperature"
 
     alerts = kb.engine.facts.select { |f| f.type == :alert }
     assert_empty alerts
   end
 
   def test_threshold_boundary
-    fired = false
+    fired = []
+    kb = build_kb(fired)
 
-    kb = KBS.knowledge_base do
-      rule "high_temp_alert" do
-        on :sensor,
-          type: "temperature",
-          value: :temp?,
-          predicate: greater_than(30)
+    # Test at exact threshold
+    kb.fact :sensor, type: "temperature", value: 30
+    kb.run
 
-        perform do |facts, bindings|
-          fired = true
-        end
-      end
-
-      # Test at exact threshold
-      fact :sensor, type: "temperature", value: 30
-      run
-    end
-
-    refute fired, "Rule should not fire at exact threshold (> not >=)"
+    assert_empty fired, "Rule should not fire at exact threshold (> not >=)"
   end
 end
 ```
@@ -147,13 +126,11 @@ class TestMultiConditionRule < Minitest::Test
       rule "high_temp_and_low_humidity" do
         on :temperature,
           location: :loc?,
-          value: :temp?,
-          predicate: greater_than(30)
+          value: greater_than(30)
 
         on :humidity,
           location: :loc?,
-          value: :hum?,
-          predicate: less_than(40)
+          value: less_than(40)
 
         perform do |facts, bindings|
           fired = true
@@ -175,13 +152,11 @@ class TestMultiConditionRule < Minitest::Test
       rule "high_temp_and_low_humidity" do
         on :temperature,
           location: :loc?,
-          value: :temp?,
-          predicate: greater_than(30)
+          value: greater_than(30)
 
         on :humidity,
           location: :loc?,
-          value: :hum?,
-          predicate: less_than(40)
+          value: less_than(40)
 
         perform do |facts, bindings|
           fired = true
@@ -203,13 +178,11 @@ class TestMultiConditionRule < Minitest::Test
       rule "high_temp_and_low_humidity" do
         on :temperature,
           location: :loc?,
-          value: :temp?,
-          predicate: greater_than(30)
+          value: greater_than(30)
 
         on :humidity,
           location: :loc?,
-          value: :hum?,
-          predicate: less_than(40)
+          value: less_than(40)
 
         perform do |facts, bindings|
           fired = true
@@ -231,13 +204,11 @@ class TestMultiConditionRule < Minitest::Test
       rule "high_temp_and_low_humidity" do
         on :temperature,
           location: :loc?,
-          value: :temp?,
-          predicate: greater_than(30)
+          value: greater_than(30)
 
         on :humidity,
           location: :loc?,
-          value: :hum?,
-          predicate: less_than(40)
+          value: less_than(40)
 
         perform do |facts, bindings|
           fired = true
@@ -313,30 +284,31 @@ class TestRuleInteractions < Minitest::Test
     kb = KBS.knowledge_base do
       # Rule 1: Detect high temperature
       rule "detect_high_temp" do
-        on :sensor, value: :temp?, predicate: greater_than(30)
+        on :sensor, value: greater_than(30)
 
         perform do |facts, bindings|
-          fact :temp_alert, severity: "high"
+          kb.fact :temp_alert, severity: "high"
         end
       end
 
       # Rule 2: Escalate to critical
       rule "escalate_critical" do
         on :temp_alert, severity: "high"
-        on :sensor, value: :temp?, predicate: greater_than(40)
+        on :sensor, value: greater_than(40)
 
         perform do |facts, bindings|
-          fact :critical_alert, type: "temperature"
+          kb.fact :critical_alert, type: "temperature"
           alerts << :critical
         end
       end
-
-      # Add high temperature
-      fact :sensor, value: 45
-      run
     end
 
-    # Both rules should fire
+    # Add high temperature
+    kb.fact :sensor, value: 45
+    kb.run
+
+    # Both rules fire: the alert asserted by the first rule activates the
+    # second within the same run
     assert kb.engine.facts.any? { |f| f.type == :temp_alert }
     assert kb.engine.facts.any? { |f| f.type == :critical_alert }
     assert_includes alerts, :critical
@@ -347,23 +319,23 @@ class TestRuleInteractions < Minitest::Test
 
     kb = KBS.knowledge_base do
       rule "detect_high_temp" do
-        on :sensor, value: :temp?, predicate: greater_than(30)
-        perform { fact :temp_alert, severity: "high" }
+        on :sensor, value: greater_than(30)
+        perform { kb.fact :temp_alert, severity: "high" }
       end
 
       rule "escalate_critical" do
         on :temp_alert, severity: "high"
-        on :sensor, value: :temp?, predicate: greater_than(40)
+        on :sensor, value: greater_than(40)
         perform do |facts, bindings|
-          fact :critical_alert, type: "temperature"
+          kb.fact :critical_alert, type: "temperature"
           alerts << :critical
         end
       end
-
-      # Add moderately high temperature
-      fact :sensor, value: 35
-      run
     end
+
+    # Add moderately high temperature
+    kb.fact :sensor, value: 35
+    kb.run
 
     # Only first rule fires
     assert kb.engine.facts.any? { |f| f.type == :temp_alert }
@@ -442,7 +414,7 @@ class TestWithFixtures < Minitest::Test
   def test_with_high_temp_scenario
     kb = KBS.knowledge_base do
       rule "check_threshold" do
-        on :sensor, value: :v?, predicate: greater_than(30)
+        on :sensor, value: greater_than(30)
         perform { }
       end
     end
@@ -465,12 +437,12 @@ module RuleFixtures
   def add_temperature_monitoring_rules(kb)
     kb.instance_eval do
       rule "detect_high" do
-        on :sensor, value: :v?, predicate: greater_than(30)
+        on :sensor, value: greater_than(30)
         perform { |facts, bindings| facts[0][:alerted] = true }
       end
 
       rule "detect_low" do
-        on :sensor, value: :v?, predicate: less_than(15)
+        on :sensor, value: less_than(15)
         perform { |facts, bindings| facts[0][:alerted] = true }
       end
     end
@@ -490,7 +462,7 @@ class CoverageTracker
   end
 
   def wrap_rules
-    @kb.engine.instance_variable_get(:@rules).each do |rule|
+    @kb.engine.rules.each do |rule|
       original_action = rule.action
 
       rule.action = lambda do |facts, bindings|
@@ -503,7 +475,7 @@ class CoverageTracker
   def report
     puts "\n=== Coverage Report ==="
 
-    total_rules = @kb.engine.instance_variable_get(:@rules).size
+    total_rules = @kb.engine.rules.size
     fired_rules = @rule_firings.keys.size
     coverage = (fired_rules.to_f / total_rules * 100).round(2)
 
@@ -514,7 +486,7 @@ class CoverageTracker
       puts "  #{name}: #{count}"
     end
 
-    untested = @kb.engine.instance_variable_get(:@rules).map(&:name) - @rule_firings.keys
+    untested = @kb.engine.rules.map(&:name) - @rule_firings.keys
     if untested.any?
       puts "\nUntested Rules:"
       untested.each { |name| puts "  - #{name}" }
@@ -672,15 +644,16 @@ class TestBlackboardPersistence < Minitest::Test
     engine = KBS::Blackboard::Engine.new(db_path: ':memory:')
 
     fact = engine.add_fact(:data, value: 1)
-    engine.update_fact(fact.id, value: 2)
-    engine.delete_fact(fact.id)
+    engine.modify(fact, value: 2)
+    engine.remove_fact(fact)
 
-    history = engine.fact_history(fact.id)
+    # Newest entry first
+    history = engine.blackboard.get_history(fact.uuid)
 
     assert_equal 3, history.size
-    assert_equal "add", history[0][:operation]
-    assert_equal "update", history[1][:operation]
-    assert_equal "delete", history[2][:operation]
+    assert_equal %w[REMOVE UPDATE ADD], history.map { |entry| entry[:action] }
+
+    engine.close
   end
 end
 ```
@@ -722,32 +695,32 @@ def test_edge_cases
   # Exact threshold
   kb = KBS.knowledge_base do
     rule "check" do
-      on :sensor, value: :v?, predicate: greater_than(30)
+      on :sensor, value: greater_than(30)
       perform { }
     end
     fact :sensor, value: 30
-    run
   end
+  assert_equal 0, kb.run  # run returns the number of rules fired
 
   # Just below threshold
   kb = KBS.knowledge_base do
     rule "check" do
-      on :sensor, value: :v?, predicate: greater_than(30)
+      on :sensor, value: greater_than(30)
       perform { }
     end
     fact :sensor, value: 29.99
-    run
   end
+  assert_equal 0, kb.run
 
   # Just above threshold
   kb = KBS.knowledge_base do
     rule "check" do
-      on :sensor, value: :v?, predicate: greater_than(30)
+      on :sensor, value: greater_than(30)
       perform { }
     end
     fact :sensor, value: 30.01
-    run
   end
+  assert_equal 1, kb.run
 end
 ```
 
@@ -761,14 +734,14 @@ def test_action_side_effects
     rule "test" do
       on :trigger, {}
       perform do |facts, bindings|
-        new_fact = fact :result, value: 42
+        new_fact = kb.fact :result, value: 42
         added_facts << new_fact
       end
     end
 
     fact :trigger, {}
-    run
   end
+  kb.run
 
   assert_equal 1, added_facts.size
   assert_equal 42, added_facts.first[:value]

@@ -109,7 +109,7 @@ class TestQuantifierNodes < Minitest::Test
 
     @alpha.activate(payment(1))
 
-    assert_equal [1], @retracted.map { |token| token.parent.fact[:id] }
+    assert_equal([1], @retracted.map { |token| token.parent.fact[:id] })
   end
 
   def test_negation_removing_a_blocked_token_drops_its_links

@@ -128,6 +128,10 @@ KBS::Condition.new(:watchlist, { symbol: :sym? })
 { type: :watchlist, symbol: "GOOGL" }  # ✗
 ```
 
+**Scope rules:**
+- A variable used twice in one condition compares two attributes of the same fact: `{ min: :v?, max: :v? }` matches only when `min == max`.
+- A variable that first appears in a negated (`without`) or `exists` condition is local to that condition. Such conditions add no fact to the match, so they bind nothing for later conditions or for the action.
+
 ### 3. Action: Access
 
 ```ruby
@@ -163,6 +167,8 @@ r.conditions = [
 
 ### Join Test Execution
 
+A simplified version of `KBS::JoinTests#join_test_passes?`:
+
 ```ruby
 def perform_join_test(token, new_fact, test)
   # Get value from token (previous facts)
@@ -192,7 +198,7 @@ threshold = { type: :threshold, sensor_id: "bedroom", max: 25 }
 
 # Join execution:
 # 1. sensor matches → token created
-token = Token.new(parent: root, fact: sensor)
+token = KBS::Token.new(root_token, sensor, join_node)
 # Bindings: { :id? => "bedroom", :temp? => 28 }
 
 # 2. threshold tested against token
@@ -447,20 +453,16 @@ r.action = lambda do |facts, bindings|
 end
 ```
 
-### Trace Join Tests
+### Inspect Join Tests
+
+`KBS::JoinTestBuilder` compiles a rule's conditions into the join tests the network uses, one array per condition:
 
 ```ruby
-class DebugJoinNode < KBS::JoinNode
-  def perform_join_tests(token, fact)
-    result = super
-    puts "Join test: #{@tests.inspect}"
-    puts "  Token: #{token.inspect}"
-    puts "  Fact: #{fact.inspect}"
-    puts "  Result: #{result}"
-    result
-  end
-end
+KBS::JoinTestBuilder.new(rule.conditions).tests
+# => [[], [{token_field_index: 0, token_field: :id, fact_field: :sensor_id, operation: :eq}]]
 ```
+
+Equality tests between a token field and a fact field become hash-index keys on the join node's memories, so they are looked up rather than evaluated per candidate.
 
 ### Validate Bindings
 

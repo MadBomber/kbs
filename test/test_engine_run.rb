@@ -239,8 +239,14 @@ end
 class TestKnowledgeBaseRun < Minitest::Test
   def test_run_passes_the_limit_and_returns_the_count
     kb = KBS.knowledge_base do
-      rule("a") { on :go; perform { nil } }
-      rule("b") { on :go; perform { nil } }
+      rule("a") do
+        on :go
+        perform { nil }
+      end
+      rule("b") do
+        on :go
+        perform { nil }
+      end
     end
     kb.assert(:go)
 
@@ -251,8 +257,17 @@ class TestKnowledgeBaseRun < Minitest::Test
   def test_halt
     kb = KBS.knowledge_base
     fired = []
-    kb.rule("a") { on :go; perform { fired << "a"; kb.halt } }
-    kb.rule("b") { on :go; perform { fired << "b" } }
+    kb.rule("a") do
+      on :go
+      perform do
+        fired << "a"
+        kb.halt
+      end
+    end
+    kb.rule("b") do
+      on :go
+      perform { fired << "b" }
+    end
     kb.assert(:go)
 
     kb.run

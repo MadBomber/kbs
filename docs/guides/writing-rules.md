@@ -113,6 +113,26 @@ KBS.knowledge_base do
 end
 ```
 
+`facts` holds one fact per positive condition, in order; `without` and `exists` conditions contribute none. `bindings` maps each `?variable` to its value.
+
+**Working memory inside `perform`:** the action block runs with the rule builder as `self`. Once the rule is built, the builder forwards `fact`, `assert`, `retract`, `modify`, `query`, `facts`, `halt` and `engine` to the knowledge base, so bare calls work. Condition keywords (`on`, `without`, `exists`, `logical`, `perform` and their aliases) raise `KBS::RuleBuiltError` there, since they can no longer change the rule. Calling the knowledge base through a local works as well:
+
+```ruby
+kb = KBS.knowledge_base do
+  rule "derive" do
+    on :sensor, temp: :temp?
+    perform do |facts, bindings|
+      kb.fact :reading_seen, temp: bindings[:temp?]
+    end
+  end
+end
+
+kb.fact :sensor, temp: 28
+kb.run   # call run after `kb` is assigned
+```
+
+The examples below use either form.
+
 ## Condition Ordering
 
 **Golden Rule**: Order conditions from most selective to least selective.
@@ -208,13 +228,13 @@ end
 Split complex actions into multiple rules:
 
 ```ruby
-KBS.knowledge_base do
+kb = KBS.knowledge_base do
   # Rule 1: Detect condition
   rule "detect_high_temp", priority: 50 do
-    on :sensor, temp: :temp?, predicate: greater_than(30)
+    on :sensor, temp: greater_than(30)
 
     perform do |facts, bindings|
-      fact :high_temp_detected, temp: bindings[:temp?]
+      kb.fact :high_temp_detected, temp: facts[0][:temp]
     end
   end
 
@@ -250,11 +270,11 @@ kb = KBS.knowledge_base do
 
     perform do |facts, bindings|
       # Remove old alert if exists
-      old = engine.facts.find { |f| f.type == :alert && f[:id] == bindings[:id?] }
-      engine.remove_fact(old) if old
+      old = kb.query(:alert, id: bindings[:id?]).first
+      kb.retract(old) if old
 
       # Add new alert
-      fact :alert, id: bindings[:id?], message: "Alert!"
+      kb.fact :alert, id: bindings[:id?], message: "Alert!"
     end
   end
 end
@@ -266,18 +286,20 @@ kb = KBS.knowledge_base do
 
     perform do |facts, bindings|
       # Always adds, even if alert already exists
-      fact :alert, id: bindings[:id?], message: "Alert!"
+      kb.fact :alert, id: bindings[:id?], message: "Alert!"
     end
   end
 end
 ```
+
+Alternatively, turn duplicate facts off with `kb.engine.fact_duplication = false` (or `KBS::Engine.new(fact_duplication: false)`): asserting a fact equal to one already in working memory then returns the existing fact instead of adding another.
 
 ### Error Handling
 
 Protect against failures:
 
 ```ruby
-KBS.knowledge_base do
+kb = KBS.knowledge_base do
   rule "safe_email" do
     on :alert, email: :email?, message: :message?
 
@@ -287,7 +309,7 @@ KBS.knowledge_base do
       rescue Net::SMTPError => e
         logger.error("Failed to send email: #{e.message}")
         # Add failure fact for retry logic
-        fact :email_failure,
+        kb.fact :email_failure,
           email: bindings[:email?],
           error: e.message,
           timestamp: Time.now
@@ -370,7 +392,7 @@ end
 Model state transitions:
 
 ```ruby
-KBS.knowledge_base do
+kb = KBS.knowledge_base do
   # Transition: pending → processing
   rule "start_processing" do
     on :order,
@@ -378,12 +400,7 @@ KBS.knowledge_base do
       status: "pending"
 
     perform do |facts, bindings|
-      old_order = facts[0]
-      engine.remove_fact(old_order)
-      fact :order,
-        id: bindings[:order_id?],
-        status: "processing",
-        started_at: Time.now
+      kb.modify(facts[0], status: "processing", started_at: Time.now)
     end
   end
 
@@ -396,24 +413,21 @@ KBS.knowledge_base do
       order_id: :order_id?
 
     perform do |facts, bindings|
-      order = facts[0]
-      engine.remove_fact(order)
-      engine.remove_fact(facts[1])  # Remove trigger
-      fact :order,
-        id: bindings[:order_id?],
-        status: "completed",
-        completed_at: Time.now
+      kb.retract(facts[1])  # Remove trigger
+      kb.modify(facts[0], status: "completed", completed_at: Time.now)
     end
   end
 end
 ```
+
+`kb.modify` changes a fact's attributes and matches it again, as a retraction followed by an assertion, so the next transition rule can match it. Assigning `order[:status] = ...` does not re-match the fact.
 
 ### Guard Conditions
 
 Prevent duplicate actions:
 
 ```ruby
-KBS.knowledge_base do
+kb = KBS.knowledge_base do
   rule "send_alert_once" do
     on :high_temp, sensor_id: :id?
 
@@ -424,7 +438,7 @@ KBS.knowledge_base do
       send_alert(bindings[:id?])
 
       # Record that we sent this alert
-      fact :alert_sent, sensor_id: bindings[:id?]
+      kb.fact :alert_sent, sensor_id: bindings[:id?]
     end
   end
 end
@@ -435,40 +449,38 @@ end
 Remove stale facts:
 
 ```ruby
-KBS.knowledge_base do
+kb = KBS.knowledge_base do
   rule "cleanup_stale_alerts", priority: 1 do
     on :alert,
-      timestamp: :time?,
-      predicate: lambda { |f|
-        (Time.now - f[:timestamp]) > 3600  # 1 hour old
-      }
+      timestamp: ->(t) { (Time.now - t) > 3600 }  # 1 hour old
 
     perform do |facts, bindings|
-      engine.remove_fact(facts[0])
+      kb.retract(facts[0])
       logger.info("Removed stale alert")
     end
   end
 end
 ```
 
+A predicate is tested when the fact is asserted or modified, not again as time passes. To re-check an aging fact, re-match it with `kb.modify(alert, {})` (or assert a fresh tick fact your rules depend on).
+
 ### Aggregation Rules
 
 Compute over multiple facts:
 
 ```ruby
-KBS.knowledge_base do
+kb = KBS.knowledge_base do
   rule "compute_average_temp" do
     on :compute_avg_requested, {}
 
     perform do |facts, bindings|
-      temps = engine.facts
-        .select { |f| f.type == :sensor }
+      temps = kb.query(:sensor)
         .map { |f| f[:temp] }
         .compact
 
       avg = temps.sum / temps.size.to_f
 
-      fact :average_temp, value: avg
+      kb.fact :average_temp, value: avg
     end
   end
 end
@@ -483,15 +495,10 @@ KBS.knowledge_base do
   rule "detect_delayed_response" do
     on :request,
       id: :req_id?,
-      created_at: :created?
+      created_at: ->(t) { (Time.now - t) > 300 }  # 5 minutes
 
     without :response,
       request_id: :req_id?
-
-    on :request, {},
-      predicate: lambda { |f|
-        (Time.now - f[:created_at]) > 300  # 5 minutes
-      }
 
     perform do |facts, bindings|
       alert("Request #{bindings[:req_id?]} delayed!")
@@ -499,6 +506,8 @@ KBS.knowledge_base do
   end
 end
 ```
+
+As with the cleanup rule, the age test runs when the request is asserted or modified; re-match pending requests periodically with `kb.modify(request, {})`.
 
 ## Priority Management
 
@@ -530,15 +539,16 @@ end
 
 ### Priority Inversion
 
-Avoid priority inversions where low-priority rules block high-priority rules:
+Priority only orders the activations that are on the agenda at the same time. `run` keeps firing until the agenda is empty, so a high-priority rule that depends on a fact produced by a low-priority rule still fires in the same run, but only after the low-priority rule, and after every activation that outranks it:
 
 ```ruby
-# Bad: Low priority rule creates fact needed by high priority rule
-KBS.knowledge_base do
+# Risky: emergency_check waits for compute_risk (priority 10), so any
+# priority 11-99 activation fires before the emergency check can
+kb = KBS.knowledge_base do
   rule "compute_risk", priority: 10 do
     on :data, value: :v?
     perform do |facts, bindings|
-      fact :risk_score, value: calculate_risk(bindings[:v?])
+      kb.fact :risk_score, value: calculate_risk(bindings[:v?])
     end
   end
 
@@ -551,11 +561,11 @@ KBS.knowledge_base do
 end
 
 # Fix: Make dependency higher priority
-KBS.knowledge_base do
-  rule "compute_risk", priority: 110 do  # Now runs before emergency_check
+kb = KBS.knowledge_base do
+  rule "compute_risk", priority: 110 do  # Now runs before other work
     on :data, value: :v?
     perform do |facts, bindings|
-      fact :risk_score, value: calculate_risk(bindings[:v?])
+      kb.fact :risk_score, value: calculate_risk(bindings[:v?])
     end
   end
 
@@ -653,8 +663,8 @@ def test_state_machine_workflow
     rule "start_processing" do
       on :order, id: :id?, status: "pending"
       perform do |facts, bindings|
-        engine.remove_fact(facts[0])
-        fact :order, id: bindings[:id?], status: "processing"
+        kb.retract(facts[0])
+        kb.fact :order, id: bindings[:id?], status: "processing"
       end
     end
 
@@ -662,20 +672,20 @@ def test_state_machine_workflow
       on :order, id: :id?, status: "processing"
       on :processing_done, order_id: :id?
       perform do |facts, bindings|
-        engine.remove_fact(facts[0])
-        engine.remove_fact(facts[1])
-        fact :order, id: bindings[:id?], status: "completed"
+        kb.retract(facts[0])
+        kb.retract(facts[1])
+        kb.fact :order, id: bindings[:id?], status: "completed"
       end
     end
 
     # Add initial state
     fact :order, id: 1, status: "pending"
-    run
   end
+  kb.run
 
-  # Should not transition yet
+  # Started, but not completed yet
   order = kb.engine.facts.find { |f| f.type == :order && f[:id] == 1 }
-  assert_equal "pending", order[:status]
+  assert_equal "processing", order[:status]
 
   # Trigger transition
   kb.fact :processing_done, order_id: 1
@@ -700,7 +710,7 @@ def test_no_duplicate_alerts
 
       perform do |facts, bindings|
         send_alert(bindings[:id?])
-        fact :alert_sent, sensor_id: bindings[:id?]
+        kb.fact :alert_sent, sensor_id: bindings[:id?]
       end
     end
 
@@ -708,10 +718,10 @@ def test_no_duplicate_alerts
     100.times do |i|
       fact :high_temp, sensor_id: i
     end
-
-    # Run engine multiple times
-    10.times { run }
   end
+
+  # Run engine multiple times
+  10.times { kb.run }
 
   # Property: At most one alert per sensor
   alert_counts = kb.engine.facts
@@ -729,7 +739,7 @@ end
 
 ### Minimize Negations
 
-Negations are expensive:
+Each negation adds a node to the rule's path that tracks, for every partial match, the facts that block it. Negations that share a `?variable` with earlier conditions are hash-indexed; unconstrained ones (like `without :foo, {}`) are checked against every partial match:
 
 ```ruby
 # Expensive: 3 negations
@@ -758,11 +768,13 @@ end
 
 ### Avoid Predicates for Simple Checks
 
+A constant test is filed in a hash, so a fact reaches the matching alpha memory with one lookup on its value, and rules with the same pattern share that memory. A lambda is called for every fact of the type, and two patterns share a memory only when they hold the same lambda object.
+
 ```ruby
-# Expensive: Predicate disables network sharing
+# Expensive: Lambda called for every :stock fact
 KBS.knowledge_base do
   rule "with_predicate" do
-    on :stock, {}, predicate: lambda { |f| f[:symbol] == "AAPL" }
+    on :stock, symbol: ->(s) { s == "AAPL" }
     perform { }
   end
 end
@@ -780,25 +792,25 @@ end
 
 ```ruby
 # Bad: Recomputes every time rule fires
-KBS.knowledge_base do
+kb = KBS.knowledge_base do
   rule "check_average" do
     on :sensor, temp: :temp?
 
     perform do |facts, bindings|
-      avg = compute_expensive_average(engine.facts)
+      avg = compute_expensive_average(kb.facts)
       alert(avg) if avg > threshold
     end
   end
 end
 
 # Good: Cache as fact, recompute only when needed
-KBS.knowledge_base do
+kb = KBS.knowledge_base do
   rule "update_average", priority: 100 do
     on :sensor, temp: :temp?  # Triggers when sensor added
 
     perform do |facts, bindings|
-      avg = compute_expensive_average(engine.facts)
-      fact :cached_average, value: avg
+      avg = compute_expensive_average(kb.facts)
+      kb.fact :cached_average, value: avg
     end
   end
 
@@ -818,63 +830,59 @@ end
 
 ```ruby
 # Bad: Rule fires itself indefinitely
-KBS.knowledge_base do
+kb = KBS.knowledge_base do
   rule "infinite_loop" do
     on :sensor, temp: :temp?
 
     perform do |facts, bindings|
       # This triggers the rule again!
-      fact :sensor, temp: bindings[:temp?] + 1
+      kb.fact :sensor, temp: bindings[:temp?] + 1
     end
   end
 end
 
 # Fix: Add termination condition
-KBS.knowledge_base do
+kb = KBS.knowledge_base do
   rule "limited_increment" do
     on :sensor, temp: :temp?
     without :increment_done, {}
 
     perform do |facts, bindings|
-      fact :sensor, temp: bindings[:temp?] + 1
-      fact :increment_done, {}
+      kb.fact :sensor, temp: bindings[:temp?] + 1
+      kb.fact :increment_done, {}
     end
   end
 end
 ```
 
-### 2. Variable Scope Confusion
+As a safety net while developing, `kb.run(100)` stops after 100 firings, and `kb.halt` called from an action stops the current run.
+
+### 2. Writing Conditions Inside `perform`
 
 ```ruby
-# Bad: Closure captures wrong variable
-rules = []
-%w[sensor1 sensor2 sensor3].each do |sensor|
-  # All rules reference same 'sensor' variable (last value!)
-  kb = KBS.knowledge_base do
-    rule "process_#{sensor}" do
-      on :reading, {}
-      perform { puts sensor }  # Wrong!
-    end
+# Bad: the rule is already built when the action runs
+kb = KBS.knowledge_base do
+  rule "derive" do
+    on :reading, {}
+    perform { on :other }   # raises KBS::RuleBuiltError during run
   end
 end
 
-# Fix: Force closure with parameter
-%w[sensor1 sensor2 sensor3].each do |sensor_name|
-  captured_sensor = sensor_name  # Force capture
-
-  kb = KBS.knowledge_base do
-    rule "process_#{captured_sensor}" do
-      on :reading, {}
-      perform { puts captured_sensor }  # Correct
-    end
+# Fine: working-memory calls, bare or through kb
+kb = KBS.knowledge_base do
+  rule "derive" do
+    on :reading, {}
+    perform { fact :derived, {} }   # same as kb.fact :derived, {}
   end
 end
 ```
 
 ### 3. Forgetting to Call `run`
 
+Facts are matched as they are added, but matching only puts activations on the agenda; rules fire when `run` is called.
+
 ```ruby
-# Bad: Facts added but never matched
+# Bad: Facts matched but rules never fire
 kb = KBS.knowledge_base do
   rule "example" do
     on :sensor, temp: :temp?

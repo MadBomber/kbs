@@ -10,13 +10,13 @@ class TestRetraction < Minitest::Test
     @fired = []
     fired = @fired
     @engine.add_rule(KBS::Rule.new(
-      "paid",
-      conditions: [
-        KBS::Condition.new(:order, { id: :id? }),
-        KBS::Condition.new(:payment, { order_id: :id? })
-      ],
-      action: ->(facts) { fired << facts.map(&:type) }
-    ))
+                       "paid",
+                       conditions: [
+                         KBS::Condition.new(:order, { id: :id? }),
+                         KBS::Condition.new(:payment, { order_id: :id? })
+                       ],
+                       action: ->(facts) { fired << facts.map(&:type) }
+                     ))
   end
 
   def production
@@ -37,7 +37,7 @@ class TestRetraction < Minitest::Test
     @engine.remove_fact(order)
 
     assert_empty @engine.alpha_memories_for(order)
-    assert @engine.alpha_memories.each_value.all? { |memory| memory.size.zero? }
+    assert(@engine.alpha_memories.each_value.all? { |memory| memory.items.empty? })
   end
 
   def test_removing_the_right_fact_removes_its_matches
@@ -69,7 +69,7 @@ class TestRetraction < Minitest::Test
 
     @engine.remove_fact(first)
 
-    assert_equal [[2, 2]], production.tokens.map { |token| [token.facts[0][:id], token.facts[1][:order_id]] }
+    assert_equal([[2, 2]], production.tokens.map { |token| [token.facts[0][:id], token.facts[1][:order_id]] })
   end
 
   def test_fact_joined_with_several_tokens
@@ -123,14 +123,14 @@ class TestRetraction < Minitest::Test
   def test_three_condition_chain_unwinds_from_the_middle
     fired = @fired
     @engine.add_rule(KBS::Rule.new(
-      "shipped",
-      conditions: [
-        KBS::Condition.new(:order, { id: :id? }),
-        KBS::Condition.new(:payment, { order_id: :id? }),
-        KBS::Condition.new(:shipment, { order_id: :id? })
-      ],
-      action: ->(_facts) { fired << :shipped }
-    ))
+                       "shipped",
+                       conditions: [
+                         KBS::Condition.new(:order, { id: :id? }),
+                         KBS::Condition.new(:payment, { order_id: :id? }),
+                         KBS::Condition.new(:shipment, { order_id: :id? })
+                       ],
+                       action: ->(_facts) { fired << :shipped }
+                     ))
     @engine.add_fact(:order, id: 1)
     payment = @engine.add_fact(:payment, order_id: 1)
     @engine.add_fact(:shipment, order_id: 1)
@@ -166,12 +166,12 @@ class TestRetraction < Minitest::Test
   def test_blackboard_engine_retracts_by_uuid
     engine = KBS::Blackboard::Engine.new
     engine.add_rule(KBS::Rule.new(
-      "paid",
-      conditions: [
-        KBS::Condition.new(:order, { id: :id? }),
-        KBS::Condition.new(:payment, { order_id: :id? })
-      ]
-    ))
+                      "paid",
+                      conditions: [
+                        KBS::Condition.new(:order, { id: :id? }),
+                        KBS::Condition.new(:payment, { order_id: :id? })
+                      ]
+                    ))
     engine.add_fact(:order, id: 1)
     payment = engine.add_fact(:payment, order_id: 1)
     assert_equal 1, engine.production_nodes["paid"].tokens.size
@@ -205,7 +205,7 @@ class TestJoinNodeTokenLinks < Minitest::Test
     @alpha.activate(fact)
 
     assert_equal 2, @node.tokens_built_from(fact).size
-    assert @node.tokens_built_from(fact).all? { |token| token.fact.equal?(fact) }
+    assert(@node.tokens_built_from(fact).all? { |token| token.fact.equal?(fact) })
   end
 
   def test_right_deactivate_removes_exactly_the_tokens_of_that_fact

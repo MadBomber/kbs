@@ -5,6 +5,7 @@ require 'time'
 
 module KBS
   module Blackboard
+    # A priority message queue between knowledge sources, kept in SQLite.
     class MessageQueue
       def initialize(db)
         @db = db
@@ -40,7 +41,7 @@ module KBS
 
         @db.execute(
           "INSERT INTO blackboard_messages (sender, topic, content, priority) VALUES (?, ?, ?, ?)",
-          [sender, topic, content_json, priority]
+          [sender.to_s, topic.to_s, content_json, priority]
         )
       end
 
@@ -50,47 +51,40 @@ module KBS
         loop do
           result = @db.get_first_row(
             "SELECT * FROM blackboard_messages WHERE topic = ? AND consumed = 0 ORDER BY priority DESC, posted_at ASC LIMIT 1",
-            [topic]
+            [topic.to_s]
           )
           break unless result
 
           # Claim the message only if no other consumer took it since the SELECT
           @db.execute(
             "UPDATE blackboard_messages SET consumed = 1, consumed_by = ?, consumed_at = CURRENT_TIMESTAMP WHERE id = ? AND consumed = 0",
-            [consumer, result['id']]
+            [consumer.to_s, result['id']]
           )
           break if @db.changes == 1
         end
 
-        if result
+        result && message_from(result)
+      end
 
-          {
-            id: result['id'],
-            sender: result['sender'],
-            topic: result['topic'],
-            content: parse_content(result['content']),
-            priority: result['priority'],
-            posted_at: Time.parse("#{result['posted_at']} UTC").localtime
-          }
-        end
+      # A row of blackboard_messages as the Hash handed to consumers.
+      def message_from(row)
+        {
+          id: row['id'],
+          sender: row['sender'],
+          topic: row['topic'],
+          content: parse_content(row['content']),
+          priority: row['priority'],
+          posted_at: Time.parse("#{row['posted_at']} UTC").localtime
+        }
       end
 
       def peek(topic, limit: 10)
         results = @db.execute(
           "SELECT * FROM blackboard_messages WHERE topic = ? AND consumed = 0 ORDER BY priority DESC, posted_at ASC LIMIT ?",
-          [topic, limit]
+          [topic.to_s, limit]
         )
 
-        results.map do |row|
-          {
-            id: row['id'],
-            sender: row['sender'],
-            topic: row['topic'],
-            content: parse_content(row['content']),
-            priority: row['priority'],
-            posted_at: Time.parse("#{row['posted_at']} UTC").localtime
-          }
-        end
+        results.map { |row| message_from(row) }
       end
 
       def stats

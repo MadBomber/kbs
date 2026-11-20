@@ -15,6 +15,9 @@ module KBS
       # - Durable audit trail via SQLite
       # - Best of both worlds for production systems
       class HybridStore < Store
+        # The SQLite tables the audit log writes to.
+        AUDIT_TABLES = %w[fact_history rules_fired].freeze
+
         attr_reader :redis_store, :sqlite_store, :session_id
 
         def initialize(
@@ -23,6 +26,7 @@ module KBS
           db_path: 'audit.db',
           session_id: nil
         )
+          super()
           @session_id = session_id || SecureRandom.uuid
 
           # Redis for hot data (facts, messages)
@@ -72,15 +76,15 @@ module KBS
           @redis_store.clear_session(session_id)
         end
 
-        # Stats combined from both stores
+        # The Redis store's stats, plus :audit_records from SQLite.
         def stats
-          redis_stats = @redis_store.stats
-          sqlite_stats = @sqlite_store.stats
+          @redis_store.stats.merge(audit_records: audit_record_count)
+        end
 
-          # Prefer Redis for fact counts (authoritative)
-          redis_stats.merge(
-            audit_records: sqlite_stats[:total_facts] # SQLite tracks audit records
-          )
+        # Rows the audit log has written to SQLite: fact changes plus rule
+        # firings. Zero before a Memory has created the audit tables.
+        def audit_record_count
+          AUDIT_TABLES.sum { |table| row_count(table) }
         end
 
         def vacuum
@@ -88,7 +92,7 @@ module KBS
           @sqlite_store.vacuum
         end
 
-        def transaction(&block)
+        def transaction(&)
           # Redis and SQLite transactions are separate
           # Execute block in context of both
           yield
@@ -112,6 +116,12 @@ module KBS
         # Helper to check if this is a hybrid store
         def hybrid?
           true
+        end
+
+        # The number of rows in a SQLite table, or 0 when it does not exist.
+        def row_count(table)
+          exists = db.get_first_value("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = ?", [table])
+          exists.zero? ? 0 : db.get_first_value("SELECT COUNT(*) FROM #{table}")
         end
       end
     end

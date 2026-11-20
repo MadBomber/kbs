@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 module KBS
+  # A partial match: the facts matched so far, as a chain of tokens with
+  # one link per condition.
   class Token
     attr_accessor :parent, :fact, :node
 
@@ -51,7 +53,7 @@ module KBS
     end
 
     def to_s
-      "Token(#{facts.map(&:to_s).join(', ')})"
+      "Token(#{facts.join(', ')})"
     end
 
     def fired?

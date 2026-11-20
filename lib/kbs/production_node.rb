@@ -1,7 +1,11 @@
 # frozen_string_literal: true
 
 module KBS
+  # The end of a rule's path through the network: puts each complete
+  # match on the agenda and fires the rule for it.
   class ProductionNode
+    include NetworkNode
+
     attr_accessor :rule
     attr_reader :order
 
@@ -52,6 +56,10 @@ module KBS
       @fired.delete(token)
       @agenda&.remove(@activations.delete(token))
     end
+
+    # A beta memory tells its successors of tokens through these.
+    alias left_activate activate
+    alias left_deactivate deactivate
 
     # Forgets every match, fired or pending.
     def reset

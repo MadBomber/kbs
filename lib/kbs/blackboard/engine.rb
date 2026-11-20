@@ -14,6 +14,8 @@ module KBS
         @blackboard = Memory.new(db_path: db_path, store: store)
         @working_memory = @blackboard
         @blackboard.add_observer(self)
+        # Files the facts already stored, so duplicates of them are refused.
+        self.fact_duplication = fact_duplication
       end
 
       # Writes the fact to the blackboard, which tells this engine to
@@ -49,16 +51,26 @@ module KBS
 
       # Records the firing in the audit log, then fires the rule.
       def fire_activation(activation)
-        unless activation.node.fired?(activation.token)
-          facts = activation.token.facts
-          fact_uuids = facts.map { |f| f.respond_to?(:uuid) ? f.uuid : f.object_id.to_s }
-          bindings = activation.rule.bindings_for(facts)
-
-          @blackboard.log_rule_firing(activation.rule.name, fact_uuids, bindings)
-        end
-
+        log_firing(activation)
         super
       end
+
+      # Writes the activation's firing to the audit log, unless its rule
+      # has fired for that token already. Rules that share join nodes
+      # share tokens, so whether a rule fired is asked of its production
+      # node, not of the token.
+      def log_firing(activation)
+        token = activation.token
+        return if activation.node.fired?(token)
+
+        rule = activation.rule
+        facts = token.facts
+        @blackboard.log_rule_firing(rule.name, facts.map(&:uuid), rule.bindings_for(facts))
+      end
+
+      # A reset empties the network, not the store: the persisted facts
+      # stay on the blackboard.
+      def clear_working_memory; end
 
       def post_message(sender, topic, content, priority: 0)
         @blackboard.post_message(sender, topic, content, priority: priority)

@@ -42,7 +42,7 @@ class TestRedisStore < Minitest::Test
 
     sensors = @store.get_facts(:sensor)
     assert_equal 2, sensors.size
-    assert sensors.all? { |f| f[:type] == :sensor }
+    assert(sensors.all? { |f| f[:type] == :sensor })
   end
 
   def test_get_facts_with_pattern
@@ -90,6 +90,15 @@ class TestRedisStore < Minitest::Test
 
     stats = @store.stats
     assert_equal 1, stats[:knowledge_sources]
+  end
+
+  # Contract: blackboard/register-knowledge-source-without-description
+  # Bug: RedisStore#register_knowledge_source raised TypeError when description was nil
+  def test_register_knowledge_source_without_description
+    @store.register_knowledge_source('TempMonitor', topics: ['readings'])
+
+    assert_equal 1, @store.stats[:knowledge_sources]
+    refute @redis.hexists('ks:TempMonitor', 'description')
   end
 
   def test_stats
@@ -141,7 +150,7 @@ class TestRedisStore < Minitest::Test
     memory.post_message("s", "q", "plain text")
     memory.post_message("s", "q", { ok: true })
 
-    assert_equal ["plain text", { ok: true }], memory.peek_messages("q").map { |m| m[:content] }
+    assert_equal(["plain text", { ok: true }], memory.peek_messages("q").map { |m| m[:content] })
     assert_equal "plain text", memory.consume_message("q", "c")[:content]
     assert_equal({ ok: true }, memory.consume_message("q", "c")[:content])
   end

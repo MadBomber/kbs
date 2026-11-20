@@ -138,14 +138,16 @@ kb = KBS.knowledge_base do
       if bindings[:temp?] > bindings[:max?]
         puts "🚨 ALERT: Sensor #{bindings[:sensor_id?]} at #{bindings[:temp?]}°C"
         # Record that we sent this alert
-        fact :alert, sensor_id: bindings[:sensor_id?]
+        kb.fact :alert, sensor_id: bindings[:sensor_id?]
       end
     end
   end
 end
 ```
 
-**Negated condition** (`negated: true`): Rule fires only when NO `:alert` fact exists for this sensor.
+**Negated condition** (`without`): Rule fires only when NO `:alert` fact exists for this sensor.
+
+Inside `perform`, `fact`, `assert`, `retract`, `modify` and `query` change or read working memory, whether you write them bare or through `kb`. (The action runs during `kb.run`, after `kb` has been assigned.)
 
 **Flow:**
 
@@ -157,13 +159,15 @@ end
 So far, facts disappear when your program exits. Use blackboard memory for persistence:
 
 ```ruby
-require 'kbs'
+require 'kbs/blackboard'
 
 # Create engine with SQLite persistence
 engine = KBS::Blackboard::Engine.new(db_path: 'sensors.db')
 
-# Add rules (same as before)
-engine.add_rule(smart_alert_rule)
+# Add rules (same as before) to a knowledge base that runs on this engine
+kb = KBS.knowledge_base(engine: engine) do
+  # rule "smart_temperature_alert" do ... end
+end
 
 # Add facts - these are saved to database
 engine.add_fact(:sensor, id: "bedroom", temp: 28)
@@ -180,7 +184,7 @@ engine.close
 ```ruby
 engine = KBS::Blackboard::Engine.new(db_path: 'sensors.db')
 # Facts automatically loaded from database
-puts engine.facts.size  # => 2 (sensor + threshold)
+puts engine.facts.size  # => 3 (sensor, threshold, and the alert the rule added)
 ```
 
 Blackboard provides:
@@ -226,7 +230,7 @@ end
 Here's a complete temperature monitoring system:
 
 ```ruby
-require 'kbs'
+require 'kbs/blackboard'
 
 class TemperatureMonitor
   def initialize
@@ -239,6 +243,8 @@ class TemperatureMonitor
     monitor = self
 
     KBS.knowledge_base(engine: engine) do
+      kb = self   # the knowledge base, for use inside actions
+
       # Rule 1: Send alert when temp exceeds threshold
       rule "temperature_alert", priority: 50 do
         on :sensor, id: :id?, temp: :temp?
@@ -248,7 +254,7 @@ class TemperatureMonitor
         perform do |facts, bindings|
           if bindings[:temp?] > bindings[:max?]
             monitor.send_alert(bindings[:id?], bindings[:temp?], bindings[:max?])
-            fact :alert, sensor_id: bindings[:id?]
+            kb.fact :alert, sensor_id: bindings[:id?]
           end
         end
       end
@@ -263,8 +269,8 @@ class TemperatureMonitor
           if bindings[:temp?] <= bindings[:max?]
             monitor.clear_alert(bindings[:id?])
             # Find and retract the alert fact
-            alert_fact = query(:alert, sensor_id: bindings[:id?]).first
-            retract alert_fact if alert_fact
+            alert_fact = kb.query(:alert, sensor_id: bindings[:id?]).first
+            kb.retract alert_fact if alert_fact
           end
         end
       end

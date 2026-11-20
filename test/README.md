@@ -12,16 +12,29 @@ Comprehensive test suite for the KBS (Knowledge-Based System) Ruby gem using Min
 - `test_beta_memory.rb` - Token storage and management
 - `test_join_node.rb` - Join operations between alpha and beta memories
 - `test_negation_node.rb` - Negated conditions and unlinking
+- `test_quantifier_nodes.rb` - `NegationNode` / `ExistsNode` blocker links and `exists` conditions
 - `test_production_node.rb` - Rule firing and token management
 - `test_condition.rb` - Condition creation, pattern matching, variable bindings
 - `test_rule.rb` - Rule definition and action execution
 - `test_rete_engine.rb` - Complete RETE network building and inference
+- `test_pattern_matching.rb` - Pattern matching and `NetworkNode`
+- `test_alpha_network.rb` - Alpha memories grouped by fact type and constant
+- `test_memory_index.rb`, `test_join_indexing.rb` - Hash-indexed joins on shared variables
+- `test_join_tests.rb`, `test_join_test_builder.rb`, `test_variable_joins.rb` - Joins on shared `?variables`
+- `test_memory_collections.rb` - Memories hold Sets and hand out copies
+- `test_retraction.rb` - Retracting facts without searching the memories
+- `test_agenda.rb`, `test_engine_run.rb` - Agenda, conflict resolution strategies, `run(limit)` and `halt`
+- `test_rule_priority.rb`, `test_assertion_order.rb` - Firing order and once-per-match firing
+- `test_fact_registry.rb`, `test_fact_lifecycle.rb` - Duplicate rejection, `modify`, and the match guard
+- `test_truth_maintenance.rb` - Logical conditions and truth maintenance
+- `late_rule_addition_tests.rb` - Shared tests (no `test_` prefix) for rules added after facts exist, required by `test_rete_engine.rb` and `test_blackboard_engine.rb`
 
 ### DSL Tests
 - `test_dsl_variable.rb` - Logic variables (symbols ending with `?`)
 - `test_dsl_knowledge_base.rb` - KB initialization, facts, rules, queries
 - `test_dsl_rule_builder.rb` - Fluent API for rule definition, aliases
 - `test_dsl_condition_helpers.rb` - Pattern matching helpers (less_than, greater_than, between, etc.)
+- `test_rule_source.rb`, `test_rule_source_fallback.rb`, `test_decompiler.rb` - Rule source introspection and the decompiler
 
 ### Blackboard Pattern Tests
 - `test_blackboard_memory.rb` - Persistent facts, messages, audit trail
@@ -31,6 +44,7 @@ Comprehensive test suite for the KBS (Knowledge-Based System) Ruby gem using Min
 ### Redis Persistence Tests
 - `test_redis_store.rb` - RedisStore implementation
 - `test_hybrid_store.rb` - HybridStore (Redis + SQLite) integration
+- `test_redis_test_support.rb` - the Redis tests stay skipped unless opted in
 
 These tests flush the Redis database they use, so they are skipped unless
 `KBS_TEST_REDIS_URL` names a disposable one. Point it at a throwaway server,
@@ -38,7 +52,7 @@ not the Redis you use day to day:
 
 ```bash
 redis-server --port 6399 --bind 127.0.0.1 --save '' --appendonly no --daemonize yes
-KBS_TEST_REDIS_URL=redis://127.0.0.1:6399/15 bundle exec rake test
+KBS_TEST_REDIS_URL=redis://127.0.0.1:6399/15 asgard test_check
 redis-cli -p 6399 shutdown nosave
 ```
 
@@ -50,23 +64,26 @@ redis-cli -p 6399 shutdown nosave
   - Multi-condition joins
   - Message queue priority
   - Trading and IoT scenarios
+- `test_kbs.rb`, `test_gemspec.rb` - Version constant and the files the gem ships
 
 ## Running Tests
 
 ### All Tests
 ```bash
-ruby -Ilib:test -e "Dir['test/test_*.rb'].each { |f| require f.sub('test/', '') }"
+asgard test_check
+# or, without asgard, the command it runs:
+bundle exec ruby -Ilib:test -e 'Dir["test/**/test_*.rb"].each { |f| require File.expand_path(f) }'
 ```
 
 ### Single Test File
 ```bash
-ruby -Ilib:test test/test_rete_engine.rb
+bundle exec ruby -Ilib:test test/test_rete_engine.rb
 ```
 
 ### With Coverage Report
 ```bash
 # SimpleCov runs automatically from test_helper.rb
-ruby -Ilib:test -e "Dir['test/test_*.rb'].each { |f| require f.sub('test/', '') }"
+bundle exec ruby -Ilib:test -e 'Dir["test/**/test_*.rb"].each { |f| require File.expand_path(f) }'
 # Open coverage/index.html to view report
 ```
 
@@ -99,21 +116,22 @@ end
 
 ## Test Organization
 
-### Core RETE Tests (12 files)
+### Core RETE Tests
 Tests for the RETE algorithm implementation:
 - Alpha network (pattern matching)
 - Beta network (join operations)
 - Production nodes (rule firing)
 - Unlinking optimization (negation)
+- Agenda, truth maintenance and fact lifecycle
 
-### DSL Tests (4 files)
+### DSL Tests
 Tests for the declarative rule DSL:
 - Rule builder fluent API
 - Pattern evaluators
 - Condition helpers
 - Knowledge base management
 
-### Blackboard Tests (4 files)
+### Blackboard Tests
 Tests for the Blackboard architectural pattern:
 - Persistent fact storage
 - Message queue (priority-based)
@@ -185,7 +203,7 @@ assert_equal 1, results.size
 
 ## Continuous Integration
 
-CI runs `bundle exec rake test` with a Redis service and `KBS_TEST_REDIS_URL` set; see `.github/workflows/test.yml`.
+CI runs the same command as `asgard test_check` (see `.loki`) with a Redis service and `KBS_TEST_REDIS_URL` set; see `.github/workflows/test.yml`.
 
 ## Development Workflow
 
@@ -200,7 +218,8 @@ CI runs `bundle exec rake test` with a Redis service and `KBS_TEST_REDIS_URL` se
 `test/test_helper.rb` provides:
 - SimpleCov configuration
 - Minitest autorun
-- Common requires
+- Common requires (`kbs` and `kbs/blackboard`)
+- `RedisTestSupport`, the Redis opt-in
 
 All test files should start with:
 ```ruby

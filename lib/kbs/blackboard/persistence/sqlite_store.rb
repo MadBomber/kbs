@@ -8,18 +8,20 @@ require_relative 'store'
 module KBS
   module Blackboard
     module Persistence
+      # Keeps blackboard facts in a SQLite database.
       class SqliteStore < Store
         attr_reader :db, :db_path, :session_id
 
         def initialize(db_path: ':memory:', session_id: nil)
+          super()
           @db_path = db_path
           @session_id = session_id || SecureRandom.uuid
           @transaction_depth = 0
+          @db = SQLite3::Database.new(@db_path)
           setup_database
         end
 
         def setup_database
-          @db = SQLite3::Database.new(@db_path)
           @db.results_as_hash = true
           create_tables
           create_indexes
@@ -91,17 +93,16 @@ module KBS
             [uuid]
           )
 
-          if result
-            @db.execute(
-              "UPDATE facts SET retracted = 1, retracted_at = CURRENT_TIMESTAMP WHERE uuid = ?",
-              [uuid]
-            )
+          return unless result
+          @db.execute(
+            "UPDATE facts SET retracted = 1, retracted_at = CURRENT_TIMESTAMP WHERE uuid = ?",
+            [uuid]
+          )
 
-            {
-              type: result['fact_type'].to_sym,
-              attributes: JSON.parse(result['attributes'], symbolize_names: true)
-            }
-          end
+          {
+            type: result['fact_type'].to_sym,
+            attributes: JSON.parse(result['attributes'], symbolize_names: true)
+          }
         end
 
         def update_fact(uuid, attributes)
@@ -121,13 +122,12 @@ module KBS
             [uuid]
           )
 
-          if result
-            {
-              uuid: result['uuid'],
-              type: result['fact_type'].to_sym,
-              attributes: JSON.parse(result['attributes'], symbolize_names: true)
-            }
-          end
+          return unless result
+          {
+            uuid: result['uuid'],
+            type: result['fact_type'].to_sym,
+            attributes: JSON.parse(result['attributes'], symbolize_names: true)
+          }
         end
 
         def get_facts(type = nil, pattern = {})
@@ -144,13 +144,12 @@ module KBS
           results.map do |row|
             attributes = JSON.parse(row['attributes'], symbolize_names: true)
 
-            if matches_pattern?(attributes, pattern)
-              {
-                uuid: row['uuid'],
-                type: row['fact_type'].to_sym,
-                attributes: attributes
-              }
-            end
+            next unless matches_pattern?(attributes, pattern)
+            {
+              uuid: row['uuid'],
+              type: row['fact_type'].to_sym,
+              attributes: attributes
+            }
           end.compact
         end
 
@@ -197,7 +196,7 @@ module KBS
           }
         end
 
-        def transaction(&block)
+        def transaction(&)
           @transaction_depth += 1
           result = nil
           begin
@@ -230,11 +229,8 @@ module KBS
 
         def matches_pattern?(attributes, pattern)
           pattern.all? do |key, value|
-            if value.is_a?(Proc)
-              attributes[key] && value.call(attributes[key])
-            else
-              attributes[key] == value
-            end
+            actual = attributes[key]
+            value.is_a?(Proc) ? actual && value.call(actual) : actual == value
           end
         end
       end
