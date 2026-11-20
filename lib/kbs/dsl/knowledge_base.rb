@@ -113,7 +113,7 @@ module KBS
           puts "  Priority: #{builder.priority}"
           puts "  Conditions: #{builder.conditions.size}"
           builder.conditions.each_with_index do |cond, i|
-            negated = cond.negated ? "NOT " : ""
+            negated = { "without" => "NOT ", "exists" => "EXISTS " }.fetch(cond.keyword, "")
             puts "    #{i + 1}. #{negated}#{cond.type}(#{reconstruct_pattern(cond.pattern)})"
           end
           puts ""
@@ -133,7 +133,7 @@ module KBS
         lines << "  priority #{builder.priority}" if builder.priority != 0
 
         builder.conditions.each do |cond|
-          keyword = cond.negated ? "without" : "on"
+          keyword = cond.keyword
           pattern_str = reconstruct_pattern(cond.pattern)
           if pattern_str.empty?
             lines << "  #{keyword} #{cond.type.inspect}"

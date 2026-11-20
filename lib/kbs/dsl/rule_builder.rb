@@ -67,8 +67,14 @@ module KBS
         on(type, pattern, &block)
       end
 
+      # Matches once when at least one fact fits the pattern, however many
+      # do. The rule's action receives no fact for this condition, and a
+      # variable first used here is not bound for later conditions.
       def exists(type, pattern = {}, &block)
-        on(type, pattern, &block)
+        pattern = pattern.merge(evaluate_block(&block)) if block_given?
+        @conditions << Condition.new(type, pattern, exists: true)
+        @negated = false
+        self
       end
 
       def absent(type, pattern = {}, &block)

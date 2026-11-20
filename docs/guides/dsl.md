@@ -389,7 +389,8 @@ All of these are **aliases** - use whichever reads best for your domain:
 - **`given(type, pattern = {})`** - Alias for `on`
 - **`matches(type, pattern = {})`** - Alias for `on`
 - **`fact(type, pattern = {})`** - Alias for `on`
-- **`exists(type, pattern = {})`** - Alias for `on`
+
+`exists` is not an alias; see [Exists](#exists).
 
 **Parameters**:
 - `type` (Symbol) - Fact type to match
@@ -716,6 +717,29 @@ rule "sensor_temperature_correlation" do
   end
 end
 ```
+
+---
+
+## Exists
+
+`exists(type, pattern = {}, &block)` matches when **at least one** fact fits the pattern, and matches once however many do.
+
+```ruby
+rule "sound the horn" do
+  exists :alarm, level: "critical"
+  perform { sound_horn }
+end
+```
+
+With three critical alarms in working memory, `on :alarm` fires the rule three times and `exists :alarm` fires it once. The rule stays matched until the last such alarm is retracted, and matches again when a new one arrives.
+
+An `exists` condition tests for facts but adds none to the match:
+
+- the action's `facts` has no entry for it
+- a variable first used in it is not bound for later conditions or for the action
+- a variable bound by an earlier condition does join, so `on :order, id: :id?` followed by `exists :payment, order_id: :id?` matches each order that has at least one payment, once
+
+`exists` is the opposite of `without`: `without` matches while no fact fits, `exists` while at least one does.
 
 ---
 

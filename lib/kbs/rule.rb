@@ -32,10 +32,10 @@ module KBS
     end
 
     # Maps each variable to its value in the matched facts. The facts
-    # line up with the positive conditions only; negated conditions
-    # match no fact.
+    # line up with the conditions that bind a fact; negated and exists
+    # conditions contribute none.
     def bindings_for(facts)
-      @conditions.reject(&:negated).zip(facts).each_with_object({}) do |(condition, fact), bindings|
+      @conditions.select(&:binds_fact?).zip(facts).each_with_object({}) do |(condition, fact), bindings|
         next unless fact
 
         condition.variable_bindings.each { |var, field| bindings[var] = fact.attributes[field] }
@@ -47,11 +47,10 @@ module KBS
       lines << "  priority #{@priority}" unless @priority.zero?
 
       @conditions.each do |condition|
-        keyword = condition.negated ? "without" : "on"
         pattern = condition.pattern.map do |key, value|
           "#{key}: #{pattern_value_source(value)}"
         end.join(", ")
-        line = "  #{keyword} #{condition.type.inspect}"
+        line = "  #{condition.keyword} #{condition.type.inspect}"
         line += ", #{pattern}" unless pattern.empty?
         lines << line
       end

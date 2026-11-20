@@ -7,8 +7,9 @@ module KBS
   # equality test against that condition's fact, so the same variable in
   # two conditions joins them. A variable used twice in one condition
   # compares the two attributes of the same fact. Variables that first
-  # appear in a negated condition are local to it: a negated condition
-  # matches no fact, so it binds nothing for later conditions.
+  # appear in a negated or exists condition are local to it: such a
+  # condition adds no fact to the match, so it binds nothing for later
+  # conditions.
   class JoinTestBuilder
     def initialize(conditions)
       @conditions = conditions
@@ -21,7 +22,7 @@ module KBS
       @conditions.each_with_index.map do |condition, index|
         local = {}
         tests = type_tests(condition, index) + variable_tests(condition, bound, local)
-        local.each { |variable, field| bound[variable] ||= [index, field] } unless condition.negated
+        local.each { |variable, field| bound[variable] ||= [index, field] } if condition.binds_fact?
         tests
       end
     end
