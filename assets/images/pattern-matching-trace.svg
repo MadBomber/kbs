@@ -88,8 +88,8 @@
 
   <!-- Success indicator -->
   <rect x="450" y="250" width="520" height="50" class="production-box" rx="5"/>
-  <text x="710" y="275" class="step-label" text-anchor="middle">✓ RULE FIRES: "No alert for AAPL!"</text>
-  <text x="710" y="292" class="comment" text-anchor="middle">Token propagates to Production Node</text>
+  <text x="710" y="275" class="step-label" text-anchor="middle">✓ engine.run → RULE FIRES: "No alert for AAPL!"</text>
+  <text x="710" y="292" class="comment" text-anchor="middle">Token reaches Production Node, activation waits on the agenda until run</text>
 
   <!-- Phase 2: Add alert fact -->
   <text x="450" y="330" class="phase-title">Phase 2: Add Alert Fact (Inhibit)</text>
@@ -99,11 +99,11 @@
 
   <text x="470" y="388" class="code-label">✓ Matches Alpha Memory 2 → activates</text>
   <text x="470" y="405" class="code-label">✓ Negation Node.right_activate(alert_fact)</text>
-  <text x="470" y="422" class="code-label">✓ Finds existing token in Beta Memory 1</text>
-  <text x="470" y="439" class="code-label">✓ Alert fact now INHIBITS the negation condition</text>
+  <text x="470" y="422" class="code-label">✓ Finds matching tokens in Beta Memory 1</text>
+  <text x="470" y="439" class="code-label">✓ Links alert fact to each token as a blocker</text>
 
-  <text x="470" y="460" class="step-label">4. Negation Node deactivates token</text>
-  <text x="470" y="477" class="code-label">✓ Removes token from Production Node</text>
+  <text x="470" y="460" class="step-label">4. Negation Node retracts the blocked token</text>
+  <text x="470" y="477" class="code-label">✓ Removed from Production Node (and agenda, if not yet fired)</text>
 
   <!-- Blocked indicator -->
   <rect x="450" y="500" width="520" height="50" class="negation-box" rx="5"/>
@@ -118,8 +118,8 @@
 
   <text x="470" y="638" class="code-label">✓ Alpha Memory 2 deactivates alert fact</text>
   <text x="470" y="655" class="code-label">✓ Negation Node.right_deactivate(alert_fact)</text>
-  <text x="470" y="672" class="code-label">✓ No more inhibiting facts → condition satisfied again</text>
-  <text x="470" y="689" class="code-label">✓ Creates new token and propagates to Production Node</text>
+  <text x="470" y="672" class="code-label">✓ Token's last blocker removed → condition satisfied again</text>
+  <text x="470" y="689" class="code-label">✓ Token re-emitted to Production Node → new agenda activation</text>
 
   <text x="470" y="710" class="step-label">6. engine.run()</text>
 

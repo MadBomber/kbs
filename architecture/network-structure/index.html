@@ -535,7 +535,7 @@
   <span class="md-ellipsis">
     
   
-    What is aKnowledge Base?
+    What is a Knowledge Base?
   
 
     
@@ -997,10 +997,32 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#exists-nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exists Nodes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#production-nodes" class="md-nav__link">
     <span class="md-ellipsis">
       
         Production Nodes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agenda" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agenda
       
     </span>
   </a>
@@ -2174,10 +2196,32 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#exists-nodes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exists Nodes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#production-nodes" class="md-nav__link">
     <span class="md-ellipsis">
       
         Production Nodes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#agenda" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agenda
       
     </span>
   </a>
@@ -2461,44 +2505,47 @@
 <p><strong>Finding a fact's memories</strong>: <code>KBS::AlphaNetwork</code> groups the alpha memories by fact type. Within a type, a memory whose pattern tests an attribute against a constant is filed in a hash under that attribute and value. A new fact reaches those memories with one lookup on its own value, and is only tested against the memories of its type that have no constant test. The number of rules on other fact types, or testing other constants, does not affect the cost of asserting a fact.</p>
 <h3 id="step-3-build-join-network">Step 3: Build Join Network<a class="headerlink" href="#step-3-build-join-network" title="Permanent link">&para;</a></h3>
 <p>Connect conditions through join nodes:</p>
+<p>Simplified from <code>Engine#build_network_for_rule</code> and <code>#add_condition_node</code>:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Start with root beta memory (contains dummy token)</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">current_beta</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="vi">@root_beta_memory</span>
 </span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># For each condition</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">rule</span><span class="o">.</span><span class="n">conditions</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">condition</span><span class="o">|</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">  </span><span class="n">alpha_memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">get_or_create_alpha_memory</span><span class="p">(</span><span class="n">condition</span><span class="o">.</span><span class="n">pattern</span><span class="p">)</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">  </span><span class="c1"># Build join tests for variable consistency</span>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">  </span><span class="n">tests</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">extract_join_tests</span><span class="p">(</span><span class="n">condition</span><span class="p">)</span>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>
-</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">  </span><span class="c1"># Create join or negation node</span>
-</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="n">condition</span><span class="o">.</span><span class="n">negated</span>
-</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">    </span><span class="n">node</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">NegationNode</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">alpha_memory</span><span class="p">,</span><span class="w"> </span><span class="n">current_beta</span><span class="p">,</span><span class="w"> </span><span class="n">tests</span><span class="p">)</span>
-</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">  </span><span class="k">else</span>
-</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">    </span><span class="n">node</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">JoinNode</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">alpha_memory</span><span class="p">,</span><span class="w"> </span><span class="n">current_beta</span><span class="p">,</span><span class="w"> </span><span class="n">tests</span><span class="p">)</span>
-</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>
-</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">  </span><span class="c1"># Create beta memory to store results</span>
-</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">  </span><span class="n">new_beta</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">BetaMemory</span><span class="o">.</span><span class="n">new</span>
-</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">  </span><span class="n">node</span><span class="o">.</span><span class="n">successors</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">new_beta</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Build join tests for variable consistency, one list per condition</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="n">join_tests</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">JoinTestBuilder</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">rule</span><span class="o">.</span><span class="n">conditions</span><span class="p">)</span><span class="o">.</span><span class="n">tests</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="n">rule</span><span class="o">.</span><span class="n">conditions</span><span class="o">.</span><span class="n">each_with_index</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">condition</span><span class="p">,</span><span class="w"> </span><span class="n">index</span><span class="o">|</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">  </span><span class="n">alpha_memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">get_or_create_alpha_memory</span><span class="p">(</span><span class="n">condition</span><span class="o">.</span><span class="n">pattern</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="n">condition</span><span class="o">.</span><span class="n">type</span><span class="p">))</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">  </span><span class="c1"># Create join, negation or exists node</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">  </span><span class="n">node_class</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">condition</span><span class="o">.</span><span class="n">negated</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="no">NegationNode</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">               </span><span class="k">elsif</span><span class="w"> </span><span class="n">condition</span><span class="o">.</span><span class="n">exists</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="no">ExistsNode</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">               </span><span class="k">else</span><span class="w"> </span><span class="no">JoinNode</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">               </span><span class="k">end</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">  </span><span class="n">node</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">node_class</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">alpha_memory</span><span class="p">,</span><span class="w"> </span><span class="n">current_beta</span><span class="p">,</span><span class="w"> </span><span class="n">join_tests</span><span class="o">[</span><span class="n">index</span><span class="o">]</span><span class="p">)</span>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">  </span><span class="c1"># Create beta memory to store results</span>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">  </span><span class="n">new_beta</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">BetaMemory</span><span class="o">.</span><span class="n">new</span>
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">  </span><span class="n">node</span><span class="o">.</span><span class="n">successors</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">new_beta</span>
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">  </span><span class="n">replay_tokens</span><span class="p">(</span><span class="n">current_beta</span><span class="p">,</span><span class="w"> </span><span class="n">node</span><span class="p">)</span><span class="w">  </span><span class="c1"># match tokens that already exist</span>
 </span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="w">  </span><span class="n">current_beta</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">new_beta</span>
 </span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="k">end</span>
 </span></code></pre></div>
 <h3 id="step-4-attach-production-node">Step 4: Attach Production Node<a class="headerlink" href="#step-4-attach-production-node" title="Permanent link">&para;</a></h3>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">production_node</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">ProductionNode</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">rule</span><span class="p">)</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">production_node</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">ProductionNode</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">rule</span><span class="p">,</span><span class="w"> </span><span class="vi">@agenda</span><span class="p">,</span><span class="w"> </span><span class="ss">order</span><span class="p">:</span><span class="w"> </span><span class="vi">@rules</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">current_beta</span><span class="o">.</span><span class="n">successors</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">production_node</span>
 </span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="vi">@production_nodes</span><span class="o">[</span><span class="n">rule</span><span class="o">.</span><span class="n">name</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">production_node</span>
 </span></code></pre></div>
+<p>The production node puts each complete match on the engine's <code>Agenda</code>; <code>engine.run</code> fires them.</p>
 <h2 id="node-types">Node Types<a class="headerlink" href="#node-types" title="Permanent link">&para;</a></h2>
 <h3 id="alpha-memory-nodes">Alpha Memory Nodes<a class="headerlink" href="#alpha-memory-nodes" title="Permanent link">&para;</a></h3>
 <p><strong>Purpose</strong>: Store facts matching a specific pattern</p>
 <p><strong>Structure</strong>:
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">AlphaMemory</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="kp">attr_accessor</span><span class="w"> </span><span class="ss">:items</span><span class="w">      </span><span class="c1"># Facts that match pattern</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="kp">attr_accessor</span><span class="w"> </span><span class="ss">:successors</span><span class="w"> </span><span class="c1"># Join nodes using this alpha</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="kp">attr_reader</span><span class="w"> </span><span class="ss">:items</span><span class="w">        </span><span class="c1"># Facts that match pattern (a copy; a Set inside)</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="kp">attr_accessor</span><span class="w"> </span><span class="ss">:successors</span><span class="w"> </span><span class="c1"># Join/negation/exists nodes using this alpha</span>
 </span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="kp">attr_accessor</span><span class="w"> </span><span class="ss">:pattern</span><span class="w">    </span><span class="c1"># Pattern to match</span>
 </span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span><span class="kp">attr_reader</span><span class="w"> </span><span class="ss">:linked</span><span class="w">       </span><span class="c1"># Unlinking state</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="k">end</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">  </span><span class="c1"># index_on(fields) → MemoryIndex used by joins on shared variables</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="k">end</span>
 </span></code></pre></div></p>
 <p><strong>Example</strong>:
 <div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>AlphaMemory(stock, symbol: "AAPL")
@@ -2509,10 +2556,12 @@
 <p><strong>Purpose</strong>: Store partial matches (tokens) as they propagate</p>
 <p><strong>Structure</strong>:
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">BetaMemory</span>
-</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="kp">attr_accessor</span><span class="w"> </span><span class="ss">:tokens</span><span class="w">     </span><span class="c1"># Partial matches</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="kp">attr_reader</span><span class="w"> </span><span class="ss">:tokens</span><span class="w">       </span><span class="c1"># Partial matches (a copy; a Set inside)</span>
 </span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="kp">attr_accessor</span><span class="w"> </span><span class="ss">:successors</span><span class="w"> </span><span class="c1"># Next nodes in network</span>
 </span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="kp">attr_reader</span><span class="w"> </span><span class="ss">:linked</span><span class="w">       </span><span class="c1"># Unlinking state</span>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="k">end</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span><span class="kp">attr_accessor</span><span class="w"> </span><span class="ss">:listener</span><span class="w">   </span><span class="c1"># Told of removed tokens (truth maintenance)</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">  </span><span class="c1"># index_on(specs) → MemoryIndex used by joins on shared variables</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="k">end</span>
 </span></code></pre></div></p>
 <p><strong>Example</strong>:
 <div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>BetaMemory
@@ -2526,12 +2575,14 @@
 <p><strong>Purpose</strong>: Combine facts from alpha memory with tokens from beta memory</p>
 <p><strong>Structure</strong>:
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">JoinNode</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="kp">attr_accessor</span><span class="w"> </span><span class="ss">:alpha_memory</span><span class="w">  </span><span class="c1"># Right input</span>
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="kp">attr_accessor</span><span class="w"> </span><span class="ss">:beta_memory</span><span class="w">   </span><span class="c1"># Left input</span>
-</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span><span class="kp">attr_accessor</span><span class="w"> </span><span class="ss">:tests</span><span class="w">         </span><span class="c1"># Join tests to perform</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="kp">attr_reader</span><span class="w"> </span><span class="ss">:alpha_memory</span><span class="w">    </span><span class="c1"># Right input</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="kp">attr_reader</span><span class="w"> </span><span class="ss">:beta_memory</span><span class="w">     </span><span class="c1"># Left input</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span><span class="kp">attr_reader</span><span class="w"> </span><span class="ss">:tests</span><span class="w">           </span><span class="c1"># Join tests to perform</span>
 </span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span><span class="kp">attr_accessor</span><span class="w"> </span><span class="ss">:successors</span><span class="w">    </span><span class="c1"># Beta memory nodes</span>
-</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="k">end</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">  </span><span class="c1"># @tokens_by_fact: tokens built from each fact, for retraction</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="k">end</span>
 </span></code></pre></div></p>
+<p>Equality tests between a token and a fact are used as hash-index keys on both memories (<code>KBS::JoinIndexing</code>), so a join on a shared variable looks up only matching entries; other tests are checked on those candidates.</p>
 <p><strong>Join Tests</strong>:
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="p">{</span>
 </span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="ss">token_field_index</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">    </span><span class="c1"># Check first fact in token</span>
@@ -2543,26 +2594,36 @@
 <h3 id="negation-nodes">Negation Nodes<a class="headerlink" href="#negation-nodes" title="Permanent link">&para;</a></h3>
 <p><strong>Purpose</strong>: Implement negated conditions (match when pattern is absent)</p>
 <p><strong>Structure</strong>:
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">NegationNode</span>
-</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span><span class="kp">attr_accessor</span><span class="w"> </span><span class="ss">:alpha_memory</span><span class="w">       </span><span class="c1"># Pattern to check</span>
-</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">  </span><span class="kp">attr_accessor</span><span class="w"> </span><span class="ss">:beta_memory</span><span class="w">        </span><span class="c1"># Tokens to test</span>
-</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">  </span><span class="kp">attr_accessor</span><span class="w"> </span><span class="ss">:tests</span><span class="w">              </span><span class="c1"># Join tests</span>
-</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">  </span><span class="kp">attr_accessor</span><span class="w"> </span><span class="ss">:tokens_with_matches</span><span class="w"> </span><span class="c1"># Track inhibiting facts</span>
-</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="k">end</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">NegationNode</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">QuantifierNode</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span><span class="kp">attr_reader</span><span class="w"> </span><span class="ss">:alpha_memory</span><span class="w">       </span><span class="c1"># Pattern to check</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">  </span><span class="kp">attr_reader</span><span class="w"> </span><span class="ss">:beta_memory</span><span class="w">        </span><span class="c1"># Tokens to test</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">  </span><span class="kp">attr_reader</span><span class="w"> </span><span class="ss">:tests</span><span class="w">              </span><span class="c1"># Join tests</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">  </span><span class="c1"># @facts_matching:    token → Set of facts blocking it</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="w">  </span><span class="c1"># @tokens_matched_by: fact  → Set of tokens it blocks</span>
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="k">end</span>
 </span></code></pre></div></p>
 <p><strong>Behavior</strong>:
-- Token arrives → check alpha memory for matches
+- Token arrives → link it to the matching facts in alpha memory
 - No matches found → propagate token (condition satisfied)
 - Matches found → block token (condition not satisfied)
-- Match removed → unblock token</p>
+- Last blocking fact removed → unblock token (only the tokens linked to that fact are visited)</p>
+<h3 id="exists-nodes">Exists Nodes<a class="headerlink" href="#exists-nodes" title="Permanent link">&para;</a></h3>
+<p><strong>Purpose</strong>: Implement <code>exists</code> conditions (match once while at least one fact fits)</p>
+<p><code>ExistsNode &lt; QuantifierNode</code> uses the same links as <code>NegationNode</code> with the test inverted: a token passes when it gains its first matching fact and is withdrawn when it loses its last. It adds no fact to the token and binds no variables for later conditions.</p>
 <h3 id="production-nodes">Production Nodes<a class="headerlink" href="#production-nodes" title="Permanent link">&para;</a></h3>
-<p><strong>Purpose</strong>: Fire rule actions when all conditions match</p>
+<p><strong>Purpose</strong>: Queue rule actions when all conditions match</p>
 <p><strong>Structure</strong>:
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">ProductionNode</span>
 </span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span><span class="kp">attr_accessor</span><span class="w"> </span><span class="ss">:rule</span><span class="w">   </span><span class="c1"># Rule to fire</span>
-</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">  </span><span class="kp">attr_accessor</span><span class="w"> </span><span class="ss">:tokens</span><span class="w"> </span><span class="c1"># Complete matches ready to fire</span>
-</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="k">end</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">  </span><span class="kp">attr_reader</span><span class="w"> </span><span class="ss">:tokens</span><span class="w">   </span><span class="c1"># Complete matches, fired or not (a copy)</span>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">  </span><span class="kp">attr_reader</span><span class="w"> </span><span class="ss">:order</span><span class="w">    </span><span class="c1"># Rule's position, for :definition ordering</span>
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">  </span><span class="c1"># @activations: token → its Activation on the agenda</span>
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="k">end</span>
 </span></code></pre></div></p>
+<p>A complete match becomes an <code>Activation</code> on the engine's <code>Agenda</code>. If the match is retracted before it fires, the activation is cancelled.</p>
+<h3 id="agenda">Agenda<a class="headerlink" href="#agenda" title="Permanent link">&para;</a></h3>
+<p><strong>Purpose</strong>: Hold pending activations in firing order</p>
+<p><code>KBS::Agenda</code> is a binary heap ordered by rule priority, then by the conflict resolution strategy (<code>:definition</code>, <code>:depth</code> or <code>:breadth</code>). <code>engine.run(limit = nil)</code> pops and fires one activation at a time until the agenda is empty, so facts asserted by an action can fire other rules in the same run.</p>
 <h2 id="complete-example">Complete Example<a class="headerlink" href="#complete-example" title="Permanent link">&para;</a></h2>
 <h3 id="rule-definition">Rule Definition<a class="headerlink" href="#rule-definition" title="Permanent link">&para;</a></h3>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="n">rule</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">Rule</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">"trading_signal"</span><span class="p">)</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">r</span><span class="o">|</span>
@@ -2644,11 +2705,14 @@
 </span><span id="__span-17-11"><a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a><span class="w">  </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Rule: </span><span class="si">#{</span><span class="nb">name</span><span class="si">}</span><span class="s2">"</span>
 </span><span id="__span-17-12"><a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a><span class="w">  </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"  Tokens: </span><span class="si">#{</span><span class="n">node</span><span class="o">.</span><span class="n">tokens</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">"</span>
 </span><span id="__span-17-13"><a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a><span class="k">end</span>
+</span><span id="__span-17-14"><a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a>
+</span><span id="__span-17-15"><a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a><span class="c1"># See pending activations in firing order</span>
+</span><span id="__span-17-16"><a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a><span class="n">engine</span><span class="o">.</span><span class="n">agenda</span><span class="o">.</span><span class="n">to_a</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">activation</span><span class="o">|</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="n">activation</span><span class="w"> </span><span class="p">}</span>
 </span></code></pre></div>
 <h3 id="visualizing-token-flow">Visualizing Token Flow<a class="headerlink" href="#visualizing-token-flow" title="Permanent link">&para;</a></h3>
 <p>Enable tracing in actions:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="n">r</span><span class="o">.</span><span class="n">action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">lambda</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">facts</span><span class="p">,</span><span class="w"> </span><span class="n">bindings</span><span class="o">|</span>
-</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">  </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Rule '</span><span class="si">#{</span><span class="n">rule</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">' fired"</span>
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">  </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Rule 'trading_signal' fired"</span>
 </span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">  </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"  Facts: </span><span class="si">#{</span><span class="n">facts</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:to_s</span><span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">', '</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
 </span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="w">  </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"  Bindings: </span><span class="si">#{</span><span class="n">bindings</span><span class="o">.</span><span class="n">inspect</span><span class="si">}</span><span class="s2">"</span>
 </span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="k">end</span>
@@ -2675,6 +2739,16 @@
 <td>Hash-based pattern cache</td>
 </tr>
 <tr>
+<td>Alpha memory selection</td>
+<td>O(K + U)</td>
+<td>K = constant-tested attributes looked up, U = memories of the type with no constant test</td>
+</tr>
+<tr>
+<td>Join candidate lookup</td>
+<td>O(1) + matches</td>
+<td>Hash index when the join has a shared <code>?variable</code>; otherwise a scan of the other memory</td>
+</tr>
+<tr>
 <td>Join test</td>
 <td>O(T)</td>
 <td>T = number of tests</td>
@@ -2698,8 +2772,8 @@
 <tbody>
 <tr>
 <td>Alpha memories</td>
-<td>O(P)</td>
-<td>P = unique patterns across all rules</td>
+<td>O(P) nodes</td>
+<td>P = unique patterns across all rules (variable names count: <code>:p?</code> and <code>:price?</code> make different patterns)</td>
 </tr>
 <tr>
 <td>Beta memories</td>
@@ -2722,8 +2796,8 @@
 <ol>
 <li><strong>Maximize network sharing</strong>: Design rules to reuse common patterns</li>
 <li><strong>Order conditions by selectivity</strong>: Specific first, general last</li>
-<li><strong>Minimize negations</strong>: Expensive to maintain</li>
-<li><strong>Use predicates sparingly</strong>: Can't be shared across rules</li>
+<li><strong>Join on shared variables</strong>: Negations and joins with a shared <code>?variable</code> use hash indexes; without one they scan the other memory</li>
+<li><strong>Use predicates sparingly</strong>: Can't be shared across rules (each lambda is a different pattern), and a pattern with no constant test is checked for every fact of its type</li>
 <li><strong>Profile your rules</strong>: Use debugging to identify bottlenecks</li>
 </ol>
 <h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>

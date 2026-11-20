@@ -535,7 +535,7 @@
   <span class="md-ellipsis">
     
   
-    What is aKnowledge Base?
+    What is a Knowledge Base?
   
 
     
@@ -2996,14 +2996,15 @@
 
 <h1 id="the-rete-algorithm-in-kbs">The RETE Algorithm in KBS<a class="headerlink" href="#the-rete-algorithm-in-kbs" title="Permanent link">&para;</a></h1>
 <h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
-<p>The RETE algorithm is a pattern matching algorithm for implementing production rule systems. Developed by Charles Forgy in 1979, RETE (Latin for "network") creates a discrimination network that efficiently matches rules against a working memory of facts. KBS implements the RETE algorithm with the critical <strong>unlinking optimization</strong> for improved performance.</p>
+<p>The RETE algorithm is a pattern matching algorithm for implementing production rule systems. Developed by Charles Forgy in 1979, RETE (Latin for "network") creates a discrimination network that efficiently matches rules against a working memory of facts. KBS implements the RETE algorithm with left <strong>unlinking</strong> of empty beta memories, hash-indexed joins on shared <code>?variables</code>, alpha memories discriminated by fact type and constant, and retraction that follows recorded links instead of scanning memories. Complete matches wait on an <strong>agenda</strong> until <code>engine.run</code> fires them.</p>
 <h2 id="why-rete">Why RETE?<a class="headerlink" href="#why-rete" title="Permanent link">&para;</a></h2>
-<p>Traditional rule engines evaluate all rules against all facts on every cycle, resulting in O(R × F) complexity where R is the number of rules and F is the number of facts. RETE achieves near-constant time per working memory change by:</p>
+<p>Traditional rule engines evaluate all rules against all facts on every cycle, resulting in O(R × F) complexity where R is the number of rules and F is the number of facts. RETE makes the work per working memory change depend on what that change affects rather than on the total number of rules and facts, by:</p>
 <ol>
 <li><strong>Sharing common patterns</strong> across rules in a compiled network</li>
 <li><strong>Maintaining state</strong> between cycles (incremental matching)</li>
 <li><strong>Processing only changes</strong> rather than re-evaluating everything</li>
 <li><strong>Unlinking empty nodes</strong> to skip unnecessary computation (RETE optimization)</li>
+<li><strong>Indexing</strong> alpha memories by type and constant, and join memories by shared variable values</li>
 </ol>
 <h2 id="core-concepts">Core Concepts<a class="headerlink" href="#core-concepts" title="Permanent link">&para;</a></h2>
 <h3 id="facts">Facts<a class="headerlink" href="#facts" title="Permanent link">&para;</a></h3>
@@ -3016,33 +3017,38 @@
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Creating a fact</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:stock</span><span class="p">,</span><span class="w"> </span><span class="ss">symbol</span><span class="p">:</span><span class="w"> </span><span class="s2">"AAPL"</span><span class="p">,</span><span class="w"> </span><span class="ss">price</span><span class="p">:</span><span class="w"> </span><span class="mi">150</span><span class="o">.</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="ss">volume</span><span class="p">:</span><span class="w"> </span><span class="mi">1000000</span><span class="p">)</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Fact structure</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># =&gt; stock(symbol: AAPL, price: 150.0, volume: 1000000)</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">fact</span><span class="o">.</span><span class="n">to_s</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># =&gt; fact :stock, symbol: "AAPL", price: 150.0, volume: 1000000</span>
 </span></code></pre></div>
-<p><strong>Implementation</strong>: <code>lib/kbs/fact.rb:4</code></p>
+<p><strong>Implementation</strong>: <code>lib/kbs/fact.rb</code></p>
 <h3 id="working-memory">Working Memory<a class="headerlink" href="#working-memory" title="Permanent link">&para;</a></h3>
 <p>Working memory is the collection of all facts currently known to the system. It implements the <strong>Observer pattern</strong> to notify the RETE network when facts are added or removed.</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">WorkingMemory</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">add_fact</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="vi">@facts</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">fact</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="n">notify_observers</span><span class="p">(</span><span class="ss">:add</span><span class="p">,</span><span class="w"> </span><span class="n">fact</span><span class="p">)</span><span class="w">  </span><span class="c1"># Triggers RETE propagation</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">remove_fact</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">    </span><span class="vi">@facts</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">    </span><span class="n">notify_observers</span><span class="p">(</span><span class="ss">:remove</span><span class="p">,</span><span class="w"> </span><span class="n">fact</span><span class="p">)</span><span class="w">  </span><span class="c1"># Triggers retraction</span>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="k">end</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="vi">@facts</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">fact</span><span class="w">                  </span><span class="c1"># @facts is a Set</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="n">notify_observers</span><span class="p">(</span><span class="ss">:add</span><span class="p">,</span><span class="w"> </span><span class="n">fact</span><span class="p">)</span><span class="w">    </span><span class="c1"># Triggers RETE propagation</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="n">fact</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">remove_fact</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">    </span><span class="vi">@facts</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="n">notify_observers</span><span class="p">(</span><span class="ss">:remove</span><span class="p">,</span><span class="w"> </span><span class="n">fact</span><span class="p">)</span><span class="w"> </span><span class="c1"># Triggers retraction</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">    </span><span class="n">fact</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="k">end</span>
 </span></code></pre></div>
-<p><strong>Implementation</strong>: <code>lib/kbs/working_memory.rb:4</code></p>
+<p>The engine is the observer. <code>Engine#update</code> matches the fact (or unmatches it on removal) and raises <code>KBS::MatchInProgressError</code> if a fact is added, removed or modified while another fact is still being matched.</p>
+<p><strong>Implementation</strong>: <code>lib/kbs/working_memory.rb</code></p>
 <h3 id="conditions-and-patterns">Conditions and Patterns<a class="headerlink" href="#conditions-and-patterns" title="Permanent link">&para;</a></h3>
 <p>A condition specifies a pattern that facts must match. Patterns can include:</p>
 <ul>
-<li><strong>Type matching</strong>: <code>{ type: :stock }</code></li>
+<li><strong>Type matching</strong>: the first argument, <code>Condition.new(:stock, ...)</code> (a <code>type:</code> key in the pattern is an ordinary attribute named <code>type</code>)</li>
 <li><strong>Literal values</strong>: <code>{ symbol: "AAPL" }</code></li>
 <li><strong>Variable bindings</strong>: <code>{ price: :price? }</code> (variables end with <code>?</code>)</li>
 <li><strong>Predicates</strong>: <code>{ price: -&gt;(p) { p &gt; 100 } }</code></li>
 <li><strong>Negation</strong>: <code>negated: true</code> (match when pattern is absent)</li>
+<li><strong>Existence</strong>: <code>exists: true</code> (match once while at least one fact fits)</li>
+<li><strong>Logical</strong>: <code>logical: true</code> (facts the action asserts depend on this condition staying matched)</li>
 </ul>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Match any stock with symbol "AAPL"</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:stock</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">symbol</span><span class="p">:</span><span class="w"> </span><span class="s2">"AAPL"</span><span class="w"> </span><span class="p">})</span>
@@ -3053,7 +3059,7 @@
 </span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="c1"># Match when there is NO alert for "AAPL"</span>
 </span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:alert</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">symbol</span><span class="p">:</span><span class="w"> </span><span class="s2">"AAPL"</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="ss">negated</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">)</span>
 </span></code></pre></div>
-<p><strong>Implementation</strong>: <code>lib/kbs/condition.rb:4</code></p>
+<p><strong>Implementation</strong>: <code>lib/kbs/condition.rb</code></p>
 <h3 id="rules">Rules<a class="headerlink" href="#rules" title="Permanent link">&para;</a></h3>
 <p>Rules are production rules consisting of:</p>
 <ul>
@@ -3074,29 +3080,38 @@
 </span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">  </span><span class="k">end</span>
 </span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="k">end</span>
 </span></code></pre></div>
-<p><strong>Implementation</strong>: <code>lib/kbs/rule.rb:4</code></p>
+<p><strong>Implementation</strong>: <code>lib/kbs/rule.rb</code></p>
 <h3 id="tokens">Tokens<a class="headerlink" href="#tokens" title="Permanent link">&para;</a></h3>
-<p>Tokens represent <strong>partial matches</strong> as they flow through the RETE network. A token is a linked list of facts that have matched conditions so far.</p>
+<p>Tokens represent <strong>partial matches</strong> as they flow through the RETE network. A token is a linked list of facts that have matched conditions so far. Simplified excerpt:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Token</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="kp">attr_accessor</span><span class="w"> </span><span class="ss">:parent</span><span class="p">,</span><span class="w"> </span><span class="ss">:fact</span><span class="p">,</span><span class="w"> </span><span class="ss">:node</span><span class="p">,</span><span class="w"> </span><span class="ss">:children</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="kp">attr_accessor</span><span class="w"> </span><span class="ss">:parent</span><span class="p">,</span><span class="w"> </span><span class="ss">:fact</span><span class="p">,</span><span class="w"> </span><span class="ss">:node</span>
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="c1"># Reconstruct the full chain of matched facts</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">facts</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="n">facts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[]</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span><span class="n">token</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">self</span>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="n">token</span>
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">      </span><span class="n">facts</span><span class="o">.</span><span class="n">unshift</span><span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">fact</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">token</span><span class="o">.</span><span class="n">fact</span>
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">      </span><span class="n">token</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">token</span><span class="o">.</span><span class="n">parent</span>
-</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">    </span><span class="k">end</span>
-</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">    </span><span class="n">facts</span>
-</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="k">end</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">initialize</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span><span class="w"> </span><span class="n">fact</span><span class="p">,</span><span class="w"> </span><span class="n">node</span><span class="p">)</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="vi">@parent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">parent</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">    </span><span class="vi">@fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fact</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">    </span><span class="vi">@node</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">node</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">    </span><span class="vi">@children</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kp">nil</span>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">    </span><span class="c1"># One slot per condition matched so far (nil for a negated or</span>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">    </span><span class="c1"># exists condition), copied from the parent when the token is made</span>
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">    </span><span class="vi">@slots</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">parent</span><span class="w"> </span><span class="p">?</span><span class="w"> </span><span class="n">parent</span><span class="o">.</span><span class="n">slots</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="o">[</span><span class="n">fact</span><span class="o">]</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">(</span><span class="n">fact</span><span class="w"> </span><span class="p">?</span><span class="w"> </span><span class="o">[</span><span class="n">fact</span><span class="o">]</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="o">[]</span><span class="p">)</span>
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>
+</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="w">  </span><span class="c1"># The matched facts, one per fact-binding condition</span>
+</span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">facts</span>
+</span><span id="__span-4-16"><a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="w">    </span><span class="vi">@slots</span><span class="o">.</span><span class="n">compact</span>
+</span><span id="__span-4-17"><a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-4-18"><a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>
+</span><span id="__span-4-19"><a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="w">  </span><span class="c1"># The fact matched by the condition at `index`, used by join tests</span>
+</span><span id="__span-4-20"><a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">fact_at</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+</span><span id="__span-4-21"><a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="w">    </span><span class="vi">@slots</span><span class="o">[</span><span class="n">index</span><span class="o">]</span>
+</span><span id="__span-4-22"><a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-4-23"><a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a><span class="k">end</span>
 </span></code></pre></div>
 <p><strong>Key insights</strong>:
 - The <strong>root token</strong> has <code>parent = nil</code>, <code>fact = nil</code> and represents "no conditions matched yet"
 - Each join creates a <strong>new token</strong> linking to its parent token plus a new fact
-- Tokens form a <strong>tree structure</strong> via the <code>children</code> array, enabling efficient retraction</p>
-<p><strong>Implementation</strong>: <code>lib/kbs/token.rb:4</code></p>
+- Tokens form a <strong>tree structure</strong> via <code>children</code> (a <code>Set</code>, created lazily by <code>add_child</code>), so retraction removes a token's descendants without searching</p>
+<p><strong>Implementation</strong>: <code>lib/kbs/token.rb</code></p>
 <h2 id="network-architecture">Network Architecture<a class="headerlink" href="#network-architecture" title="Permanent link">&para;</a></h2>
 <p>The RETE network is a <strong>directed acyclic graph (DAG)</strong> consisting of three layers:</p>
 <p><img alt="RETE Network Layers" src="../../assets/images/rete-network-layers.svg" /></p>
@@ -3106,20 +3121,23 @@
 <ul>
 <li>Stores facts matching a specific pattern</li>
 <li>Is shared across all rules using the same pattern (network sharing)</li>
-<li>Propagates matches to successor join nodes</li>
+<li>Propagates matches to successor join, negation and exists nodes</li>
+<li>Keeps hash indexes (<code>index_on</code>) that join nodes use to look up facts by shared variable values</li>
 </ul>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">AlphaMemory</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="kp">attr_accessor</span><span class="w"> </span><span class="ss">:items</span><span class="p">,</span><span class="w"> </span><span class="ss">:successors</span><span class="p">,</span><span class="w"> </span><span class="ss">:pattern</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="kp">attr_accessor</span><span class="w"> </span><span class="ss">:successors</span><span class="p">,</span><span class="w"> </span><span class="ss">:pattern</span>
 </span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
 </span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">activate</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span>
 </span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="k">unless</span><span class="w"> </span><span class="vi">@linked</span>
-</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">    </span><span class="vi">@items</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">fact</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">    </span><span class="n">add_item</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span><span class="w">                 </span><span class="c1"># adds to @items (a Set) and every index</span>
 </span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">    </span><span class="vi">@successors</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">s</span><span class="o">|</span><span class="w"> </span><span class="n">s</span><span class="o">.</span><span class="n">right_activate</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
 </span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">  </span><span class="k">end</span>
 </span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="k">end</span>
 </span></code></pre></div>
+<p><code>items</code> returns a copy of the memory's contents; use <code>add_item</code>/<code>remove_item</code> to change it.</p>
+<p>A new fact does not visit every alpha memory. <code>KBS::AlphaNetwork#memories_for(fact)</code> groups the memories by fact type and, within a type, files each memory that tests an attribute against a constant in a hash under that attribute and value. Only the memories found that way, plus those of the type with no constant test, are checked with <code>Fact#matches?</code>.</p>
 <p><strong>Example</strong>: If three rules all match <code>stock(symbol: "AAPL")</code>, they share one <code>AlphaMemory</code> node for that pattern.</p>
-<p><strong>Implementation</strong>: <code>lib/kbs/alpha_memory.rb:4</code></p>
+<p><strong>Implementation</strong>: <code>lib/kbs/alpha_memory.rb</code></p>
 <h3 id="layer-2-beta-network">Layer 2: Beta Network<a class="headerlink" href="#layer-2-beta-network" title="Permanent link">&para;</a></h3>
 <p>The <strong>beta network</strong> performs <strong>inter-condition</strong> tests - joining facts from different conditions. It consists of:</p>
 <h4 id="join-nodes">Join Nodes<a class="headerlink" href="#join-nodes" title="Permanent link">&para;</a></h4>
@@ -3128,135 +3146,156 @@
 </span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">left_activate</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
 </span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="k">unless</span><span class="w"> </span><span class="vi">@left_linked</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="vi">@right_linked</span>
 </span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="vi">@alpha_memory</span><span class="o">.</span><span class="n">items</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">fact</span><span class="o">|</span>
-</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="n">perform_join_tests</span><span class="p">(</span><span class="n">token</span><span class="p">,</span><span class="w"> </span><span class="n">fact</span><span class="p">)</span>
-</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">        </span><span class="n">new_token</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">Token</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">token</span><span class="p">,</span><span class="w"> </span><span class="n">fact</span><span class="p">,</span><span class="w"> </span><span class="nb">self</span><span class="p">)</span>
-</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">        </span><span class="vi">@successors</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">s</span><span class="o">|</span><span class="w"> </span><span class="n">s</span><span class="o">.</span><span class="n">activate</span><span class="p">(</span><span class="n">new_token</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">      </span><span class="k">end</span>
-</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">    </span><span class="k">end</span>
-</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>
-</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">right_activate</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span>
-</span><span id="__span-6-14"><a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="k">unless</span><span class="w"> </span><span class="vi">@left_linked</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="vi">@right_linked</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="n">matching_facts</span><span class="p">(</span><span class="n">token</span><span class="p">)</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">fact</span><span class="o">|</span><span class="w"> </span><span class="n">emit</span><span class="p">(</span><span class="n">token</span><span class="p">,</span><span class="w"> </span><span class="n">fact</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">right_activate</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="k">unless</span><span class="w"> </span><span class="vi">@left_linked</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="vi">@right_linked</span>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">    </span><span class="n">matching_tokens</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">token</span><span class="o">|</span><span class="w"> </span><span class="n">emit</span><span class="p">(</span><span class="n">token</span><span class="p">,</span><span class="w"> </span><span class="n">fact</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>
+</span><span id="__span-6-14"><a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="w">  </span><span class="kp">private</span>
 </span><span id="__span-6-15"><a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>
-</span><span id="__span-6-16"><a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="w">    </span><span class="vi">@beta_memory</span><span class="o">.</span><span class="n">tokens</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">token</span><span class="o">|</span>
-</span><span id="__span-6-17"><a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a><span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="n">perform_join_tests</span><span class="p">(</span><span class="n">token</span><span class="p">,</span><span class="w"> </span><span class="n">fact</span><span class="p">)</span>
-</span><span id="__span-6-18"><a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a><span class="w">        </span><span class="n">new_token</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">Token</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">token</span><span class="p">,</span><span class="w"> </span><span class="n">fact</span><span class="p">,</span><span class="w"> </span><span class="nb">self</span><span class="p">)</span>
-</span><span id="__span-6-19"><a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a><span class="w">        </span><span class="vi">@successors</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">s</span><span class="o">|</span><span class="w"> </span><span class="n">s</span><span class="o">.</span><span class="n">activate</span><span class="p">(</span><span class="n">new_token</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-6-20"><a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a><span class="w">      </span><span class="k">end</span>
-</span><span id="__span-6-21"><a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a><span class="w">    </span><span class="k">end</span>
-</span><span id="__span-6-22"><a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-6-23"><a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a><span class="k">end</span>
+</span><span id="__span-6-16"><a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">emit</span><span class="p">(</span><span class="n">token</span><span class="p">,</span><span class="w"> </span><span class="n">fact</span><span class="p">)</span>
+</span><span id="__span-6-17"><a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a><span class="w">    </span><span class="n">new_token</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">Token</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">token</span><span class="p">,</span><span class="w"> </span><span class="n">fact</span><span class="p">,</span><span class="w"> </span><span class="nb">self</span><span class="p">)</span>
+</span><span id="__span-6-18"><a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a><span class="w">    </span><span class="n">token</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">new_token</span><span class="p">)</span>
+</span><span id="__span-6-19"><a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a><span class="w">    </span><span class="n">remember</span><span class="p">(</span><span class="n">new_token</span><span class="p">)</span><span class="w">            </span><span class="c1"># @tokens_by_fact[fact], for retraction</span>
+</span><span id="__span-6-20"><a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a><span class="w">    </span><span class="n">activate_successors</span><span class="p">(</span><span class="n">new_token</span><span class="p">)</span>
+</span><span id="__span-6-21"><a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-6-22"><a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a><span class="k">end</span>
 </span></code></pre></div>
+<p><code>matching_facts</code> and <code>matching_tokens</code> come from <code>KBS::JoinIndexing</code>. The node's equality tests between a token and a fact (what a shared <code>?variable</code> compiles to) become the key of a <code>MemoryIndex</code> on each memory, so a new fact or token looks up only the entries with the same values. Any remaining ("residual") tests are evaluated on those candidates. A node with no such equality test scans its other memory.</p>
 <p><strong>Join tests</strong> verify:
-- Variable consistency (e.g., both conditions match same <code>:symbol?</code>)
-- Cross-condition predicates (e.g., price1 &gt; price2)</p>
-<p><strong>Implementation</strong>: <code>lib/kbs/join_node.rb:4</code></p>
+- Variable consistency (e.g., both conditions match same <code>:symbol?</code>), as <code>:eq</code> tests
+- A variable used twice in one condition (two attributes of the same fact must be equal)</p>
+<p>Comparisons other than equality between conditions (e.g., price1 &gt; price2) are not join tests; do them in the action, or in a Proc on a single attribute.</p>
+<p><strong>Implementation</strong>: <code>lib/kbs/join_node.rb</code></p>
 <h4 id="beta-memory">Beta Memory<a class="headerlink" href="#beta-memory" title="Permanent link">&para;</a></h4>
 <p><code>BetaMemory</code> stores tokens (partial matches) and implements the <strong>unlinking optimization</strong>:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">BetaMemory</span>
 </span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">add_token</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
 </span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">    </span><span class="vi">@tokens</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">token</span>
-</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">    </span><span class="n">unlink!</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="vi">@tokens</span><span class="o">.</span><span class="n">empty?</span><span class="w">     </span><span class="c1"># Unlink when empty</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">    </span><span class="vi">@indexes</span><span class="o">.</span><span class="n">each_value</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">index</span><span class="o">|</span><span class="w"> </span><span class="n">index</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">token</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
 </span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">    </span><span class="n">relink!</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="vi">@tokens</span><span class="o">.</span><span class="n">size</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="w">  </span><span class="c1"># Relink when first token arrives</span>
 </span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">  </span><span class="k">end</span>
 </span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>
 </span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">remove_token</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
 </span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="w">    </span><span class="vi">@tokens</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
-</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="w">    </span><span class="n">unlink!</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="vi">@tokens</span><span class="o">.</span><span class="n">empty?</span><span class="w">     </span><span class="c1"># Unlink when last token removed</span>
-</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="k">end</span>
+</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="w">    </span><span class="vi">@indexes</span><span class="o">.</span><span class="n">each_value</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">index</span><span class="o">|</span><span class="w"> </span><span class="n">index</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">token</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="w">    </span><span class="vi">@listener</span><span class="o">&amp;.</span><span class="n">token_removed</span><span class="p">(</span><span class="n">token</span><span class="p">)</span><span class="w"> </span><span class="c1"># truth maintenance, see below</span>
+</span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="w">    </span><span class="n">unlink!</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="vi">@tokens</span><span class="o">.</span><span class="n">empty?</span><span class="w">       </span><span class="c1"># Unlink when last token removed</span>
+</span><span id="__span-7-13"><a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-7-14"><a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="k">end</span>
 </span></code></pre></div>
-<p><strong>Implementation</strong>: <code>lib/kbs/beta_memory.rb:4</code></p>
+<p><strong>Implementation</strong>: <code>lib/kbs/beta_memory.rb</code></p>
 <h4 id="negation-nodes">Negation Nodes<a class="headerlink" href="#negation-nodes" title="Permanent link">&para;</a></h4>
-<p><code>NegationNode</code> implements <strong>negated conditions</strong> (e.g., "when there is NO matching fact"):</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">NegationNode</span>
+<p><code>NegationNode</code> implements <strong>negated conditions</strong> (e.g., "when there is NO matching fact"). It and <code>ExistsNode</code> share their mechanism in <code>QuantifierNode</code>, which links each token to the facts that match it (its <em>blockers</em>) and each fact to the tokens it matches. Simplified excerpt:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">QuantifierNode</span>
 </span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">left_activate</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="n">matches</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="vi">@alpha_memory</span><span class="o">.</span><span class="n">items</span><span class="o">.</span><span class="n">select</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">fact</span><span class="o">|</span><span class="w"> </span><span class="n">perform_join_tests</span><span class="p">(</span><span class="n">token</span><span class="p">,</span><span class="w"> </span><span class="n">fact</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>
-</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">matches</span><span class="o">.</span><span class="n">empty?</span>
-</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">      </span><span class="c1"># No inhibiting facts found - propagate the token</span>
-</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">      </span><span class="n">new_token</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">Token</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">token</span><span class="p">,</span><span class="w"> </span><span class="kp">nil</span><span class="p">,</span><span class="w"> </span><span class="nb">self</span><span class="p">)</span>
-</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">      </span><span class="vi">@successors</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">s</span><span class="o">|</span><span class="w"> </span><span class="n">s</span><span class="o">.</span><span class="n">activate</span><span class="p">(</span><span class="n">new_token</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">    </span><span class="k">else</span>
-</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="w">      </span><span class="c1"># Found inhibiting facts - block propagation</span>
-</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">      </span><span class="vi">@tokens_with_matches</span><span class="o">[</span><span class="n">token</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">matches</span>
-</span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="w">    </span><span class="k">end</span>
-</span><span id="__span-8-13"><a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-8-14"><a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>
-</span><span id="__span-8-15"><a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">right_deactivate</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span>
-</span><span id="__span-8-16"><a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="w">    </span><span class="c1"># When an inhibiting fact is removed, check if we can now propagate</span>
-</span><span id="__span-8-17"><a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a><span class="w">    </span><span class="vi">@beta_memory</span><span class="o">.</span><span class="n">tokens</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">token</span><span class="o">|</span>
-</span><span id="__span-8-18"><a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a><span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="vi">@tokens_with_matches</span><span class="o">[</span><span class="n">token</span><span class="o">].</span><span class="n">include?</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span>
-</span><span id="__span-8-19"><a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a><span class="w">        </span><span class="vi">@tokens_with_matches</span><span class="o">[</span><span class="n">token</span><span class="o">].</span><span class="n">delete</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span>
-</span><span id="__span-8-20"><a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a>
-</span><span id="__span-8-21"><a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="vi">@tokens_with_matches</span><span class="o">[</span><span class="n">token</span><span class="o">].</span><span class="n">empty?</span>
-</span><span id="__span-8-22"><a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a><span class="w">          </span><span class="n">new_token</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">Token</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">token</span><span class="p">,</span><span class="w"> </span><span class="kp">nil</span><span class="p">,</span><span class="w"> </span><span class="nb">self</span><span class="p">)</span>
-</span><span id="__span-8-23"><a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a><span class="w">          </span><span class="vi">@successors</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">s</span><span class="o">|</span><span class="w"> </span><span class="n">s</span><span class="o">.</span><span class="n">activate</span><span class="p">(</span><span class="n">new_token</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-8-24"><a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a><span class="w">        </span><span class="k">end</span>
-</span><span id="__span-8-25"><a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a><span class="w">      </span><span class="k">end</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">    </span><span class="n">matching_facts</span><span class="p">(</span><span class="n">token</span><span class="p">)</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">fact</span><span class="o">|</span><span class="w"> </span><span class="n">link</span><span class="p">(</span><span class="n">token</span><span class="p">,</span><span class="w"> </span><span class="n">fact</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">    </span><span class="n">emit</span><span class="p">(</span><span class="n">token</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">matched?</span><span class="p">(</span><span class="n">token</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">passes_when_matched?</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">right_activate</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span>
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="w">    </span><span class="n">matching_tokens</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">token</span><span class="o">|</span>
+</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="w">      </span><span class="n">already_matched</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">matched?</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="w">      </span><span class="n">link</span><span class="p">(</span><span class="n">token</span><span class="p">,</span><span class="w"> </span><span class="n">fact</span><span class="p">)</span>
+</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="w">      </span><span class="k">next</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">already_matched</span>
+</span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>
+</span><span id="__span-8-13"><a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="w">      </span><span class="n">passes_when_matched?</span><span class="w"> </span><span class="p">?</span><span class="w"> </span><span class="n">emit</span><span class="p">(</span><span class="n">token</span><span class="p">)</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">retract</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+</span><span id="__span-8-14"><a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="w">    </span><span class="k">end</span>
+</span><span id="__span-8-15"><a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-8-16"><a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a>
+</span><span id="__span-8-17"><a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">right_deactivate</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span>
+</span><span id="__span-8-18"><a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a><span class="w">    </span><span class="c1"># Only the tokens this fact was linked to are visited</span>
+</span><span id="__span-8-19"><a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a><span class="w">    </span><span class="p">(</span><span class="vi">@tokens_matched_by</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="o">[]</span><span class="p">)</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">token</span><span class="o">|</span>
+</span><span id="__span-8-20"><a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a><span class="w">      </span><span class="n">facts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="vi">@facts_matching</span><span class="o">[</span><span class="n">token</span><span class="o">]</span>
+</span><span id="__span-8-21"><a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a><span class="w">      </span><span class="n">facts</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span>
+</span><span id="__span-8-22"><a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a><span class="w">      </span><span class="k">next</span><span class="w"> </span><span class="k">unless</span><span class="w"> </span><span class="n">facts</span><span class="o">.</span><span class="n">empty?</span>
+</span><span id="__span-8-23"><a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a>
+</span><span id="__span-8-24"><a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a><span class="w">      </span><span class="vi">@facts_matching</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+</span><span id="__span-8-25"><a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a><span class="w">      </span><span class="n">passes_when_matched?</span><span class="w"> </span><span class="p">?</span><span class="w"> </span><span class="n">retract</span><span class="p">(</span><span class="n">token</span><span class="p">)</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">emit</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
 </span><span id="__span-8-26"><a id="__codelineno-8-26" name="__codelineno-8-26" href="#__codelineno-8-26"></a><span class="w">    </span><span class="k">end</span>
 </span><span id="__span-8-27"><a id="__codelineno-8-27" name="__codelineno-8-27" href="#__codelineno-8-27"></a><span class="w">  </span><span class="k">end</span>
 </span><span id="__span-8-28"><a id="__codelineno-8-28" name="__codelineno-8-28" href="#__codelineno-8-28"></a><span class="k">end</span>
+</span><span id="__span-8-29"><a id="__codelineno-8-29" name="__codelineno-8-29" href="#__codelineno-8-29"></a>
+</span><span id="__span-8-30"><a id="__codelineno-8-30" name="__codelineno-8-30" href="#__codelineno-8-30"></a><span class="k">class</span><span class="w"> </span><span class="nc">NegationNode</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">QuantifierNode</span>
+</span><span id="__span-8-31"><a id="__codelineno-8-31" name="__codelineno-8-31" href="#__codelineno-8-31"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">passes_when_matched?</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kp">false</span><span class="w">   </span><span class="c1"># pass while no fact matches</span>
+</span><span id="__span-8-32"><a id="__codelineno-8-32" name="__codelineno-8-32" href="#__codelineno-8-32"></a><span class="k">end</span>
+</span><span id="__span-8-33"><a id="__codelineno-8-33" name="__codelineno-8-33" href="#__codelineno-8-33"></a>
+</span><span id="__span-8-34"><a id="__codelineno-8-34" name="__codelineno-8-34" href="#__codelineno-8-34"></a><span class="k">class</span><span class="w"> </span><span class="nc">ExistsNode</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">QuantifierNode</span>
+</span><span id="__span-8-35"><a id="__codelineno-8-35" name="__codelineno-8-35" href="#__codelineno-8-35"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">passes_when_matched?</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kp">true</span><span class="w">    </span><span class="c1"># pass once while any fact matches</span>
+</span><span id="__span-8-36"><a id="__codelineno-8-36" name="__codelineno-8-36" href="#__codelineno-8-36"></a><span class="k">end</span>
 </span></code></pre></div>
-<p><strong>Key insight</strong>: Negation nodes propagate tokens with <code>fact = nil</code> since there's no actual fact to include.</p>
-<p><strong>Implementation</strong>: <code>lib/kbs/negation_node.rb:4</code></p>
+<p><strong>Key insight</strong>: Negation and exists nodes propagate tokens with <code>fact = nil</code> since there's no actual fact to include. An exists condition passes a token once, however many facts match, and binds no variables for later conditions.</p>
+<p><strong>Implementation</strong>: <code>lib/kbs/quantifier_node.rb</code>, <code>lib/kbs/negation_node.rb</code>, <code>lib/kbs/exists_node.rb</code></p>
 <h3 id="layer-3-production-nodes">Layer 3: Production Nodes<a class="headerlink" href="#layer-3-production-nodes" title="Permanent link">&para;</a></h3>
 <p><code>ProductionNode</code> is the terminal node for each rule. When a token reaches a production node, all rule conditions have been satisfied:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">ProductionNode</span>
 </span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">activate</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
 </span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">    </span><span class="vi">@tokens</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">token</span>
-</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">    </span><span class="c1"># Don't fire immediately - wait for engine.run()</span>
-</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>
-</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">fire_rule</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
-</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">token</span><span class="o">.</span><span class="n">fired?</span>
-</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">    </span><span class="vi">@rule</span><span class="o">.</span><span class="n">fire</span><span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">facts</span><span class="p">)</span>
-</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="w">    </span><span class="n">token</span><span class="o">.</span><span class="n">mark_fired!</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">    </span><span class="c1"># Don't fire immediately - put an activation on the agenda</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">    </span><span class="vi">@activations</span><span class="o">[</span><span class="n">token</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="vi">@agenda</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span><span class="w"> </span><span class="n">token</span><span class="p">,</span><span class="w"> </span><span class="ss">rule_order</span><span class="p">:</span><span class="w"> </span><span class="vi">@order</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="vi">@agenda</span>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>
+</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">deactivate</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">    </span><span class="vi">@tokens</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="w">    </span><span class="vi">@agenda</span><span class="o">&amp;.</span><span class="n">remove</span><span class="p">(</span><span class="vi">@activations</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">token</span><span class="p">))</span><span class="w">  </span><span class="c1"># cancel if not yet fired</span>
 </span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-9-12"><a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="k">end</span>
+</span><span id="__span-9-12"><a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>
+</span><span id="__span-9-13"><a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">fire_rule</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+</span><span id="__span-9-14"><a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">token</span><span class="o">.</span><span class="n">fired?</span>
+</span><span id="__span-9-15"><a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="w">    </span><span class="vi">@rule</span><span class="o">.</span><span class="n">fire</span><span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">facts</span><span class="p">)</span>
+</span><span id="__span-9-16"><a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a><span class="w">    </span><span class="n">token</span><span class="o">.</span><span class="n">mark_fired!</span>
+</span><span id="__span-9-17"><a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-9-18"><a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a><span class="k">end</span>
 </span></code></pre></div>
-<p><strong>Why delay firing?</strong> Negation nodes may need to <strong>deactivate</strong> tokens after they're created but before they fire. The two-phase approach (collect tokens, then fire) ensures correctness.</p>
-<p><strong>Implementation</strong>: <code>lib/kbs/production_node.rb:4</code></p>
+<p><strong>Why delay firing?</strong> Negation nodes, retractions and other rules' actions may need to <strong>deactivate</strong> tokens after they're created but before they fire. Waiting on the agenda lets a later retraction cancel the activation.</p>
+<p><strong>Implementation</strong>: <code>lib/kbs/production_node.rb</code></p>
 <h2 id="the-rete-cycle">The RETE Cycle<a class="headerlink" href="#the-rete-cycle" title="Permanent link">&para;</a></h2>
 <h3 id="1-network-construction">1. Network Construction<a class="headerlink" href="#1-network-construction" title="Permanent link">&para;</a></h3>
 <p>When a rule is added via <code>engine.add_rule(rule)</code>, the network is built:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">build_network_for_rule</span><span class="p">(</span><span class="n">rule</span><span class="p">)</span>
-</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span><span class="n">current_beta</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="vi">@root_beta_memory</span>
-</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
-</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">  </span><span class="n">rule</span><span class="o">.</span><span class="n">conditions</span><span class="o">.</span><span class="n">each_with_index</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">condition</span><span class="p">,</span><span class="w"> </span><span class="n">index</span><span class="o">|</span>
-</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">    </span><span class="c1"># Create or reuse alpha memory</span>
-</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="w">    </span><span class="n">pattern</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">condition</span><span class="o">.</span><span class="n">pattern</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="n">condition</span><span class="o">.</span><span class="n">type</span><span class="p">)</span>
-</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="w">    </span><span class="n">alpha_memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">get_or_create_alpha_memory</span><span class="p">(</span><span class="n">pattern</span><span class="p">)</span>
-</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>
-</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="w">    </span><span class="c1"># Build join tests for variable consistency</span>
-</span><span id="__span-10-10"><a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="w">    </span><span class="n">tests</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">build_join_tests</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span><span class="w"> </span><span class="n">index</span><span class="p">)</span>
-</span><span id="__span-10-11"><a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>
-</span><span id="__span-10-12"><a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="w">    </span><span class="c1"># Create join or negation node</span>
-</span><span id="__span-10-13"><a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">condition</span><span class="o">.</span><span class="n">negated</span>
-</span><span id="__span-10-14"><a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a><span class="w">      </span><span class="n">negation_node</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">NegationNode</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">alpha_memory</span><span class="p">,</span><span class="w"> </span><span class="n">current_beta</span><span class="p">,</span><span class="w"> </span><span class="n">tests</span><span class="p">)</span>
-</span><span id="__span-10-15"><a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a><span class="w">      </span><span class="n">new_beta</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">BetaMemory</span><span class="o">.</span><span class="n">new</span>
-</span><span id="__span-10-16"><a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a><span class="w">      </span><span class="n">negation_node</span><span class="o">.</span><span class="n">successors</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">new_beta</span>
-</span><span id="__span-10-17"><a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a><span class="w">      </span><span class="n">current_beta</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">new_beta</span>
-</span><span id="__span-10-18"><a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a><span class="w">    </span><span class="k">else</span>
-</span><span id="__span-10-19"><a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a><span class="w">      </span><span class="n">join_node</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">JoinNode</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">alpha_memory</span><span class="p">,</span><span class="w"> </span><span class="n">current_beta</span><span class="p">,</span><span class="w"> </span><span class="n">tests</span><span class="p">)</span>
-</span><span id="__span-10-20"><a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a><span class="w">      </span><span class="n">new_beta</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">BetaMemory</span><span class="o">.</span><span class="n">new</span>
-</span><span id="__span-10-21"><a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a><span class="w">      </span><span class="n">join_node</span><span class="o">.</span><span class="n">successors</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">new_beta</span>
-</span><span id="__span-10-22"><a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a><span class="w">      </span><span class="n">current_beta</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">new_beta</span>
-</span><span id="__span-10-23"><a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a><span class="w">    </span><span class="k">end</span>
-</span><span id="__span-10-24"><a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-10-25"><a id="__codelineno-10-25" name="__codelineno-10-25" href="#__codelineno-10-25"></a>
-</span><span id="__span-10-26"><a id="__codelineno-10-26" name="__codelineno-10-26" href="#__codelineno-10-26"></a><span class="w">  </span><span class="c1"># Terminal production node</span>
-</span><span id="__span-10-27"><a id="__codelineno-10-27" name="__codelineno-10-27" href="#__codelineno-10-27"></a><span class="w">  </span><span class="n">production_node</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">ProductionNode</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">rule</span><span class="p">)</span>
-</span><span id="__span-10-28"><a id="__codelineno-10-28" name="__codelineno-10-28" href="#__codelineno-10-28"></a><span class="w">  </span><span class="n">current_beta</span><span class="o">.</span><span class="n">successors</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">production_node</span>
-</span><span id="__span-10-29"><a id="__codelineno-10-29" name="__codelineno-10-29" href="#__codelineno-10-29"></a><span class="w">  </span><span class="vi">@production_nodes</span><span class="o">[</span><span class="n">rule</span><span class="o">.</span><span class="n">name</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">production_node</span>
-</span><span id="__span-10-30"><a id="__codelineno-10-30" name="__codelineno-10-30" href="#__codelineno-10-30"></a><span class="k">end</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span><span class="n">conditions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rule</span><span class="o">.</span><span class="n">conditions</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">  </span><span class="c1"># Compile shared ?variables into per-condition join tests</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">  </span><span class="n">join_tests</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">JoinTestBuilder</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">conditions</span><span class="p">)</span><span class="o">.</span><span class="n">tests</span>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">  </span><span class="n">last_logical</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rule</span><span class="o">.</span><span class="n">logical_count</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="w">  </span><span class="n">beta_memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="vi">@root_beta_memory</span>
+</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="w">  </span><span class="n">conditions</span><span class="o">.</span><span class="n">each_with_index</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">condition</span><span class="p">,</span><span class="w"> </span><span class="n">index</span><span class="o">|</span>
+</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="w">    </span><span class="n">beta_memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">add_condition_node</span><span class="p">(</span><span class="n">beta_memory</span><span class="p">,</span><span class="w"> </span><span class="n">condition</span><span class="p">,</span><span class="w"> </span><span class="n">join_tests</span><span class="o">[</span><span class="n">index</span><span class="o">]</span><span class="p">)</span>
+</span><span id="__span-10-10"><a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="w">    </span><span class="c1"># The memory after the last logical condition reports removed</span>
+</span><span id="__span-10-11"><a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="w">    </span><span class="c1"># tokens to the engine (truth maintenance)</span>
+</span><span id="__span-10-12"><a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="w">    </span><span class="n">beta_memory</span><span class="o">.</span><span class="n">listener</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">self</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">index</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">last_logical</span>
+</span><span id="__span-10-13"><a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-10-14"><a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a><span class="w">  </span><span class="n">add_production_node</span><span class="p">(</span><span class="n">rule</span><span class="p">,</span><span class="w"> </span><span class="n">beta_memory</span><span class="p">)</span>
+</span><span id="__span-10-15"><a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a><span class="k">end</span>
+</span><span id="__span-10-16"><a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>
+</span><span id="__span-10-17"><a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a><span class="k">def</span><span class="w"> </span><span class="nf">add_condition_node</span><span class="p">(</span><span class="n">beta_memory</span><span class="p">,</span><span class="w"> </span><span class="n">condition</span><span class="p">,</span><span class="w"> </span><span class="n">tests</span><span class="p">)</span>
+</span><span id="__span-10-18"><a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a><span class="w">  </span><span class="c1"># Create or reuse alpha memory</span>
+</span><span id="__span-10-19"><a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a><span class="w">  </span><span class="n">alpha_memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">get_or_create_alpha_memory</span><span class="p">(</span><span class="n">condition</span><span class="o">.</span><span class="n">pattern</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="n">condition</span><span class="o">.</span><span class="n">type</span><span class="p">))</span>
+</span><span id="__span-10-20"><a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a><span class="w">  </span><span class="c1"># JoinNode, NegationNode or ExistsNode</span>
+</span><span id="__span-10-21"><a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a><span class="w">  </span><span class="n">node</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">node_class_for</span><span class="p">(</span><span class="n">condition</span><span class="p">)</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">alpha_memory</span><span class="p">,</span><span class="w"> </span><span class="n">beta_memory</span><span class="p">,</span><span class="w"> </span><span class="n">tests</span><span class="p">)</span>
+</span><span id="__span-10-22"><a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a><span class="w">  </span><span class="n">new_beta</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">BetaMemory</span><span class="o">.</span><span class="n">new</span>
+</span><span id="__span-10-23"><a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a><span class="w">  </span><span class="n">node</span><span class="o">.</span><span class="n">successors</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">new_beta</span>
+</span><span id="__span-10-24"><a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a><span class="w">  </span><span class="n">replay_tokens</span><span class="p">(</span><span class="n">beta_memory</span><span class="p">,</span><span class="w"> </span><span class="n">node</span><span class="p">)</span><span class="w">   </span><span class="c1"># bring the new node up to date</span>
+</span><span id="__span-10-25"><a id="__codelineno-10-25" name="__codelineno-10-25" href="#__codelineno-10-25"></a><span class="w">  </span><span class="n">new_beta</span>
+</span><span id="__span-10-26"><a id="__codelineno-10-26" name="__codelineno-10-26" href="#__codelineno-10-26"></a><span class="k">end</span>
+</span><span id="__span-10-27"><a id="__codelineno-10-27" name="__codelineno-10-27" href="#__codelineno-10-27"></a>
+</span><span id="__span-10-28"><a id="__codelineno-10-28" name="__codelineno-10-28" href="#__codelineno-10-28"></a><span class="k">def</span><span class="w"> </span><span class="nf">add_production_node</span><span class="p">(</span><span class="n">rule</span><span class="p">,</span><span class="w"> </span><span class="n">beta_memory</span><span class="p">)</span>
+</span><span id="__span-10-29"><a id="__codelineno-10-29" name="__codelineno-10-29" href="#__codelineno-10-29"></a><span class="w">  </span><span class="n">node</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">ProductionNode</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">rule</span><span class="p">,</span><span class="w"> </span><span class="vi">@agenda</span><span class="p">,</span><span class="w"> </span><span class="ss">order</span><span class="p">:</span><span class="w"> </span><span class="vi">@rules</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+</span><span id="__span-10-30"><a id="__codelineno-10-30" name="__codelineno-10-30" href="#__codelineno-10-30"></a><span class="w">  </span><span class="n">beta_memory</span><span class="o">.</span><span class="n">successors</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">node</span>
+</span><span id="__span-10-31"><a id="__codelineno-10-31" name="__codelineno-10-31" href="#__codelineno-10-31"></a><span class="w">  </span><span class="vi">@production_nodes</span><span class="o">[</span><span class="n">rule</span><span class="o">.</span><span class="n">name</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">node</span>
+</span><span id="__span-10-32"><a id="__codelineno-10-32" name="__codelineno-10-32" href="#__codelineno-10-32"></a><span class="w">  </span><span class="n">replay_tokens</span><span class="p">(</span><span class="n">beta_memory</span><span class="p">,</span><span class="w"> </span><span class="n">node</span><span class="p">)</span><span class="w"> </span><span class="k">unless</span><span class="w"> </span><span class="n">rule</span><span class="o">.</span><span class="n">conditions</span><span class="o">.</span><span class="n">empty?</span>
+</span><span id="__span-10-33"><a id="__codelineno-10-33" name="__codelineno-10-33" href="#__codelineno-10-33"></a><span class="k">end</span>
 </span></code></pre></div>
+<p>Because new alpha memories are seeded from working memory and existing tokens are replayed into each new node, a rule added after facts are asserted matches those facts.</p>
 <p><strong>Implementation</strong>: <code>KBS::Engine#build_network_for_rule</code> in <code>lib/kbs/engine.rb</code></p>
 <h3 id="2-fact-assertion">2. Fact Assertion<a class="headerlink" href="#2-fact-assertion" title="Permanent link">&para;</a></h3>
 <p>When <code>engine.add_fact(:stock, symbol: "AAPL", price: 150)</code> is called:</p>
 <p><img alt="Fact Assertion Flow" src="../../assets/images/fact-assertion-flow.svg" /></p>
-<p><em>Step-by-step flow showing how a fact propagates through the RETE network from working memory to production nodes.</em></p>
+<p><em>Step-by-step flow showing how a fact propagates through the RETE network from working memory to production nodes. Step 4's hash-index lookup applies when the condition shares a <code>?variable</code> with an earlier one. A token reaching the production node becomes an activation on the agenda.</em></p>
 <h3 id="3-pattern-matching-flow">3. Pattern Matching Flow<a class="headerlink" href="#3-pattern-matching-flow" title="Permanent link">&para;</a></h3>
 <p>Let's trace a fact through the network for this rule:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># Rule: Alert when AAPL stock exists but no alert exists</span>
@@ -3269,7 +3308,7 @@
 </span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="k">end</span>
 </span></code></pre></div>
 <p><img alt="Pattern Matching Trace" src="../../assets/images/pattern-matching-trace.svg" /></p>
-<p><em>Complete trace showing how negation works: adding a stock fact fires the rule, adding an alert inhibits it, and removing the alert reactivates the rule.</em></p>
+<p><em>Complete trace showing how negation works: adding a stock fact activates the rule, adding an alert inhibits it, and removing the alert reactivates the rule. A match puts an activation on the agenda; the action runs on <code>engine.run()</code>. If the alert arrives before <code>run</code>, the pending activation is cancelled and the rule does not fire for it.</em></p>
 <h3 id="4-rule-execution">4. Rule Execution<a class="headerlink" href="#4-rule-execution" title="Permanent link">&para;</a></h3>
 <p>The final phase is <code>engine.run()</code>:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="n">limit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kp">nil</span><span class="p">)</span>
@@ -3298,7 +3337,7 @@
 </span></code></pre></div>
 <p>If beta memory is empty, the join will produce zero results, wasting CPU cycles.</p>
 <h3 id="the-solution">The Solution<a class="headerlink" href="#the-solution" title="Permanent link">&para;</a></h3>
-<p>RETE introduces <strong>dynamic unlinking</strong>: nodes automatically disconnect from the network when empty and reconnect when non-empty.</p>
+<p>RETE introduces <strong>dynamic unlinking</strong>: nodes disconnect from the network when an input is empty and reconnect when it is non-empty. In KBS a beta memory does this automatically (left unlinking). <code>AlphaMemory#unlink!</code>/<code>#relink!</code> exist for right unlinking, but the engine does not call them.</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">BetaMemory</span>
 </span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">add_token</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
 </span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">    </span><span class="vi">@tokens</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">token</span>
@@ -3335,16 +3374,16 @@
 </span><span id="__span-15-11"><a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="k">end</span>
 </span></code></pre></div>
 <h3 id="performance-impact">Performance Impact<a class="headerlink" href="#performance-impact" title="Permanent link">&para;</a></h3>
-<p>For rules with many conditions, unlinking can reduce RETE network activations by <strong>90%+</strong>:</p>
+<p>For rules with many conditions, unlinking can avoid a large share of useless join activations (the saving depends on the rule set; KBS ships no benchmark for it):</p>
 <ul>
-<li>Empty alpha memories don't trigger join operations</li>
-<li>Empty beta memories don't process fact assertions</li>
+<li>Empty beta memories don't process fact assertions: a fact arriving at a join node whose beta memory is empty returns at once</li>
+<li>An empty alpha memory gives a left activation nothing to join with</li>
 <li>Network "lights up" only the relevant paths</li>
 </ul>
-<p>This is especially critical for:
-- <strong>Negated conditions</strong> (often have empty alpha memories)
-- <strong>Rare patterns</strong> (e.g., "critical alert" facts)
+<p>This matters most for:
+- <strong>Rare patterns</strong> (e.g., "critical alert" facts) early in a rule
 - <strong>Complex rules</strong> (many conditions = more opportunities for empty nodes)</p>
+<p>Negation and exists nodes do not use the linking flags; they rely on their blocker links instead.</p>
 <h2 id="variable-binding">Variable Binding<a class="headerlink" href="#variable-binding" title="Permanent link">&para;</a></h2>
 <p>Variables (symbols ending with <code>?</code>) enable cross-condition constraints and action parameterization:</p>
 <h3 id="extraction-during-network-build">Extraction During Network Build<a class="headerlink" href="#extraction-during-network-build" title="Permanent link">&para;</a></h3>
@@ -3360,43 +3399,56 @@
 </span><span id="__span-16-10"><a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="w">  </span><span class="k">end</span>
 </span><span id="__span-16-11"><a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="k">end</span>
 </span></code></pre></div>
-<p><strong>Implementation</strong>: <code>lib/kbs/condition.rb:16</code></p>
+<p><strong>Implementation</strong>: <code>Condition#extract_variables</code> in <code>lib/kbs/condition.rb</code></p>
 <h3 id="join-test-generation">Join Test Generation<a class="headerlink" href="#join-test-generation" title="Permanent link">&para;</a></h3>
-<p>Variables create <strong>join tests</strong> to ensure consistency:</p>
+<p><code>KBS::JoinTestBuilder</code> turns variables into <strong>join tests</strong> to ensure consistency. A variable first bound by a positive condition becomes an equality test in each later condition that uses it; a variable that first appears in a negated or exists condition is local to that condition.</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="c1"># Rule with shared ?symbol variable</span>
 </span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="n">conditions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[</span>
 </span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">  </span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:stock</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">symbol</span><span class="p">:</span><span class="w"> </span><span class="ss">:symbol?</span><span class="p">,</span><span class="w"> </span><span class="ss">price</span><span class="p">:</span><span class="w"> </span><span class="ss">:price?</span><span class="w"> </span><span class="p">}),</span>
 </span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="w">  </span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:order</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">symbol</span><span class="p">:</span><span class="w"> </span><span class="ss">:symbol?</span><span class="p">,</span><span class="w"> </span><span class="ss">quantity</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="w"> </span><span class="p">})</span>
 </span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="o">]</span>
 </span><span id="__span-17-6"><a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>
-</span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="c1"># Generates join test:</span>
-</span><span id="__span-17-8"><a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="p">{</span>
-</span><span id="__span-17-9"><a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="w">  </span><span class="ss">token_field_index</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">      </span><span class="c1"># Check first fact in token (stock)</span>
-</span><span id="__span-17-10"><a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a><span class="w">  </span><span class="ss">token_field</span><span class="p">:</span><span class="w"> </span><span class="ss">:symbol</span><span class="p">,</span><span class="w">       </span><span class="c1"># Get its :symbol attribute</span>
-</span><span id="__span-17-11"><a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a><span class="w">  </span><span class="ss">fact_field</span><span class="p">:</span><span class="w"> </span><span class="ss">:symbol</span><span class="p">,</span><span class="w">        </span><span class="c1"># Compare with order's :symbol attribute</span>
-</span><span id="__span-17-12"><a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a><span class="w">  </span><span class="ss">operation</span><span class="p">:</span><span class="w"> </span><span class="ss">:eq</span><span class="w">              </span><span class="c1"># Must be equal</span>
-</span><span id="__span-17-13"><a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a><span class="p">}</span>
+</span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="no">KBS</span><span class="o">::</span><span class="no">JoinTestBuilder</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">conditions</span><span class="p">)</span><span class="o">.</span><span class="n">tests</span>
+</span><span id="__span-17-8"><a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="c1"># =&gt; [</span>
+</span><span id="__span-17-9"><a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="c1">#   [],                          # stock: nothing to join with</span>
+</span><span id="__span-17-10"><a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a><span class="c1">#   [{</span>
+</span><span id="__span-17-11"><a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a><span class="c1">#     token_field_index: 0,      # Fact matched by condition 0 (stock)</span>
+</span><span id="__span-17-12"><a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a><span class="c1">#     token_field: :symbol,      # Get its :symbol attribute</span>
+</span><span id="__span-17-13"><a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a><span class="c1">#     fact_field: :symbol,       # Compare with order's :symbol attribute</span>
+</span><span id="__span-17-14"><a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a><span class="c1">#     operation: :eq             # Must be equal</span>
+</span><span id="__span-17-15"><a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a><span class="c1">#   }]</span>
+</span><span id="__span-17-16"><a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a><span class="c1"># ]</span>
+</span><span id="__span-17-17"><a id="__codelineno-17-17" name="__codelineno-17-17" href="#__codelineno-17-17"></a><span class="c1"># quantity: 100 is a constant, tested by the alpha memory, not a join test</span>
 </span></code></pre></div>
-<p><strong>Implementation</strong>: <code>lib/kbs/join_node.rb:89</code></p>
+<p><strong>Implementation</strong>: <code>lib/kbs/join_test_builder.rb</code> (evaluation in <code>lib/kbs/join_tests.rb</code>)</p>
 <h3 id="action-binding">Action Binding<a class="headerlink" href="#action-binding" title="Permanent link">&para;</a></h3>
 <p>When a rule fires, bindings are extracted for the action:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">fire</span><span class="p">(</span><span class="n">facts</span><span class="p">)</span>
-</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">  </span><span class="n">bindings</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bindings_for</span><span class="p">(</span><span class="n">facts</span><span class="p">)</span>
-</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">  </span><span class="c1"># bindings = { :symbol? =&gt; "AAPL", :price? =&gt; 150.0 }</span>
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">  </span><span class="vi">@fired_count</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="mi">1</span>
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="k">unless</span><span class="w"> </span><span class="vi">@action</span>
 </span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>
-</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="w">  </span><span class="vi">@action</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">facts</span><span class="p">,</span><span class="w"> </span><span class="n">bindings</span><span class="p">)</span>
-</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="k">end</span>
+</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="w">  </span><span class="n">bindings</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bindings_for</span><span class="p">(</span><span class="n">facts</span><span class="p">)</span>
+</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="w">  </span><span class="c1"># bindings = { :symbol? =&gt; "AAPL", :price? =&gt; 150.0 }</span>
 </span><span id="__span-18-7"><a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>
-</span><span id="__span-18-8"><a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="k">def</span><span class="w"> </span><span class="nf">bindings_for</span><span class="p">(</span><span class="n">facts</span><span class="p">)</span>
-</span><span id="__span-18-9"><a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="w">  </span><span class="c1"># Facts line up with the positive conditions only; negated conditions match no fact</span>
-</span><span id="__span-18-10"><a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="w">  </span><span class="vi">@conditions</span><span class="o">.</span><span class="n">reject</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:negated</span><span class="p">)</span><span class="o">.</span><span class="n">zip</span><span class="p">(</span><span class="n">facts</span><span class="p">)</span><span class="o">.</span><span class="n">each_with_object</span><span class="p">({})</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span><span class="w"> </span><span class="n">fact</span><span class="p">),</span><span class="w"> </span><span class="n">bindings</span><span class="o">|</span>
-</span><span id="__span-18-11"><a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a><span class="w">    </span><span class="k">next</span><span class="w"> </span><span class="k">unless</span><span class="w"> </span><span class="n">fact</span>
-</span><span id="__span-18-12"><a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a>
-</span><span id="__span-18-13"><a id="__codelineno-18-13" name="__codelineno-18-13" href="#__codelineno-18-13"></a><span class="w">    </span><span class="n">condition</span><span class="o">.</span><span class="n">variable_bindings</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">var</span><span class="p">,</span><span class="w"> </span><span class="n">field</span><span class="o">|</span><span class="w"> </span><span class="n">bindings</span><span class="o">[</span><span class="n">var</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fact</span><span class="o">.</span><span class="n">attributes</span><span class="o">[</span><span class="n">field</span><span class="o">]</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-18-14"><a id="__codelineno-18-14" name="__codelineno-18-14" href="#__codelineno-18-14"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-18-15"><a id="__codelineno-18-15" name="__codelineno-18-15" href="#__codelineno-18-15"></a><span class="k">end</span>
+</span><span id="__span-18-8"><a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="w">  </span><span class="c1"># Actions may take 0, 1 (facts) or 2 (facts, bindings) parameters</span>
+</span><span id="__span-18-9"><a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="vi">@action</span><span class="o">.</span><span class="n">arity</span><span class="o">.</span><span class="n">zero?</span>
+</span><span id="__span-18-10"><a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="w">    </span><span class="vi">@action</span><span class="o">.</span><span class="n">call</span>
+</span><span id="__span-18-11"><a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a><span class="w">  </span><span class="k">elsif</span><span class="w"> </span><span class="o">[</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="mi">1</span><span class="o">].</span><span class="n">include?</span><span class="p">(</span><span class="vi">@action</span><span class="o">.</span><span class="n">arity</span><span class="p">)</span>
+</span><span id="__span-18-12"><a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a><span class="w">    </span><span class="vi">@action</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">facts</span><span class="p">)</span>
+</span><span id="__span-18-13"><a id="__codelineno-18-13" name="__codelineno-18-13" href="#__codelineno-18-13"></a><span class="w">  </span><span class="k">else</span>
+</span><span id="__span-18-14"><a id="__codelineno-18-14" name="__codelineno-18-14" href="#__codelineno-18-14"></a><span class="w">    </span><span class="vi">@action</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">facts</span><span class="p">,</span><span class="w"> </span><span class="n">bindings</span><span class="p">)</span>
+</span><span id="__span-18-15"><a id="__codelineno-18-15" name="__codelineno-18-15" href="#__codelineno-18-15"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-18-16"><a id="__codelineno-18-16" name="__codelineno-18-16" href="#__codelineno-18-16"></a><span class="k">end</span>
+</span><span id="__span-18-17"><a id="__codelineno-18-17" name="__codelineno-18-17" href="#__codelineno-18-17"></a>
+</span><span id="__span-18-18"><a id="__codelineno-18-18" name="__codelineno-18-18" href="#__codelineno-18-18"></a><span class="k">def</span><span class="w"> </span><span class="nf">bindings_for</span><span class="p">(</span><span class="n">facts</span><span class="p">)</span>
+</span><span id="__span-18-19"><a id="__codelineno-18-19" name="__codelineno-18-19" href="#__codelineno-18-19"></a><span class="w">  </span><span class="c1"># Facts line up with the conditions that bind a fact; negated and</span>
+</span><span id="__span-18-20"><a id="__codelineno-18-20" name="__codelineno-18-20" href="#__codelineno-18-20"></a><span class="w">  </span><span class="c1"># exists conditions contribute none</span>
+</span><span id="__span-18-21"><a id="__codelineno-18-21" name="__codelineno-18-21" href="#__codelineno-18-21"></a><span class="w">  </span><span class="vi">@conditions</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:binds_fact?</span><span class="p">)</span><span class="o">.</span><span class="n">zip</span><span class="p">(</span><span class="n">facts</span><span class="p">)</span><span class="o">.</span><span class="n">each_with_object</span><span class="p">({})</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span><span class="w"> </span><span class="n">fact</span><span class="p">),</span><span class="w"> </span><span class="n">bindings</span><span class="o">|</span>
+</span><span id="__span-18-22"><a id="__codelineno-18-22" name="__codelineno-18-22" href="#__codelineno-18-22"></a><span class="w">    </span><span class="n">bindings</span><span class="o">.</span><span class="n">merge!</span><span class="p">(</span><span class="n">condition</span><span class="o">.</span><span class="n">bindings_from</span><span class="p">(</span><span class="n">fact</span><span class="p">))</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">fact</span>
+</span><span id="__span-18-23"><a id="__codelineno-18-23" name="__codelineno-18-23" href="#__codelineno-18-23"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-18-24"><a id="__codelineno-18-24" name="__codelineno-18-24" href="#__codelineno-18-24"></a><span class="k">end</span>
 </span></code></pre></div>
-<p><strong>Implementation</strong>: <code>lib/kbs/rule.rb:35</code></p>
+<p><strong>Implementation</strong>: <code>Rule#fire</code> and <code>Rule#bindings_for</code> in <code>lib/kbs/rule.rb</code></p>
 <h2 id="advanced-topics">Advanced Topics<a class="headerlink" href="#advanced-topics" title="Permanent link">&para;</a></h2>
 <h3 id="conflict-resolution">Conflict Resolution<a class="headerlink" href="#conflict-resolution" title="Permanent link">&para;</a></h3>
 <p>When multiple rules are activated simultaneously, KBS uses <strong>priority</strong> (higher values fire first):</p>
@@ -3405,33 +3457,30 @@
 </span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>
 </span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="c1"># rule1 fires before rule2</span>
 </span></code></pre></div>
-<p>Rules with the same priority fire in the order they were defined.</p>
+<p>With the default <code>:definition</code> strategy, rules with the same priority fire in the order they were defined, and each rule's activations oldest first. <code>KBS::Engine.new(strategy: :depth)</code> fires the newest activation first and <code>:breadth</code> the oldest; <code>engine.strategy = ...</code> changes it later. <code>engine.run(limit)</code> stops after <code>limit</code> firings, and <code>engine.halt</code> (called from an action) stops the run after the current rule.</p>
 <h3 id="fact-retraction">Fact Retraction<a class="headerlink" href="#fact-retraction" title="Permanent link">&para;</a></h3>
-<p>Removing facts triggers <strong>recursive token deletion</strong>:</p>
+<p>Removing a fact follows links recorded when it was matched, so no memory is scanned. The engine remembers which alpha memories each fact entered and deactivates exactly those; each join node remembers the tokens it built from each fact:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">JoinNode</span>
 </span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">right_deactivate</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span>
-</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="w">    </span><span class="n">tokens_to_remove</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[]</span>
-</span><span id="__span-20-4"><a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>
-</span><span id="__span-20-5"><a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="w">    </span><span class="vi">@beta_memory</span><span class="o">.</span><span class="n">tokens</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">token</span><span class="o">|</span>
-</span><span id="__span-20-6"><a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="w">      </span><span class="c1"># Find child tokens containing this fact</span>
-</span><span id="__span-20-7"><a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="w">      </span><span class="n">token</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">select</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">child</span><span class="o">|</span><span class="w"> </span><span class="n">child</span><span class="o">.</span><span class="n">fact</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">fact</span><span class="w"> </span><span class="p">}</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">child</span><span class="o">|</span>
-</span><span id="__span-20-8"><a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="w">        </span><span class="n">tokens_to_remove</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">child</span>
-</span><span id="__span-20-9"><a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a><span class="w">        </span><span class="vi">@successors</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">s</span><span class="o">|</span><span class="w"> </span><span class="n">s</span><span class="o">.</span><span class="n">deactivate</span><span class="p">(</span><span class="n">child</span><span class="p">)</span><span class="w"> </span><span class="p">}</span><span class="w">  </span><span class="c1"># Recursive!</span>
-</span><span id="__span-20-10"><a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a><span class="w">      </span><span class="k">end</span>
-</span><span id="__span-20-11"><a id="__codelineno-20-11" name="__codelineno-20-11" href="#__codelineno-20-11"></a><span class="w">    </span><span class="k">end</span>
-</span><span id="__span-20-12"><a id="__codelineno-20-12" name="__codelineno-20-12" href="#__codelineno-20-12"></a>
-</span><span id="__span-20-13"><a id="__codelineno-20-13" name="__codelineno-20-13" href="#__codelineno-20-13"></a><span class="w">    </span><span class="n">tokens_to_remove</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">token</span><span class="o">|</span><span class="w"> </span><span class="n">token</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">token</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-20-14"><a id="__codelineno-20-14" name="__codelineno-20-14" href="#__codelineno-20-14"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-20-15"><a id="__codelineno-20-15" name="__codelineno-20-15" href="#__codelineno-20-15"></a><span class="k">end</span>
+</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="w">    </span><span class="n">tokens_for</span><span class="p">(</span><span class="vi">@tokens_by_fact</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">fact</span><span class="p">))</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">child</span><span class="o">|</span>
+</span><span id="__span-20-4"><a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="w">      </span><span class="n">child</span><span class="o">.</span><span class="n">parent</span><span class="o">&amp;.</span><span class="n">remove_child</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+</span><span id="__span-20-5"><a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="w">      </span><span class="n">deactivate_successors</span><span class="p">(</span><span class="n">child</span><span class="p">)</span><span class="w">   </span><span class="c1"># Recursive: beta memory → next nodes</span>
+</span><span id="__span-20-6"><a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="w">    </span><span class="k">end</span>
+</span><span id="__span-20-7"><a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-20-8"><a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="k">end</span>
 </span></code></pre></div>
-<p>This ensures <strong>truth maintenance</strong>: when a premise is removed, all derived conclusions are also removed.</p>
-<p><strong>Implementation</strong>: <code>lib/kbs/join_node.rb:72</code></p>
+<p>Removing a token from a beta memory deactivates the tokens built from it downstream, and a token reaching a production node cancels its pending activation. Removing a fact therefore withdraws every <strong>match</strong> that used it.</p>
+<p>It does not, by itself, retract facts that a rule's action asserted from that match. For that, put the conditions in a <code>logical</code> block (or <code>Condition.new(..., logical: true)</code>); <code>KBS::TruthMaintenance</code> then records which match supports each asserted fact and retracts the fact when its last support goes away. <code>engine.logically_supported?(fact)</code>, <code>engine.dependencies(fact)</code> and <code>engine.dependents(fact)</code> expose those links.</p>
+<p><strong>Implementation</strong>: <code>JoinNode#right_deactivate</code> in <code>lib/kbs/join_node.rb</code>, <code>lib/kbs/truth_maintenance.rb</code></p>
 <h3 id="network-sharing">Network Sharing<a class="headerlink" href="#network-sharing" title="Permanent link">&para;</a></h3>
-<p>Alpha memories are <strong>shared across rules</strong> using pattern as the hash key:</p>
+<p>Alpha memories are <strong>shared across rules</strong> using the pattern (including its type) as the hash key:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">get_or_create_alpha_memory</span><span class="p">(</span><span class="n">pattern</span><span class="p">)</span>
-</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="w">  </span><span class="vi">@alpha_memories</span><span class="o">[</span><span class="n">pattern</span><span class="o">]</span><span class="w"> </span><span class="o">||=</span><span class="w"> </span><span class="no">AlphaMemory</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">pattern</span><span class="p">)</span>
-</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="k">end</span>
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="w">  </span><span class="c1"># AlphaNetwork#fetch: memories[pattern] ||= a new, filed AlphaMemory,</span>
+</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="w">  </span><span class="c1"># seeded with the matching facts already in working memory</span>
+</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="w">  </span><span class="vi">@alpha_network</span><span class="o">.</span><span class="n">fetch</span><span class="p">(</span><span class="n">pattern</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">memory</span><span class="o">|</span><span class="w"> </span><span class="n">seed_alpha_memory</span><span class="p">(</span><span class="n">memory</span><span class="p">,</span><span class="w"> </span><span class="n">pattern</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="k">end</span>
 </span></code></pre></div>
+<p>The key is the whole pattern, variable names included: <code>{ price: :p? }</code> and <code>{ price: :price? }</code> get separate memories. Join nodes and beta memories are not shared; each rule has its own.</p>
 <p>If 10 rules all match <code>stock(symbol: "AAPL")</code>, they share one <code>AlphaMemory</code> node, reducing:
 - Memory usage (one fact store instead of 10)
 - Computation (one pattern match instead of 10)</p>
@@ -3442,21 +3491,18 @@
 - Initial build: O(R × F) where R = rules, F = facts
 - Per-fact addition: O(N) where N = activated nodes (typically &lt;&lt; R × F)
 - Per-fact removal: O(T) where T = tokens to remove</p>
-<p>In practice, RETE can handle millions of facts with sub-millisecond updates.</p>
+<p><code>benchmarks/rete_scaling.rb</code> measures this: with hash-indexed joins and linked retraction, the per-fact rate stays roughly flat from 500 to 2000 facts (see <a href="../../advanced/performance/#rete-scaling">Performance Tuning</a>).</p>
 <h2 id="debugging-rete-networks">Debugging RETE Networks<a class="headerlink" href="#debugging-rete-networks" title="Permanent link">&para;</a></h2>
 <h3 id="visualizing-token-flow">Visualizing Token Flow<a class="headerlink" href="#visualizing-token-flow" title="Permanent link">&para;</a></h3>
-<p>Enable token tracing:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Token</span>
-</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">to_s</span>
-</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="w">    </span><span class="s2">"Token(</span><span class="si">#{</span><span class="n">facts</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:to_s</span><span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">', '</span><span class="p">)</span><span class="si">}</span><span class="s2">)"</span>
-</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-22-5"><a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="k">end</span>
-</span><span id="__span-22-6"><a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a>
-</span><span id="__span-22-7"><a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a><span class="c1"># In your rule action:</span>
-</span><span id="__span-22-8"><a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a><span class="n">r</span><span class="o">.</span><span class="n">action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">lambda</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">facts</span><span class="p">,</span><span class="w"> </span><span class="n">bindings</span><span class="o">|</span>
-</span><span id="__span-22-9"><a id="__codelineno-22-9" name="__codelineno-22-9" href="#__codelineno-22-9"></a><span class="w">  </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Fired with facts: </span><span class="si">#{</span><span class="n">facts</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:to_s</span><span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">', '</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
-</span><span id="__span-22-10"><a id="__codelineno-22-10" name="__codelineno-22-10" href="#__codelineno-22-10"></a><span class="w">  </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Bindings: </span><span class="si">#{</span><span class="n">bindings</span><span class="o">.</span><span class="n">inspect</span><span class="si">}</span><span class="s2">"</span>
-</span><span id="__span-22-11"><a id="__codelineno-22-11" name="__codelineno-22-11" href="#__codelineno-22-11"></a><span class="k">end</span>
+<p><code>Token#to_s</code> already prints <code>Token(&lt;facts&gt;)</code>, and each pending activation prints as <code>"&lt;priority&gt; &lt;rule&gt;: &lt;facts&gt;"</code>:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="c1"># Pending activations, in firing order</span>
+</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="n">engine</span><span class="o">.</span><span class="n">agenda</span><span class="o">.</span><span class="n">to_a</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">activation</span><span class="o">|</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="n">activation</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>
+</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="c1"># In your rule action:</span>
+</span><span id="__span-22-5"><a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="n">r</span><span class="o">.</span><span class="n">action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">lambda</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">facts</span><span class="p">,</span><span class="w"> </span><span class="n">bindings</span><span class="o">|</span>
+</span><span id="__span-22-6"><a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a><span class="w">  </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Fired with facts: </span><span class="si">#{</span><span class="n">facts</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="ss">:to_s</span><span class="p">)</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">', '</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+</span><span id="__span-22-7"><a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a><span class="w">  </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Bindings: </span><span class="si">#{</span><span class="n">bindings</span><span class="o">.</span><span class="n">inspect</span><span class="si">}</span><span class="s2">"</span>
+</span><span id="__span-22-8"><a id="__codelineno-22-8" name="__codelineno-22-8" href="#__codelineno-22-8"></a><span class="k">end</span>
 </span></code></pre></div>
 <h3 id="inspecting-network-state">Inspecting Network State<a class="headerlink" href="#inspecting-network-state" title="Permanent link">&para;</a></h3>
 <p>Check what's in memories:</p>
@@ -3466,23 +3512,32 @@
 </span><span id="__span-23-4"><a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="w">  </span><span class="n">memory</span><span class="o">.</span><span class="n">items</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">f</span><span class="o">|</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"  - </span><span class="si">#{</span><span class="n">f</span><span class="si">}</span><span class="s2">"</span><span class="w"> </span><span class="p">}</span>
 </span><span id="__span-23-5"><a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="k">end</span>
 </span><span id="__span-23-6"><a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a>
-</span><span id="__span-23-7"><a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a><span class="c1"># Beta memory contents (requires introspection)</span>
-</span><span id="__span-23-8"><a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a><span class="k">def</span><span class="w"> </span><span class="nf">walk_beta_network</span><span class="p">(</span><span class="n">beta</span><span class="p">)</span>
-</span><span id="__span-23-9"><a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a><span class="w">  </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Beta memory: </span><span class="si">#{</span><span class="n">beta</span><span class="o">.</span><span class="n">tokens</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2"> tokens"</span>
-</span><span id="__span-23-10"><a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a><span class="w">  </span><span class="n">beta</span><span class="o">.</span><span class="n">tokens</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">t</span><span class="o">|</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"  - </span><span class="si">#{</span><span class="n">t</span><span class="si">}</span><span class="s2">"</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-23-11"><a id="__codelineno-23-11" name="__codelineno-23-11" href="#__codelineno-23-11"></a><span class="w">  </span><span class="n">beta</span><span class="o">.</span><span class="n">successors</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">node</span><span class="o">|</span>
-</span><span id="__span-23-12"><a id="__codelineno-23-12" name="__codelineno-23-12" href="#__codelineno-23-12"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">node</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="no">BetaMemory</span><span class="p">)</span>
-</span><span id="__span-23-13"><a id="__codelineno-23-13" name="__codelineno-23-13" href="#__codelineno-23-13"></a><span class="w">      </span><span class="n">walk_beta_network</span><span class="p">(</span><span class="n">node</span><span class="p">)</span>
-</span><span id="__span-23-14"><a id="__codelineno-23-14" name="__codelineno-23-14" href="#__codelineno-23-14"></a><span class="w">    </span><span class="k">end</span>
-</span><span id="__span-23-15"><a id="__codelineno-23-15" name="__codelineno-23-15" href="#__codelineno-23-15"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-23-16"><a id="__codelineno-23-16" name="__codelineno-23-16" href="#__codelineno-23-16"></a><span class="k">end</span>
+</span><span id="__span-23-7"><a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a><span class="c1"># Beta memory contents: start from a node and walk down</span>
+</span><span id="__span-23-8"><a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a><span class="c1"># (node → beta memory → next node ... → production node)</span>
+</span><span id="__span-23-9"><a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a><span class="k">def</span><span class="w"> </span><span class="nf">walk_beta_network</span><span class="p">(</span><span class="n">node</span><span class="p">,</span><span class="w"> </span><span class="n">depth</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+</span><span id="__span-23-10"><a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a><span class="w">  </span><span class="n">indent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'  '</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">depth</span>
+</span><span id="__span-23-11"><a id="__codelineno-23-11" name="__codelineno-23-11" href="#__codelineno-23-11"></a><span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="n">node</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="no">KBS</span><span class="o">::</span><span class="no">ProductionNode</span><span class="p">)</span>
+</span><span id="__span-23-12"><a id="__codelineno-23-12" name="__codelineno-23-12" href="#__codelineno-23-12"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"</span><span class="si">#{</span><span class="n">indent</span><span class="si">}</span><span class="s2">Production </span><span class="si">#{</span><span class="n">node</span><span class="o">.</span><span class="n">rule</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">#{</span><span class="n">node</span><span class="o">.</span><span class="n">tokens</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2"> matches"</span>
+</span><span id="__span-23-13"><a id="__codelineno-23-13" name="__codelineno-23-13" href="#__codelineno-23-13"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-23-14"><a id="__codelineno-23-14" name="__codelineno-23-14" href="#__codelineno-23-14"></a>
+</span><span id="__span-23-15"><a id="__codelineno-23-15" name="__codelineno-23-15" href="#__codelineno-23-15"></a><span class="w">  </span><span class="n">node</span><span class="o">.</span><span class="n">successors</span><span class="o">.</span><span class="n">grep</span><span class="p">(</span><span class="no">KBS</span><span class="o">::</span><span class="no">BetaMemory</span><span class="p">)</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">beta</span><span class="o">|</span>
+</span><span id="__span-23-16"><a id="__codelineno-23-16" name="__codelineno-23-16" href="#__codelineno-23-16"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"</span><span class="si">#{</span><span class="n">indent</span><span class="si">}</span><span class="s2">Beta memory: </span><span class="si">#{</span><span class="n">beta</span><span class="o">.</span><span class="n">tokens</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2"> tokens"</span>
+</span><span id="__span-23-17"><a id="__codelineno-23-17" name="__codelineno-23-17" href="#__codelineno-23-17"></a><span class="w">    </span><span class="n">beta</span><span class="o">.</span><span class="n">tokens</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">t</span><span class="o">|</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"</span><span class="si">#{</span><span class="n">indent</span><span class="si">}</span><span class="s2">  - </span><span class="si">#{</span><span class="n">t</span><span class="si">}</span><span class="s2">"</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-23-18"><a id="__codelineno-23-18" name="__codelineno-23-18" href="#__codelineno-23-18"></a><span class="w">    </span><span class="n">beta</span><span class="o">.</span><span class="n">successors</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">next_node</span><span class="o">|</span><span class="w"> </span><span class="n">walk_beta_network</span><span class="p">(</span><span class="n">next_node</span><span class="p">,</span><span class="w"> </span><span class="n">depth</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-23-19"><a id="__codelineno-23-19" name="__codelineno-23-19" href="#__codelineno-23-19"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-23-20"><a id="__codelineno-23-20" name="__codelineno-23-20" href="#__codelineno-23-20"></a><span class="k">end</span>
+</span><span id="__span-23-21"><a id="__codelineno-23-21" name="__codelineno-23-21" href="#__codelineno-23-21"></a>
+</span><span id="__span-23-22"><a id="__codelineno-23-22" name="__codelineno-23-22" href="#__codelineno-23-22"></a><span class="c1"># First-condition nodes are the successors of the alpha memories</span>
+</span><span id="__span-23-23"><a id="__codelineno-23-23" name="__codelineno-23-23" href="#__codelineno-23-23"></a><span class="n">first_memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">engine</span><span class="o">.</span><span class="n">alpha_memories</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">first</span>
+</span><span id="__span-23-24"><a id="__codelineno-23-24" name="__codelineno-23-24" href="#__codelineno-23-24"></a><span class="n">first_memory</span><span class="o">.</span><span class="n">successors</span><span class="o">.</span><span class="n">each</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">node</span><span class="o">|</span><span class="w"> </span><span class="n">walk_beta_network</span><span class="p">(</span><span class="n">node</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
 </span></code></pre></div>
 <h3 id="common-pitfalls">Common Pitfalls<a class="headerlink" href="#common-pitfalls" title="Permanent link">&para;</a></h3>
 <ol>
-<li><strong>Forgetting to call <code>engine.run()</code></strong>: Tokens accumulate but rules don't fire</li>
-<li><strong>Pattern mismatches</strong>: <code>{ type: :stock }</code> vs <code>Condition.new(:stock, {})</code> - the latter doesn't filter by type!</li>
+<li><strong>Forgetting to call <code>engine.run()</code></strong>: Activations wait on the agenda but rules don't fire</li>
+<li><strong>Pattern mismatches</strong>: the fact type is the first argument, <code>Condition.new(:stock, {})</code>, and that condition matches every <code>:stock</code> fact. A <code>type:</code> key in the pattern tests an attribute named <code>:type</code>, not the fact type</li>
 <li><strong>Variable binding errors</strong>: Using <code>?symbol</code> (string) instead of <code>:symbol?</code> (symbol)</li>
-<li><strong>Negation timing</strong>: Negated conditions only fire when facts are <strong>absent</strong>, not after they're removed (use <code>engine.run()</code> to re-evaluate)</li>
+<li><strong>Negation timing</strong>: Removing the last fact that blocks a negated condition puts the rule back on the agenda; it fires on the next <code>engine.run()</code>. Adding a blocking fact before <code>run</code> cancels a pending activation</li>
+<li><strong>Predicates see values once</strong>: a Proc in a pattern runs when the fact is asserted (or modified with <code>engine.modify</code>), not on every <code>run</code>, so a time-based predicate such as "older than 5 minutes" does not become true later on its own</li>
 </ol>
 <h2 id="performance-characteristics">Performance Characteristics<a class="headerlink" href="#performance-characteristics" title="Permanent link">&para;</a></h2>
 <h3 id="time-complexity">Time Complexity<a class="headerlink" href="#time-complexity" title="Permanent link">&para;</a></h3>
@@ -3508,12 +3563,12 @@
 <tr>
 <td>Remove fact</td>
 <td>O(T)</td>
-<td>T = tokens containing fact</td>
+<td>T = tokens containing fact (found by recorded links)</td>
 </tr>
 <tr>
 <td>Run rules</td>
-<td>O(M)</td>
-<td>M = matched tokens in production nodes</td>
+<td>O(M log M)</td>
+<td>M = activations on the agenda (binary heap)</td>
 </tr>
 </tbody>
 </table>
@@ -3552,8 +3607,10 @@
 <h3 id="optimization-strategies">Optimization Strategies<a class="headerlink" href="#optimization-strategies" title="Permanent link">&para;</a></h3>
 <ol>
 <li><strong>Pattern specificity</strong>: Put most selective conditions first to reduce beta memory size</li>
-<li><strong>Negation placement</strong>: Place negated conditions last (they don't add facts to tokens)</li>
+<li><strong>Negation placement</strong>: Place negated conditions after the conditions that bind their variables (they don't add facts to tokens)</li>
 <li><strong>Shared patterns</strong>: Design rules to share common patterns</li>
+<li><strong>Shared variables on joins</strong>: equality on a shared <code>?variable</code> is hash-indexed; joins without one scan the other memory</li>
+<li><strong>Constants in patterns</strong>: a constant test lets <code>AlphaNetwork</code> find the memory by hash; predicate-only patterns are tested for every fact of the type</li>
 <li><strong>Fact pruning</strong>: Remove obsolete facts to trigger unlinking</li>
 <li><strong>Priority tuning</strong>: Use priority to fire expensive rules last</li>
 </ol>
@@ -3579,8 +3636,8 @@
 <h3 id="basic-rete-vs-rete-with-unlinking">Basic RETE vs RETE with Unlinking<a class="headerlink" href="#basic-rete-vs-rete-with-unlinking" title="Permanent link">&para;</a></h3>
 <p>Early RETE implementations lacked unlinking:
 - <strong>Without unlinking</strong>: All nodes always active, many wasted join operations
-- <strong>With unlinking</strong>: Nodes disconnect when empty, up to 10× faster</p>
-<p>KBS implements RETE with unlinking optimization.</p>
+- <strong>With unlinking</strong>: Nodes disconnect when empty, skipping those join operations</p>
+<p>KBS implements RETE with (left) unlinking.</p>
 <h2 id="implementation-files">Implementation Files<a class="headerlink" href="#implementation-files" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -3594,61 +3651,96 @@
 <tr>
 <td>Core engine</td>
 <td><code>lib/kbs/engine.rb</code></td>
-<td>~165</td>
+<td>~440</td>
+</tr>
+<tr>
+<td>Agenda</td>
+<td><code>lib/kbs/agenda.rb</code></td>
+<td>~195</td>
 </tr>
 <tr>
 <td>Working memory</td>
 <td><code>lib/kbs/working_memory.rb</code></td>
-<td>~35</td>
+<td>~55</td>
 </tr>
 <tr>
 <td>Facts</td>
-<td><code>lib/kbs/fact.rb</code></td>
-<td>~45</td>
+<td><code>lib/kbs/fact.rb</code>, <code>pattern_matching.rb</code></td>
+<td>~55</td>
+</tr>
+<tr>
+<td>Fact registry</td>
+<td><code>lib/kbs/fact_registry.rb</code></td>
+<td>~50</td>
+</tr>
+<tr>
+<td>Truth maintenance</td>
+<td><code>lib/kbs/truth_maintenance.rb</code></td>
+<td>~80</td>
 </tr>
 <tr>
 <td>Tokens</td>
 <td><code>lib/kbs/token.rb</code></td>
-<td>~40</td>
+<td>~85</td>
+</tr>
+<tr>
+<td>Alpha network</td>
+<td><code>lib/kbs/alpha_network.rb</code></td>
+<td>~85</td>
 </tr>
 <tr>
 <td>Alpha memory</td>
 <td><code>lib/kbs/alpha_memory.rb</code></td>
-<td>~40</td>
+<td>~85</td>
 </tr>
 <tr>
 <td>Beta memory</td>
 <td><code>lib/kbs/beta_memory.rb</code></td>
-<td>~60</td>
+<td>~90</td>
+</tr>
+<tr>
+<td>Memory index</td>
+<td><code>lib/kbs/memory_index.rb</code></td>
+<td>~75</td>
+</tr>
+<tr>
+<td>Join tests</td>
+<td><code>lib/kbs/join_test_builder.rb</code>, <code>join_tests.rb</code>, <code>join_indexing.rb</code></td>
+<td>~220</td>
 </tr>
 <tr>
 <td>Join nodes</td>
 <td><code>lib/kbs/join_node.rb</code></td>
-<td>~120</td>
+<td>~155</td>
 </tr>
 <tr>
-<td>Negation nodes</td>
-<td><code>lib/kbs/negation_node.rb</code></td>
-<td>~90</td>
+<td>Negation/exists nodes</td>
+<td><code>lib/kbs/quantifier_node.rb</code>, <code>negation_node.rb</code>, <code>exists_node.rb</code></td>
+<td>~165</td>
 </tr>
 <tr>
 <td>Production nodes</td>
 <td><code>lib/kbs/production_node.rb</code></td>
+<td>~60</td>
+</tr>
+<tr>
+<td>Network node</td>
+<td><code>lib/kbs/network_node.rb</code></td>
 <td>~30</td>
 </tr>
 <tr>
 <td>Conditions</td>
 <td><code>lib/kbs/condition.rb</code></td>
-<td>~30</td>
+<td>~65</td>
 </tr>
 <tr>
 <td>Rules</td>
 <td><code>lib/kbs/rule.rb</code></td>
-<td>~80</td>
+<td>~60</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Total</strong>: ~735 lines of core RETE implementation.</p>
+<p><strong>Total</strong>: ~2,000 lines of core RETE implementation.</p>
 <h2 id="further-reading">Further Reading<a class="headerlink" href="#further-reading" title="Permanent link">&para;</a></h2>
 <h3 id="academic-papers">Academic Papers<a class="headerlink" href="#academic-papers" title="Permanent link">&para;</a></h3>
 <ul>

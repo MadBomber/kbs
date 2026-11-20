@@ -535,7 +535,7 @@
   <span class="md-ellipsis">
     
   
-    What is aKnowledge Base?
+    What is a Knowledge Base?
   
 
     
@@ -1989,16 +1989,22 @@
 <p>The heart of KBS. Implements Charles Forgy's RETE algorithm with modern optimizations.</p>
 <p><strong>Key Files:</strong>
 - <code>lib/kbs/engine.rb</code> - Main engine coordinator
+- <code>lib/kbs/alpha_network.rb</code> - Finds a fact's alpha memories by type and constant
 - <code>lib/kbs/alpha_memory.rb</code> - Pattern-level fact storage
 - <code>lib/kbs/beta_memory.rb</code> - Token (partial match) storage
 - <code>lib/kbs/join_node.rb</code> - Inter-condition joins
-- <code>lib/kbs/negation_node.rb</code> - Negated condition handling
-- <code>lib/kbs/production_node.rb</code> - Rule firing coordination</p>
+- <code>lib/kbs/join_test_builder.rb</code>, <code>join_tests.rb</code> - Compile shared <code>?variables</code> into join tests
+- <code>lib/kbs/join_indexing.rb</code>, <code>memory_index.rb</code> - Hash indexes for joins on shared variables
+- <code>lib/kbs/quantifier_node.rb</code>, <code>negation_node.rb</code>, <code>exists_node.rb</code> - <code>without</code> and <code>exists</code> conditions
+- <code>lib/kbs/production_node.rb</code> - Puts complete matches on the agenda
+- <code>lib/kbs/agenda.rb</code> - Conflict set of pending activations (priority + strategy)
+- <code>lib/kbs/truth_maintenance.rb</code> - Logical support for facts asserted under <code>logical</code> conditions
+- <code>lib/kbs/fact_registry.rb</code> - Duplicate fact detection when <code>fact_duplication: false</code></p>
 <p><strong>Responsibilities:</strong>
 - Compile rules into discrimination networks
 - Propagate fact changes through the network
 - Maintain partial matches (tokens)
-- Fire rules when all conditions are satisfied</p>
+- Queue complete matches on the agenda and fire them on <code>run</code>, until the agenda is empty</p>
 <p><strong>Learn more</strong>: <a href="rete-algorithm/">RETE Algorithm Details</a></p>
 <h3 id="2-working-memory">2. Working Memory<a class="headerlink" href="#2-working-memory" title="Permanent link">&para;</a></h3>
 <p>Stores facts and notifies the RETE engine of changes using the Observer pattern.</p>
@@ -2008,15 +2014,16 @@
 <p><strong>Responsibilities:</strong>
 - Store facts
 - Notify observers when facts are added/removed
-- Support queries and bulk operations</p>
+- Support queries (<code>Blackboard::Memory#get_facts</code> and <code>#query_facts</code>)</p>
 <p><strong>Learn more</strong>: <a href="blackboard/">Blackboard Architecture</a></p>
 <h3 id="3-dsl-layer">3. DSL Layer<a class="headerlink" href="#3-dsl-layer" title="Permanent link">&para;</a></h3>
 <p>Provides a Ruby-native interface for defining rules, conditions, and patterns.</p>
 <p><strong>Key Classes:</strong>
+- <code>KBS.knowledge_base</code> / <code>DSL::KnowledgeBase</code> / <code>DSL::RuleBuilder</code> - The <code>rule ... on ... perform</code> DSL
 - <code>Rule</code> - Production rule with conditions and actions
 - <code>Condition</code> - Pattern specification for fact matching
 - <code>Fact</code> - Knowledge representation unit</p>
-<p><strong>Example:</strong>
+<p><strong>Example</strong> (the core classes the DSL builds):
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="no">Rule</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">"alert"</span><span class="p">)</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">r</span><span class="o">|</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="n">r</span><span class="o">.</span><span class="n">conditions</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">[</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="no">Condition</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:sensor</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">temp</span><span class="p">:</span><span class="w"> </span><span class="ss">:t?</span><span class="w"> </span><span class="p">}),</span>
@@ -2056,38 +2063,45 @@
 </span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>          ▼
 </span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>       Engine.update(:add, fact)
 </span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>          │
-</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>          └─→ For each AlphaMemory:
-</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>                 if fact.matches?(pattern)
-</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>                    │
-</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>                    ▼
-</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>                 AlphaMemory.activate(fact)
-</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>                    │
-</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>                    └─→ JoinNode.right_activate(fact)
-</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>                           │
-</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>                           └─→ Create tokens, propagate...
-</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>                                  │
-</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>                                  ▼
-</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>                               ProductionNode
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>          └─→ AlphaNetwork.memories_for(fact)
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>                 (candidates by fact type and constant,
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>                  then fact.matches?(pattern))
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>                    │
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>                    ▼
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>                 AlphaMemory.activate(fact)
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>                    │
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>                    └─→ JoinNode.right_activate(fact)
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>                           │  (hash-index lookup of tokens
+</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>                           │   sharing the ?variable values)
+</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>                           └─→ Create tokens, propagate...
+</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>                                  │
+</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a>                                  ▼
+</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a>                               ProductionNode.activate(token)
+</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>                                  │
+</span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a>                                  └─→ agenda.add(activation)
 </span></code></pre></div>
 <h3 id="firing-rules">Firing Rules<a class="headerlink" href="#firing-rules" title="Permanent link">&para;</a></h3>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>User Code
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>   │
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>   ├─→ engine.run()
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>   ├─→ engine.run(limit = nil)
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>   │
 </span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>   ▼
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>For each ProductionNode:
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>Until halted, limit reached, or agenda empty:
 </span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>   │
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>   ├─→ For each token:
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>   │      │
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>   │      └─→ rule.fire(token.facts)
-</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>   │             │
-</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>   │             └─→ Extract bindings
-</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>   │                    │
-</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>   │                    └─→ Execute action lambda
-</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>   │                           │
-</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>   │                           └─→ User code in action
-</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>   │
-</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>   └─→ Mark tokens as fired
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>   ├─→ activation = agenda.pop
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>   │      (highest priority first, then strategy:
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>   │       :definition, :depth or :breadth)
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>   │
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>   └─→ ProductionNode.fire_rule(token)
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>          │
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>          ├─→ rule.fire(token.facts)
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>          │      │
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>          │      └─→ Extract bindings, execute action
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>          │             │
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>          │             └─→ add_fact / remove_fact / modify in the
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>          │                 action update the agenda before the next pop
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>          │
+</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>          └─→ Mark token as fired
 </span></code></pre></div>
 <h2 id="network-compilation">Network Compilation<a class="headerlink" href="#network-compilation" title="Permanent link">&para;</a></h2>
 <p>When you add a rule, KBS compiles it into a discrimination network:</p>
@@ -2123,17 +2137,17 @@
 <tr>
 <td>Add fact</td>
 <td>O(N)</td>
-<td>N = activated nodes (typically &lt;&lt; total)</td>
+<td>N = activated nodes; alpha memories found by type/constant hash, joins on shared <code>?variables</code> by hash index</td>
 </tr>
 <tr>
 <td>Remove fact</td>
 <td>O(T)</td>
-<td>T = tokens containing fact</td>
+<td>T = tokens built from the fact (followed by recorded links, no memory scan)</td>
 </tr>
 <tr>
 <td>Fire rules</td>
-<td>O(M)</td>
-<td>M = complete matches</td>
+<td>O(M log M)</td>
+<td>M = activations; the agenda is a binary heap</td>
 </tr>
 <tr>
 <td>Network sharing</td>
@@ -2154,7 +2168,7 @@
 </ul>
 <p>Each component is independently testable and swappable.</p>
 <h3 id="3-performance-through-clarity">3. Performance Through Clarity<a class="headerlink" href="#3-performance-through-clarity" title="Permanent link">&para;</a></h3>
-<p>Optimize algorithm first (unlinking, network sharing), then profile before micro-optimizations.</p>
+<p>Optimize algorithm first (unlinking, network sharing, hash-indexed joins, linked retraction), then profile before micro-optimizations.</p>
 <h3 id="4-testability">4. Testability<a class="headerlink" href="#4-testability" title="Permanent link">&para;</a></h3>
 <p>Every method testable in isolation. Dependency injection for external services.</p>
 <h3 id="5-graceful-degradation">5. Graceful Degradation<a class="headerlink" href="#5-graceful-degradation" title="Permanent link">&para;</a></h3>
@@ -2163,24 +2177,48 @@
 <p>Complete audit trails for production systems. Know <em>why</em> a rule fired.</p>
 <h2 id="extension-points">Extension Points<a class="headerlink" href="#extension-points" title="Permanent link">&para;</a></h2>
 <h3 id="custom-persistence">Custom Persistence<a class="headerlink" href="#custom-persistence" title="Permanent link">&para;</a></h3>
-<p>Implement <code>KBS::Blackboard::Persistence::Store</code>:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyStore</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">save_fact</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span><span class="w"> </span><span class="o">...</span><span class="w"> </span><span class="k">end</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">load_facts</span><span class="p">(</span><span class="n">type</span><span class="p">)</span><span class="w"> </span><span class="o">...</span><span class="w"> </span><span class="k">end</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">delete_fact</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span><span class="w"> </span><span class="o">...</span><span class="w"> </span><span class="k">end</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span><span class="c1"># ...</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="k">end</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="n">engine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Engine</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">store</span><span class="p">:</span><span class="w"> </span><span class="no">MyStore</span><span class="o">.</span><span class="n">new</span><span class="p">)</span>
+<p>Subclass <code>KBS::Blackboard::Persistence::Store</code>:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyStore</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Persistence</span><span class="o">::</span><span class="no">Store</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="kp">attr_reader</span><span class="w"> </span><span class="ss">:session_id</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">add_fact</span><span class="p">(</span><span class="n">uuid</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="p">,</span><span class="w"> </span><span class="n">attributes</span><span class="p">)</span><span class="w"> </span><span class="o">...</span><span class="w"> </span><span class="k">end</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">remove_fact</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span><span class="w"> </span><span class="o">...</span><span class="w"> </span><span class="k">end</span><span class="w">        </span><span class="c1"># returns { type:, attributes: } or nil</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">update_fact</span><span class="p">(</span><span class="n">uuid</span><span class="p">,</span><span class="w"> </span><span class="n">attributes</span><span class="p">)</span><span class="w"> </span><span class="o">...</span><span class="w"> </span><span class="k">end</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">get_fact</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span><span class="w"> </span><span class="o">...</span><span class="w"> </span><span class="k">end</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">get_facts</span><span class="p">(</span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kp">nil</span><span class="p">,</span><span class="w"> </span><span class="n">pattern</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{})</span><span class="w"> </span><span class="o">...</span><span class="w"> </span><span class="k">end</span>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">stats</span><span class="w"> </span><span class="o">...</span><span class="w"> </span><span class="k">end</span>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="w"> </span><span class="o">...</span><span class="w"> </span><span class="k">end</span>
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">  </span><span class="c1"># query_facts, clear_session, vacuum, transaction as needed</span>
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>
+</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">  </span><span class="c1"># Blackboard::Memory builds its message queue and audit log from</span>
+</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="w">  </span><span class="c1"># either #db (a SQLite3::Database) or #connection (a Redis client);</span>
+</span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="w">  </span><span class="c1"># a store with neither raises ArgumentError.</span>
+</span><span id="__span-4-16"><a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">db</span><span class="w"> </span><span class="o">...</span><span class="w"> </span><span class="k">end</span>
+</span><span id="__span-4-17"><a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="k">end</span>
+</span><span id="__span-4-18"><a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>
+</span><span id="__span-4-19"><a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="n">engine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Engine</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">store</span><span class="p">:</span><span class="w"> </span><span class="no">MyStore</span><span class="o">.</span><span class="n">new</span><span class="p">)</span>
 </span></code></pre></div>
 <h3 id="custom-pattern-matching">Custom Pattern Matching<a class="headerlink" href="#custom-pattern-matching" title="Permanent link">&para;</a></h3>
-<p>Override <code>Fact#matches?</code>:</p>
+<p>Subclass <code>KBS::Fact</code>, override <code>matches?</code>, and have the engine build your
+facts by overriding <code>Engine#create_fact</code>:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyFact</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Fact</span>
 </span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">matches?</span><span class="p">(</span><span class="n">pattern</span><span class="p">)</span>
 </span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="c1"># Custom matching logic</span>
 </span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="k">end</span>
 </span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="k">end</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="k">class</span><span class="w"> </span><span class="nc">MyEngine</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Engine</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">create_fact</span><span class="p">(</span><span class="n">type</span><span class="p">,</span><span class="w"> </span><span class="n">attributes</span><span class="p">)</span>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">    </span><span class="n">fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">MyFact</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">type</span><span class="p">,</span><span class="w"> </span><span class="n">attributes</span><span class="p">)</span>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">    </span><span class="vi">@working_memory</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span>
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">    </span><span class="n">fact</span>
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="k">end</span>
 </span></code></pre></div>
+<p><code>matches?</code> is only asked about the alpha memories <code>AlphaNetwork</code> selects
+for the fact: memories of the fact's type, filed under the fact's own value
+for a constant-tested attribute. It can narrow a match but cannot make a
+fact match a constant it is not equal to; use a Proc in the pattern for that.</p>
 <h3 id="custom-rule-actions">Custom Rule Actions<a class="headerlink" href="#custom-rule-actions" title="Permanent link">&para;</a></h3>
 <p>Actions are lambdas - inject any Ruby code:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">r</span><span class="o">.</span><span class="n">action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">lambda</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">facts</span><span class="p">,</span><span class="w"> </span><span class="n">bindings</span><span class="o">|</span>
@@ -2194,25 +2232,39 @@
 </span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>├── engine.rb              # Main engine
 </span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>├── working_memory.rb      # Fact storage
 </span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>├── fact.rb                # Fact representation
-</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>├── rule.rb                # Rule definition
-</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>├── condition.rb           # Pattern specification
-</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>├── token.rb               # Partial match
-</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>├── alpha_memory.rb        # Pattern-level cache
-</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>├── beta_memory.rb         # Token storage
-</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>├── join_node.rb           # Inter-condition joins
-</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>├── negation_node.rb       # Negated conditions
-</span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>├── production_node.rb     # Rule firing
-</span><span id="__span-7-13"><a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>└── blackboard/            # Persistent memory
-</span><span id="__span-7-14"><a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>    ├── engine.rb          # Blackboard-aware RETE
-</span><span id="__span-7-15"><a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>    ├── memory.rb          # Central workspace
-</span><span id="__span-7-16"><a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>    ├── fact.rb            # Persisted fact
-</span><span id="__span-7-17"><a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>    ├── message_queue.rb   # Agent communication
-</span><span id="__span-7-18"><a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a>    ├── audit_log.rb       # Change history
-</span><span id="__span-7-19"><a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a>    └── persistence/       # Storage backends
-</span><span id="__span-7-20"><a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a>        ├── store.rb       # Abstract interface
-</span><span id="__span-7-21"><a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a>        ├── sqlite_store.rb
-</span><span id="__span-7-22"><a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a>        ├── redis_store.rb
-</span><span id="__span-7-23"><a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a>        └── hybrid_store.rb
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>├── pattern_matching.rb    # Fact#matches?
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>├── fact_registry.rb       # Duplicate detection
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>├── truth_maintenance.rb   # Logical support of facts
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>├── rule.rb                # Rule definition
+</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>├── condition.rb           # Pattern specification
+</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>├── token.rb               # Partial match
+</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>├── alpha_network.rb       # Type/constant discrimination of alpha memories
+</span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>├── alpha_memory.rb        # Pattern-level cache
+</span><span id="__span-7-13"><a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>├── beta_memory.rb         # Token storage
+</span><span id="__span-7-14"><a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>├── memory_index.rb        # Hash index over a memory
+</span><span id="__span-7-15"><a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>├── join_test_builder.rb   # ?variables → join tests
+</span><span id="__span-7-16"><a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>├── join_tests.rb          # Join test evaluation
+</span><span id="__span-7-17"><a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>├── join_indexing.rb       # Indexed vs residual join tests
+</span><span id="__span-7-18"><a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a>├── join_node.rb           # Inter-condition joins
+</span><span id="__span-7-19"><a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a>├── quantifier_node.rb     # Base for negation/exists (blocker links)
+</span><span id="__span-7-20"><a id="__codelineno-7-20" name="__codelineno-7-20" href="#__codelineno-7-20"></a>├── negation_node.rb       # Negated conditions
+</span><span id="__span-7-21"><a id="__codelineno-7-21" name="__codelineno-7-21" href="#__codelineno-7-21"></a>├── exists_node.rb         # Exists conditions
+</span><span id="__span-7-22"><a id="__codelineno-7-22" name="__codelineno-7-22" href="#__codelineno-7-22"></a>├── production_node.rb     # Puts matches on the agenda
+</span><span id="__span-7-23"><a id="__codelineno-7-23" name="__codelineno-7-23" href="#__codelineno-7-23"></a>├── agenda.rb              # Activations and conflict resolution
+</span><span id="__span-7-24"><a id="__codelineno-7-24" name="__codelineno-7-24" href="#__codelineno-7-24"></a>├── dsl/                   # KBS.knowledge_base DSL
+</span><span id="__span-7-25"><a id="__codelineno-7-25" name="__codelineno-7-25" href="#__codelineno-7-25"></a>└── blackboard/            # Persistent memory
+</span><span id="__span-7-26"><a id="__codelineno-7-26" name="__codelineno-7-26" href="#__codelineno-7-26"></a>    ├── engine.rb          # Blackboard-aware RETE
+</span><span id="__span-7-27"><a id="__codelineno-7-27" name="__codelineno-7-27" href="#__codelineno-7-27"></a>    ├── memory.rb          # Central workspace
+</span><span id="__span-7-28"><a id="__codelineno-7-28" name="__codelineno-7-28" href="#__codelineno-7-28"></a>    ├── fact.rb            # Persisted fact
+</span><span id="__span-7-29"><a id="__codelineno-7-29" name="__codelineno-7-29" href="#__codelineno-7-29"></a>    ├── message_queue.rb   # Agent communication
+</span><span id="__span-7-30"><a id="__codelineno-7-30" name="__codelineno-7-30" href="#__codelineno-7-30"></a>    ├── audit_log.rb       # Change history
+</span><span id="__span-7-31"><a id="__codelineno-7-31" name="__codelineno-7-31" href="#__codelineno-7-31"></a>    ├── redis_message_queue.rb
+</span><span id="__span-7-32"><a id="__codelineno-7-32" name="__codelineno-7-32" href="#__codelineno-7-32"></a>    ├── redis_audit_log.rb
+</span><span id="__span-7-33"><a id="__codelineno-7-33" name="__codelineno-7-33" href="#__codelineno-7-33"></a>    └── persistence/       # Storage backends
+</span><span id="__span-7-34"><a id="__codelineno-7-34" name="__codelineno-7-34" href="#__codelineno-7-34"></a>        ├── store.rb       # Abstract interface
+</span><span id="__span-7-35"><a id="__codelineno-7-35" name="__codelineno-7-35" href="#__codelineno-7-35"></a>        ├── sqlite_store.rb
+</span><span id="__span-7-36"><a id="__codelineno-7-36" name="__codelineno-7-36" href="#__codelineno-7-36"></a>        ├── redis_store.rb
+</span><span id="__span-7-37"><a id="__codelineno-7-37" name="__codelineno-7-37" href="#__codelineno-7-37"></a>        └── hybrid_store.rb
 </span></code></pre></div>
 <h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
 <ul>

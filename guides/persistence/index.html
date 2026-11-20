@@ -535,7 +535,7 @@
   <span class="md-ellipsis">
     
   
-    What is aKnowledge Base?
+    What is a Knowledge Base?
   
 
     
@@ -1515,17 +1515,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#hybrid-sync-issues" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Hybrid Sync Issues
-      
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -2274,17 +2263,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#hybrid-sync-issues" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Hybrid Sync Issues
-      
-    </span>
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -2367,14 +2345,16 @@
 - ❌ No audit trail</p>
 <h3 id="2-sqlite-default-persistent">2. SQLite (Default Persistent)<a class="headerlink" href="#2-sqlite-default-persistent" title="Permanent link">&para;</a></h3>
 <p>Embedded database using <code>KBS::Blackboard::Engine</code>:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">engine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Engine</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">db_path</span><span class="p">:</span><span class="w"> </span><span class="s1">'kb.db'</span><span class="p">)</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">require</span><span class="w"> </span><span class="s1">'kbs/blackboard'</span><span class="w">  </span><span class="c1"># not loaded by require 'kbs'</span>
 </span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:sensor</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">temp</span><span class="p">:</span><span class="w"> </span><span class="mi">28</span><span class="w"> </span><span class="p">})</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="n">engine</span><span class="o">.</span><span class="n">close</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="c1"># Next run</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="n">engine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Engine</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">db_path</span><span class="p">:</span><span class="w"> </span><span class="s1">'kb.db'</span><span class="p">)</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="nb">puts</span><span class="w"> </span><span class="n">engine</span><span class="o">.</span><span class="n">facts</span><span class="o">.</span><span class="n">size</span><span class="w">  </span><span class="c1"># =&gt; 1 (persisted)</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">engine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Engine</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">db_path</span><span class="p">:</span><span class="w"> </span><span class="s1">'kb.db'</span><span class="p">)</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:sensor</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">temp</span><span class="p">:</span><span class="w"> </span><span class="mi">28</span><span class="w"> </span><span class="p">})</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">engine</span><span class="o">.</span><span class="n">close</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="c1"># Next run</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="n">engine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Engine</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">db_path</span><span class="p">:</span><span class="w"> </span><span class="s1">'kb.db'</span><span class="p">)</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="nb">puts</span><span class="w"> </span><span class="n">engine</span><span class="o">.</span><span class="n">facts</span><span class="o">.</span><span class="n">size</span><span class="w">  </span><span class="c1"># =&gt; 1 (persisted)</span>
 </span></code></pre></div>
 <p><strong>When to use:</strong>
 - Single-process applications
@@ -2387,20 +2367,22 @@
 - ✅ ACID guarantees
 - ✅ Durable
 - ✅ Full audit trail
-- ✅ SQL queries available</p>
+- ✅ SQL queries available (<code>engine.blackboard.query_facts(sql, params)</code>)</p>
 <p><strong>Cons:</strong>
 - ❌ Slower than Redis
 - ❌ Single writer
 - ❌ Not distributed</p>
 <p><strong>Configuration:</strong></p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">engine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Engine</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="ss">db_path</span><span class="p">:</span><span class="w"> </span><span class="s1">'kb.db'</span><span class="p">,</span><span class="w">          </span><span class="c1"># Database file path</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="ss">journal_mode</span><span class="p">:</span><span class="w"> </span><span class="s1">'WAL'</span><span class="w">        </span><span class="c1"># WAL mode for better concurrency</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="p">)</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="ss">db_path</span><span class="p">:</span><span class="w"> </span><span class="s1">'kb.db'</span><span class="w">           </span><span class="c1"># Database file path (default ':memory:')</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="p">)</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># WAL mode for better concurrency, set on the SQLite3::Database</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="n">engine</span><span class="o">.</span><span class="n">blackboard</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"PRAGMA journal_mode = WAL"</span><span class="p">)</span>
 </span></code></pre></div>
 <h3 id="3-redis-high-performance">3. Redis (High Performance)<a class="headerlink" href="#3-redis-high-performance" title="Permanent link">&para;</a></h3>
 <p>In-memory data structure store:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">require</span><span class="w"> </span><span class="s1">'kbs/blackboard/persistence/redis_store'</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">require</span><span class="w"> </span><span class="s1">'kbs/blackboard'</span><span class="w">  </span><span class="c1"># the Redis stores also need the redis gem</span>
 </span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
 </span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Persistence</span><span class="o">::</span><span class="no">RedisStore</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
 </span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">  </span><span class="ss">url</span><span class="p">:</span><span class="w"> </span><span class="s1">'redis://localhost:6379/0'</span>
@@ -2408,6 +2390,7 @@
 </span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
 </span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="n">engine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Engine</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">store</span><span class="p">:</span><span class="w"> </span><span class="n">store</span><span class="p">)</span>
 </span></code></pre></div>
+<p>With a Redis store the message queue and audit log are kept in Redis too.</p>
 <p><strong>When to use:</strong>
 - High-frequency updates (&gt; 1000 writes/sec)
 - Real-time systems (trading, IoT)
@@ -2415,7 +2398,7 @@
 - Large fact volumes
 - Speed is critical</p>
 <p><strong>Pros:</strong>
-- ✅ 100x faster than SQLite
+- ✅ Faster than SQLite for high write rates
 - ✅ Distributed (multiple engines share data)
 - ✅ Perfect for real-time
 - ✅ Scalable</p>
@@ -2423,14 +2406,15 @@
 - ❌ Requires Redis server
 - ❌ Volatile by default (enable RDB/AOF for persistence)
 - ❌ No ACID across keys
-- ❌ Less audit trail</p>
+- ❌ Audit trail capped (latest 1,000 entries per fact or rule, 10,000 overall) and no SQL queries</p>
 <p><strong>Configuration:</strong></p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Persistence</span><span class="o">::</span><span class="no">RedisStore</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="ss">url</span><span class="p">:</span><span class="w"> </span><span class="s1">'redis://localhost:6379/0'</span><span class="p">,</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="ss">namespace</span><span class="p">:</span><span class="w"> </span><span class="s1">'kbs'</span><span class="p">,</span><span class="w">              </span><span class="c1"># Key prefix</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="ss">ttl</span><span class="p">:</span><span class="w"> </span><span class="mi">86400</span><span class="w">                     </span><span class="c1"># Expire facts after 24h (optional)</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="ss">url</span><span class="p">:</span><span class="w"> </span><span class="s1">'redis://localhost:6379/0'</span><span class="p">,</span><span class="w">  </span><span class="c1"># Ignored when redis: is given</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="ss">session_id</span><span class="p">:</span><span class="w"> </span><span class="kp">nil</span><span class="p">,</span><span class="w">                  </span><span class="c1"># Defaults to a new UUID</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="ss">redis</span><span class="p">:</span><span class="w"> </span><span class="kp">nil</span><span class="w">                        </span><span class="c1"># An existing Redis client to use</span>
 </span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="p">)</span>
 </span></code></pre></div>
+<p>Retracted facts stay in Redis until <code>engine.blackboard.vacuum</code> removes those retracted more than 30 days ago.</p>
 <p><strong>Redis Persistence Options:</strong></p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># In redis.conf:</span>
 </span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
@@ -2444,7 +2428,7 @@
 </span></code></pre></div>
 <h3 id="4-hybrid-best-of-both">4. Hybrid (Best of Both)<a class="headerlink" href="#4-hybrid-best-of-both" title="Permanent link">&para;</a></h3>
 <p>Combines Redis (speed) with SQLite (durability):</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nb">require</span><span class="w"> </span><span class="s1">'kbs/blackboard/persistence/hybrid_store'</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nb">require</span><span class="w"> </span><span class="s1">'kbs/blackboard'</span>
 </span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
 </span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Persistence</span><span class="o">::</span><span class="no">HybridStore</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
 </span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="ss">redis_url</span><span class="p">:</span><span class="w"> </span><span class="s1">'redis://localhost:6379/0'</span><span class="p">,</span>
@@ -2470,15 +2454,17 @@
 <p><strong>Cons:</strong>
 - ❌ Requires both Redis and SQLite
 - ❌ More complex setup
-- ❌ Slightly slower writes (dual write)</p>
+- ❌ Slightly slower writes (each change also writes the SQLite audit log)
+- ❌ No transactions (Redis and SQLite writes are separate)</p>
 <p><strong>Configuration:</strong></p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Persistence</span><span class="o">::</span><span class="no">HybridStore</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="ss">redis_url</span><span class="p">:</span><span class="w"> </span><span class="s1">'redis://localhost:6379/0'</span><span class="p">,</span>
-</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="ss">db_path</span><span class="p">:</span><span class="w"> </span><span class="s1">'audit.db'</span><span class="p">,</span>
-</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">  </span><span class="ss">audit_facts</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">,</span><span class="w">        </span><span class="c1"># Log fact changes to SQLite</span>
-</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">  </span><span class="ss">audit_rules</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="w">         </span><span class="c1"># Log rule firings to SQLite</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="ss">redis_url</span><span class="p">:</span><span class="w"> </span><span class="s1">'redis://localhost:6379/0'</span><span class="p">,</span><span class="w">  </span><span class="c1"># Ignored when redis: is given</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="ss">redis</span><span class="p">:</span><span class="w"> </span><span class="kp">nil</span><span class="p">,</span><span class="w">                              </span><span class="c1"># An existing Redis client</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">  </span><span class="ss">db_path</span><span class="p">:</span><span class="w"> </span><span class="s1">'audit.db'</span><span class="p">,</span><span class="w">                     </span><span class="c1"># SQLite audit log (the default)</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">  </span><span class="ss">session_id</span><span class="p">:</span><span class="w"> </span><span class="kp">nil</span><span class="w">                          </span><span class="c1"># Defaults to a new UUID</span>
 </span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="p">)</span>
 </span></code></pre></div>
+<p>Fact changes and rule firings are always logged to SQLite.</p>
 <h2 id="choosing-a-backend">Choosing a Backend<a class="headerlink" href="#choosing-a-backend" title="Permanent link">&para;</a></h2>
 <h3 id="decision-tree">Decision Tree<a class="headerlink" href="#decision-tree" title="Permanent link">&para;</a></h3>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>Need persistence?
@@ -2566,124 +2552,108 @@
 </span><span id="__span-15-7"><a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="w">    </span><span class="mi">10_000</span><span class="o">.</span><span class="n">times</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">i</span><span class="o">|</span><span class="w"> </span><span class="n">sqlite_engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:test</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">}</span>
 </span><span id="__span-15-8"><a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="w">  </span><span class="k">end</span>
 </span><span id="__span-15-9"><a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="k">end</span>
-</span><span id="__span-15-10"><a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="c1"># ~5,000 ops/sec</span>
-</span><span id="__span-15-11"><a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a>
-</span><span id="__span-15-12"><a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="c1"># Redis</span>
-</span><span id="__span-15-13"><a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a><span class="n">redis_store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Persistence</span><span class="o">::</span><span class="no">RedisStore</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
-</span><span id="__span-15-14"><a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a><span class="w">  </span><span class="ss">url</span><span class="p">:</span><span class="w"> </span><span class="s1">'redis://localhost:6379/0'</span>
-</span><span id="__span-15-15"><a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a><span class="p">)</span>
-</span><span id="__span-15-16"><a id="__codelineno-15-16" name="__codelineno-15-16" href="#__codelineno-15-16"></a><span class="n">redis_engine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Engine</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">store</span><span class="p">:</span><span class="w"> </span><span class="n">redis_store</span><span class="p">)</span>
-</span><span id="__span-15-17"><a id="__codelineno-15-17" name="__codelineno-15-17" href="#__codelineno-15-17"></a><span class="no">Benchmark</span><span class="o">.</span><span class="n">bm</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">x</span><span class="o">|</span>
-</span><span id="__span-15-18"><a id="__codelineno-15-18" name="__codelineno-15-18" href="#__codelineno-15-18"></a><span class="w">  </span><span class="n">x</span><span class="o">.</span><span class="n">report</span><span class="p">(</span><span class="s2">"Redis writes:"</span><span class="p">)</span><span class="w"> </span><span class="k">do</span>
-</span><span id="__span-15-19"><a id="__codelineno-15-19" name="__codelineno-15-19" href="#__codelineno-15-19"></a><span class="w">    </span><span class="mi">10_000</span><span class="o">.</span><span class="n">times</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">i</span><span class="o">|</span><span class="w"> </span><span class="n">redis_engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:test</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-15-20"><a id="__codelineno-15-20" name="__codelineno-15-20" href="#__codelineno-15-20"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-15-21"><a id="__codelineno-15-21" name="__codelineno-15-21" href="#__codelineno-15-21"></a><span class="k">end</span>
-</span><span id="__span-15-22"><a id="__codelineno-15-22" name="__codelineno-15-22" href="#__codelineno-15-22"></a><span class="c1"># ~50,000 ops/sec (10x faster)</span>
+</span><span id="__span-15-10"><a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a>
+</span><span id="__span-15-11"><a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="c1"># Redis</span>
+</span><span id="__span-15-12"><a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="n">redis_store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Persistence</span><span class="o">::</span><span class="no">RedisStore</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
+</span><span id="__span-15-13"><a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a><span class="w">  </span><span class="ss">url</span><span class="p">:</span><span class="w"> </span><span class="s1">'redis://localhost:6379/0'</span>
+</span><span id="__span-15-14"><a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a><span class="p">)</span>
+</span><span id="__span-15-15"><a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a><span class="n">redis_engine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Engine</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">store</span><span class="p">:</span><span class="w"> </span><span class="n">redis_store</span><span class="p">)</span>
+</span><span id="__span-15-16"><a id="__codelineno-15-16" name="__codelineno-15-16" href="#__codelineno-15-16"></a><span class="no">Benchmark</span><span class="o">.</span><span class="n">bm</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">x</span><span class="o">|</span>
+</span><span id="__span-15-17"><a id="__codelineno-15-17" name="__codelineno-15-17" href="#__codelineno-15-17"></a><span class="w">  </span><span class="n">x</span><span class="o">.</span><span class="n">report</span><span class="p">(</span><span class="s2">"Redis writes:"</span><span class="p">)</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-15-18"><a id="__codelineno-15-18" name="__codelineno-15-18" href="#__codelineno-15-18"></a><span class="w">    </span><span class="mi">10_000</span><span class="o">.</span><span class="n">times</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">i</span><span class="o">|</span><span class="w"> </span><span class="n">redis_engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:test</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="p">})</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-15-19"><a id="__codelineno-15-19" name="__codelineno-15-19" href="#__codelineno-15-19"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-15-20"><a id="__codelineno-15-20" name="__codelineno-15-20" href="#__codelineno-15-20"></a><span class="k">end</span>
 </span></code></pre></div>
 <h3 id="read-performance">Read Performance<a class="headerlink" href="#read-performance" title="Permanent link">&para;</a></h3>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="c1"># SQLite</span>
 </span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="no">Benchmark</span><span class="o">.</span><span class="n">bm</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">x</span><span class="o">|</span>
 </span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">  </span><span class="n">x</span><span class="o">.</span><span class="n">report</span><span class="p">(</span><span class="s2">"SQLite reads:"</span><span class="p">)</span><span class="w"> </span><span class="k">do</span>
-</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">    </span><span class="mi">10_000</span><span class="o">.</span><span class="n">times</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">sqlite_engine</span><span class="o">.</span><span class="n">facts</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">    </span><span class="mi">100</span><span class="o">.</span><span class="n">times</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">sqlite_engine</span><span class="o">.</span><span class="n">facts</span><span class="w"> </span><span class="p">}</span>
 </span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a><span class="w">  </span><span class="k">end</span>
 </span><span id="__span-16-6"><a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="k">end</span>
-</span><span id="__span-16-7"><a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="c1"># ~10,000 ops/sec</span>
-</span><span id="__span-16-8"><a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>
-</span><span id="__span-16-9"><a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="c1"># Redis</span>
-</span><span id="__span-16-10"><a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="no">Benchmark</span><span class="o">.</span><span class="n">bm</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">x</span><span class="o">|</span>
-</span><span id="__span-16-11"><a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="w">  </span><span class="n">x</span><span class="o">.</span><span class="n">report</span><span class="p">(</span><span class="s2">"Redis reads:"</span><span class="p">)</span><span class="w"> </span><span class="k">do</span>
-</span><span id="__span-16-12"><a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a><span class="w">    </span><span class="mi">10_000</span><span class="o">.</span><span class="n">times</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">redis_engine</span><span class="o">.</span><span class="n">facts</span><span class="w"> </span><span class="p">}</span>
-</span><span id="__span-16-13"><a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-16-14"><a id="__codelineno-16-14" name="__codelineno-16-14" href="#__codelineno-16-14"></a><span class="k">end</span>
-</span><span id="__span-16-15"><a id="__codelineno-16-15" name="__codelineno-16-15" href="#__codelineno-16-15"></a><span class="c1"># ~100,000 ops/sec (10x faster)</span>
+</span><span id="__span-16-7"><a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>
+</span><span id="__span-16-8"><a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="c1"># Redis</span>
+</span><span id="__span-16-9"><a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a><span class="no">Benchmark</span><span class="o">.</span><span class="n">bm</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">x</span><span class="o">|</span>
+</span><span id="__span-16-10"><a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="w">  </span><span class="n">x</span><span class="o">.</span><span class="n">report</span><span class="p">(</span><span class="s2">"Redis reads:"</span><span class="p">)</span><span class="w"> </span><span class="k">do</span>
+</span><span id="__span-16-11"><a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a><span class="w">    </span><span class="mi">100</span><span class="o">.</span><span class="n">times</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">redis_engine</span><span class="o">.</span><span class="n">facts</span><span class="w"> </span><span class="p">}</span>
+</span><span id="__span-16-12"><a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-16-13"><a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a><span class="k">end</span>
 </span></code></pre></div>
+<p>Results depend on your hardware, Redis setup and SQLite pragmas; run these against your own workload. <code>engine.facts</code> reads every active fact from the store each time, so it slows as the store grows.</p>
 <h2 id="custom-persistence">Custom Persistence<a class="headerlink" href="#custom-persistence" title="Permanent link">&para;</a></h2>
-<p>Implement your own backend by subclassing <code>KBS::Blackboard::Persistence::Store</code>:</p>
+<p>Implement your own backend by subclassing <code>KBS::Blackboard::Persistence::Store</code>. A store keeps facts only; the blackboard picks its message queue and audit log by what the store offers, so it must also respond to <code>db</code> (a SQLite3 database) or <code>connection</code> (a Redis client):</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">PostgresStore</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Persistence</span><span class="o">::</span><span class="no">Store</span>
-</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">save_fact</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span>
-</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">    </span><span class="c1"># Insert into PostgreSQL</span>
-</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>
-</span><span id="__span-17-6"><a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">load_facts</span><span class="p">(</span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kp">nil</span><span class="p">)</span>
-</span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="w">    </span><span class="c1"># Query from PostgreSQL</span>
-</span><span id="__span-17-8"><a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-17-9"><a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>
-</span><span id="__span-17-10"><a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">delete_fact</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
-</span><span id="__span-17-11"><a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a><span class="w">    </span><span class="c1"># Delete from PostgreSQL</span>
-</span><span id="__span-17-12"><a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-17-13"><a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a>
-</span><span id="__span-17-14"><a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">save_message</span><span class="p">(</span><span class="n">topic</span><span class="p">,</span><span class="w"> </span><span class="n">message</span><span class="p">,</span><span class="w"> </span><span class="n">priority</span><span class="p">)</span>
-</span><span id="__span-17-15"><a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a><span class="w">    </span><span class="c1"># Store message</span>
-</span><span id="__span-17-16"><a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-17-17"><a id="__codelineno-17-17" name="__codelineno-17-17" href="#__codelineno-17-17"></a>
-</span><span id="__span-17-18"><a id="__codelineno-17-18" name="__codelineno-17-18" href="#__codelineno-17-18"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">pop_message</span><span class="p">(</span><span class="n">topic</span><span class="p">)</span>
-</span><span id="__span-17-19"><a id="__codelineno-17-19" name="__codelineno-17-19" href="#__codelineno-17-19"></a><span class="w">    </span><span class="c1"># Retrieve highest priority message</span>
-</span><span id="__span-17-20"><a id="__codelineno-17-20" name="__codelineno-17-20" href="#__codelineno-17-20"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-17-21"><a id="__codelineno-17-21" name="__codelineno-17-21" href="#__codelineno-17-21"></a>
-</span><span id="__span-17-22"><a id="__codelineno-17-22" name="__codelineno-17-22" href="#__codelineno-17-22"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">log_fact_change</span><span class="p">(</span><span class="n">operation</span><span class="p">,</span><span class="w"> </span><span class="n">fact</span><span class="p">)</span>
-</span><span id="__span-17-23"><a id="__codelineno-17-23" name="__codelineno-17-23" href="#__codelineno-17-23"></a><span class="w">    </span><span class="c1"># Audit logging</span>
-</span><span id="__span-17-24"><a id="__codelineno-17-24" name="__codelineno-17-24" href="#__codelineno-17-24"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-17-25"><a id="__codelineno-17-25" name="__codelineno-17-25" href="#__codelineno-17-25"></a>
-</span><span id="__span-17-26"><a id="__codelineno-17-26" name="__codelineno-17-26" href="#__codelineno-17-26"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">fact_history</span><span class="p">(</span><span class="n">fact_id</span><span class="p">)</span>
-</span><span id="__span-17-27"><a id="__codelineno-17-27" name="__codelineno-17-27" href="#__codelineno-17-27"></a><span class="w">    </span><span class="c1"># Get change history</span>
-</span><span id="__span-17-28"><a id="__codelineno-17-28" name="__codelineno-17-28" href="#__codelineno-17-28"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-17-29"><a id="__codelineno-17-29" name="__codelineno-17-29" href="#__codelineno-17-29"></a><span class="k">end</span>
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="w">  </span><span class="kp">attr_reader</span><span class="w"> </span><span class="ss">:session_id</span>
+</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>
+</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">add_fact</span><span class="p">(</span><span class="n">uuid</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="p">,</span><span class="w"> </span><span class="n">attributes</span><span class="p">)</span>
+</span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="w">    </span><span class="c1"># Insert into PostgreSQL</span>
+</span><span id="__span-17-6"><a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>
+</span><span id="__span-17-8"><a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">remove_fact</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
+</span><span id="__span-17-9"><a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="w">    </span><span class="c1"># Mark retracted; return { type:, attributes: }, or nil if not found</span>
+</span><span id="__span-17-10"><a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-17-11"><a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a>
+</span><span id="__span-17-12"><a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">update_fact</span><span class="p">(</span><span class="n">uuid</span><span class="p">,</span><span class="w"> </span><span class="n">attributes</span><span class="p">)</span>
+</span><span id="__span-17-13"><a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a><span class="w">    </span><span class="c1"># Replace attributes; return the fact's type, or nil</span>
+</span><span id="__span-17-14"><a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-17-15"><a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a>
+</span><span id="__span-17-16"><a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">get_fact</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
+</span><span id="__span-17-17"><a id="__codelineno-17-17" name="__codelineno-17-17" href="#__codelineno-17-17"></a><span class="w">    </span><span class="c1"># Return { uuid:, type:, attributes: }, or nil</span>
+</span><span id="__span-17-18"><a id="__codelineno-17-18" name="__codelineno-17-18" href="#__codelineno-17-18"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-17-19"><a id="__codelineno-17-19" name="__codelineno-17-19" href="#__codelineno-17-19"></a>
+</span><span id="__span-17-20"><a id="__codelineno-17-20" name="__codelineno-17-20" href="#__codelineno-17-20"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">get_facts</span><span class="p">(</span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kp">nil</span><span class="p">,</span><span class="w"> </span><span class="n">pattern</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{})</span>
+</span><span id="__span-17-21"><a id="__codelineno-17-21" name="__codelineno-17-21" href="#__codelineno-17-21"></a><span class="w">    </span><span class="c1"># Return an Array of { uuid:, type:, attributes: } for active facts</span>
+</span><span id="__span-17-22"><a id="__codelineno-17-22" name="__codelineno-17-22" href="#__codelineno-17-22"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-17-23"><a id="__codelineno-17-23" name="__codelineno-17-23" href="#__codelineno-17-23"></a>
+</span><span id="__span-17-24"><a id="__codelineno-17-24" name="__codelineno-17-24" href="#__codelineno-17-24"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">transaction</span>
+</span><span id="__span-17-25"><a id="__codelineno-17-25" name="__codelineno-17-25" href="#__codelineno-17-25"></a><span class="w">    </span><span class="k">yield</span>
+</span><span id="__span-17-26"><a id="__codelineno-17-26" name="__codelineno-17-26" href="#__codelineno-17-26"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-17-27"><a id="__codelineno-17-27" name="__codelineno-17-27" href="#__codelineno-17-27"></a>
+</span><span id="__span-17-28"><a id="__codelineno-17-28" name="__codelineno-17-28" href="#__codelineno-17-28"></a><span class="w">  </span><span class="c1"># Also: query_facts, register_knowledge_source, clear_session,</span>
+</span><span id="__span-17-29"><a id="__codelineno-17-29" name="__codelineno-17-29" href="#__codelineno-17-29"></a><span class="w">  </span><span class="c1"># stats, vacuum, close</span>
 </span><span id="__span-17-30"><a id="__codelineno-17-30" name="__codelineno-17-30" href="#__codelineno-17-30"></a>
-</span><span id="__span-17-31"><a id="__codelineno-17-31" name="__codelineno-17-31" href="#__codelineno-17-31"></a><span class="c1"># Use custom store</span>
-</span><span id="__span-17-32"><a id="__codelineno-17-32" name="__codelineno-17-32" href="#__codelineno-17-32"></a><span class="n">store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">PostgresStore</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">connection_string</span><span class="p">:</span><span class="w"> </span><span class="s2">"..."</span><span class="p">)</span>
-</span><span id="__span-17-33"><a id="__codelineno-17-33" name="__codelineno-17-33" href="#__codelineno-17-33"></a><span class="n">engine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Engine</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">store</span><span class="p">:</span><span class="w"> </span><span class="n">store</span><span class="p">)</span>
+</span><span id="__span-17-31"><a id="__codelineno-17-31" name="__codelineno-17-31" href="#__codelineno-17-31"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">connection</span>
+</span><span id="__span-17-32"><a id="__codelineno-17-32" name="__codelineno-17-32" href="#__codelineno-17-32"></a><span class="w">    </span><span class="c1"># A Redis client for the message queue and audit log</span>
+</span><span id="__span-17-33"><a id="__codelineno-17-33" name="__codelineno-17-33" href="#__codelineno-17-33"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-17-34"><a id="__codelineno-17-34" name="__codelineno-17-34" href="#__codelineno-17-34"></a><span class="k">end</span>
+</span><span id="__span-17-35"><a id="__codelineno-17-35" name="__codelineno-17-35" href="#__codelineno-17-35"></a>
+</span><span id="__span-17-36"><a id="__codelineno-17-36" name="__codelineno-17-36" href="#__codelineno-17-36"></a><span class="c1"># Use custom store</span>
+</span><span id="__span-17-37"><a id="__codelineno-17-37" name="__codelineno-17-37" href="#__codelineno-17-37"></a><span class="n">store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">PostgresStore</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">connection_string</span><span class="p">:</span><span class="w"> </span><span class="s2">"..."</span><span class="p">)</span>
+</span><span id="__span-17-38"><a id="__codelineno-17-38" name="__codelineno-17-38" href="#__codelineno-17-38"></a><span class="n">engine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Engine</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">store</span><span class="p">:</span><span class="w"> </span><span class="n">store</span><span class="p">)</span>
 </span></code></pre></div>
 <p>See <a href="../../advanced/custom-persistence/">Custom Persistence</a> for details.</p>
 <h2 id="configuration-best-practices">Configuration Best Practices<a class="headerlink" href="#configuration-best-practices" title="Permanent link">&para;</a></h2>
 <h3 id="sqlite">SQLite<a class="headerlink" href="#sqlite" title="Permanent link">&para;</a></h3>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="c1"># Enable WAL mode for better concurrency</span>
-</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="n">engine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Engine</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
-</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">  </span><span class="ss">db_path</span><span class="p">:</span><span class="w"> </span><span class="s1">'kb.db'</span><span class="p">,</span>
-</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="w">  </span><span class="ss">journal_mode</span><span class="p">:</span><span class="w"> </span><span class="s1">'WAL'</span><span class="p">,</span>
-</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="w">  </span><span class="ss">synchronous</span><span class="p">:</span><span class="w"> </span><span class="s1">'NORMAL'</span><span class="p">,</span><span class="w">  </span><span class="c1"># Trade some durability for speed</span>
-</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="w">  </span><span class="ss">cache_size</span><span class="p">:</span><span class="w"> </span><span class="o">-</span><span class="mi">64000</span><span class="w">      </span><span class="c1"># 64MB cache</span>
-</span><span id="__span-18-7"><a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="p">)</span>
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="n">engine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Engine</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">db_path</span><span class="p">:</span><span class="w"> </span><span class="s1">'kb.db'</span><span class="p">)</span>
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="n">db</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">engine</span><span class="o">.</span><span class="n">blackboard</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">db</span>
+</span><span id="__span-18-4"><a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>
+</span><span id="__span-18-5"><a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"PRAGMA journal_mode = WAL"</span><span class="p">)</span>
+</span><span id="__span-18-6"><a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"PRAGMA synchronous = NORMAL"</span><span class="p">)</span><span class="w">  </span><span class="c1"># Trade some durability for speed</span>
+</span><span id="__span-18-7"><a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"PRAGMA cache_size = -64000"</span><span class="p">)</span><span class="w">   </span><span class="c1"># 64MB cache</span>
 </span></code></pre></div>
 <h3 id="redis">Redis<a class="headerlink" href="#redis" title="Permanent link">&para;</a></h3>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="c1"># Connection pooling for high concurrency</span>
-</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="n">store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Persistence</span><span class="o">::</span><span class="no">RedisStore</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
-</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="w">  </span><span class="ss">url</span><span class="p">:</span><span class="w"> </span><span class="s1">'redis://localhost:6379/0'</span><span class="p">,</span>
-</span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="w">  </span><span class="ss">pool_size</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w">          </span><span class="c1"># Connection pool size</span>
-</span><span id="__span-19-5"><a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a><span class="w">  </span><span class="ss">pool_timeout</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="w">         </span><span class="c1"># Timeout in seconds</span>
-</span><span id="__span-19-6"><a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a><span class="p">)</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="c1"># Configure the client yourself and pass it in</span>
+</span><span id="__span-19-2"><a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="n">client</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">Redis</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">url</span><span class="p">:</span><span class="w"> </span><span class="s1">'redis://localhost:6379/0'</span><span class="p">,</span><span class="w"> </span><span class="ss">timeout</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">)</span>
+</span><span id="__span-19-3"><a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>
+</span><span id="__span-19-4"><a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="n">store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Persistence</span><span class="o">::</span><span class="no">RedisStore</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">redis</span><span class="p">:</span><span class="w"> </span><span class="n">client</span><span class="p">)</span>
 </span></code></pre></div>
 <h3 id="hybrid">Hybrid<a class="headerlink" href="#hybrid" title="Permanent link">&para;</a></h3>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="c1"># Balance between speed and durability</span>
-</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="n">store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Persistence</span><span class="o">::</span><span class="no">HybridStore</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
-</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="w">  </span><span class="ss">redis_url</span><span class="p">:</span><span class="w"> </span><span class="s1">'redis://localhost:6379/0'</span><span class="p">,</span>
-</span><span id="__span-20-4"><a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="w">  </span><span class="ss">db_path</span><span class="p">:</span><span class="w"> </span><span class="s1">'audit.db'</span><span class="p">,</span>
-</span><span id="__span-20-5"><a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="w">  </span><span class="ss">batch_audit_writes</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="p">,</span><span class="w">   </span><span class="c1"># Batch SQLite writes</span>
-</span><span id="__span-20-6"><a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="w">  </span><span class="ss">audit_batch_size</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="w">       </span><span class="c1"># Flush every 100 changes</span>
-</span><span id="__span-20-7"><a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="p">)</span>
-</span></code></pre></div>
+<p>The hybrid store writes each audit record to SQLite as the change happens; there is no batching to configure.</p>
 <h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
 <h3 id="sqlite-database-locked">SQLite Database Locked<a class="headerlink" href="#sqlite-database-locked" title="Permanent link">&para;</a></h3>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="c1"># Increase busy timeout</span>
-</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="n">engine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Engine</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
-</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="w">  </span><span class="ss">db_path</span><span class="p">:</span><span class="w"> </span><span class="s1">'kb.db'</span><span class="p">,</span>
-</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="w">  </span><span class="ss">busy_timeout</span><span class="p">:</span><span class="w"> </span><span class="mi">5000</span><span class="w">  </span><span class="c1"># Wait up to 5 seconds</span>
-</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="p">)</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="c1"># Increase busy timeout</span>
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="n">engine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Engine</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">db_path</span><span class="p">:</span><span class="w"> </span><span class="s1">'kb.db'</span><span class="p">)</span>
+</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="n">engine</span><span class="o">.</span><span class="n">blackboard</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">busy_timeout</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">5000</span><span class="w">  </span><span class="c1"># Wait up to 5 seconds</span>
 </span></code></pre></div>
 <h3 id="redis-connection-issues">Redis Connection Issues<a class="headerlink" href="#redis-connection-issues" title="Permanent link">&para;</a></h3>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="c1"># Enable retry logic</span>
-</span><span id="__span-22-2"><a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a><span class="n">store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Persistence</span><span class="o">::</span><span class="no">RedisStore</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
-</span><span id="__span-22-3"><a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a><span class="w">  </span><span class="ss">url</span><span class="p">:</span><span class="w"> </span><span class="s1">'redis://localhost:6379/0'</span><span class="p">,</span>
-</span><span id="__span-22-4"><a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a><span class="w">  </span><span class="ss">reconnect_attempts</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
-</span><span id="__span-22-5"><a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a><span class="w">  </span><span class="ss">reconnect_delay</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="o">.</span><span class="mi">0</span>
-</span><span id="__span-22-6"><a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a><span class="p">)</span>
-</span></code></pre></div>
-<h3 id="hybrid-sync-issues">Hybrid Sync Issues<a class="headerlink" href="#hybrid-sync-issues" title="Permanent link">&para;</a></h3>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="c1"># Force synchronous audit writes</span>
-</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="n">store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Persistence</span><span class="o">::</span><span class="no">HybridStore</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
-</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="w">  </span><span class="ss">redis_url</span><span class="p">:</span><span class="w"> </span><span class="s1">'redis://localhost:6379/0'</span><span class="p">,</span>
-</span><span id="__span-23-4"><a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="w">  </span><span class="ss">db_path</span><span class="p">:</span><span class="w"> </span><span class="s1">'audit.db'</span><span class="p">,</span>
-</span><span id="__span-23-5"><a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="w">  </span><span class="ss">sync_audit_writes</span><span class="p">:</span><span class="w"> </span><span class="kp">true</span><span class="w">  </span><span class="c1"># Don't batch, write immediately</span>
-</span><span id="__span-23-6"><a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="p">)</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="c1"># Enable retry logic on the client</span>
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="n">client</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">Redis</span><span class="o">.</span><span class="n">new</span><span class="p">(</span>
+</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="w">  </span><span class="ss">url</span><span class="p">:</span><span class="w"> </span><span class="s1">'redis://localhost:6379/0'</span><span class="p">,</span>
+</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="w">  </span><span class="ss">reconnect_attempts</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span>
+</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="p">)</span>
+</span><span id="__span-21-6"><a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a>
+</span><span id="__span-21-7"><a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a><span class="n">store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Persistence</span><span class="o">::</span><span class="no">RedisStore</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">redis</span><span class="p">:</span><span class="w"> </span><span class="n">client</span><span class="p">)</span>
 </span></code></pre></div>
 <h2 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
 <ul>

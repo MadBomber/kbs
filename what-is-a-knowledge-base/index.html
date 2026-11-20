@@ -29,7 +29,7 @@
     
     
       
-        <title>What is aKnowledge Base? - KBS - Knowledge-Based Systems for Ruby</title>
+        <title>What is a Knowledge Base? - KBS - Knowledge-Based Systems for Ruby</title>
       
     
     
@@ -122,7 +122,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              What is aKnowledge Base?
+              What is a Knowledge Base?
             
           </span>
         </div>
@@ -549,7 +549,7 @@
   <span class="md-ellipsis">
     
   
-    What is aKnowledge Base?
+    What is a Knowledge Base?
   
 
     
@@ -567,7 +567,7 @@
   <span class="md-ellipsis">
     
   
-    What is aKnowledge Base?
+    What is a Knowledge Base?
   
 
     
@@ -2410,7 +2410,7 @@
 <ul>
 <li>Matches facts against rule conditions</li>
 <li>Tracks partial matches</li>
-<li>Fires rules when all conditions are satisfied</li>
+<li>Places a rule on the agenda when all its conditions are satisfied; <code>run</code> fires the agenda until it is empty</li>
 </ul>
 <h2 id="how-knowledge-bases-work">How Knowledge Bases Work<a class="headerlink" href="#how-knowledge-bases-work" title="Permanent link">&para;</a></h2>
 <h3 id="the-inference-cycle">The Inference Cycle<a class="headerlink" href="#the-inference-cycle" title="Permanent link">&para;</a></h3>
@@ -2468,13 +2468,15 @@
 <li>⚠️ Slower - I/O overhead</li>
 </ul>
 <p><strong>Example:</strong>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">engine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Engine</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">db_path</span><span class="p">:</span><span class="w"> </span><span class="s1">'kb.db'</span><span class="p">)</span>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nb">require</span><span class="w"> </span><span class="s1">'kbs/blackboard'</span>
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">engine</span><span class="o">.</span><span class="n">add_rule</span><span class="p">(</span><span class="n">rule</span><span class="p">)</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:stock</span><span class="p">,</span><span class="w"> </span><span class="ss">symbol</span><span class="p">:</span><span class="w"> </span><span class="s2">"AAPL"</span><span class="p">,</span><span class="w"> </span><span class="ss">price</span><span class="p">:</span><span class="w"> </span><span class="mi">150</span><span class="p">)</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">engine</span><span class="o">.</span><span class="n">run</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="c1"># Facts persist even after restart</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">engine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Engine</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">db_path</span><span class="p">:</span><span class="w"> </span><span class="s1">'kb.db'</span><span class="p">)</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">engine</span><span class="o">.</span><span class="n">add_rule</span><span class="p">(</span><span class="n">rule</span><span class="p">)</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:stock</span><span class="p">,</span><span class="w"> </span><span class="ss">symbol</span><span class="p">:</span><span class="w"> </span><span class="s2">"AAPL"</span><span class="p">,</span><span class="w"> </span><span class="ss">price</span><span class="p">:</span><span class="w"> </span><span class="mi">150</span><span class="p">)</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="n">engine</span><span class="o">.</span><span class="n">run</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="c1"># Facts persist even after restart</span>
 </span></code></pre></div></p>
 <h2 id="key-differences-from-databases">Key Differences from Databases<a class="headerlink" href="#key-differences-from-databases" title="Permanent link">&para;</a></h2>
 <table>
@@ -2524,7 +2526,7 @@
 </span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>
 </span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="c1"># Knowledge base approach (declarative rules)</span>
 </span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="n">kb</span><span class="o">.</span><span class="n">rule</span><span class="w"> </span><span class="s2">"momentum_alert"</span><span class="w"> </span><span class="k">do</span>
-</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">  </span><span class="n">on</span><span class="w"> </span><span class="ss">:stock</span><span class="p">,</span><span class="w"> </span><span class="ss">price_change</span><span class="p">:</span><span class="w"> </span><span class="n">greater_than</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span><span class="w"> </span><span class="ss">volume</span><span class="p">:</span><span class="w"> </span><span class="n">greater_than</span><span class="p">(</span><span class="mi">1_000_000</span><span class="p">)</span>
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">  </span><span class="n">on</span><span class="w"> </span><span class="ss">:stock</span><span class="p">,</span><span class="w"> </span><span class="ss">symbol</span><span class="p">:</span><span class="w"> </span><span class="ss">:symbol?</span><span class="p">,</span><span class="w"> </span><span class="ss">price_change</span><span class="p">:</span><span class="w"> </span><span class="n">greater_than</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span><span class="w"> </span><span class="ss">volume</span><span class="p">:</span><span class="w"> </span><span class="n">greater_than</span><span class="p">(</span><span class="mi">1_000_000</span><span class="p">)</span>
 </span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="w">  </span><span class="n">perform</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">|</span><span class="n">facts</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="o">|</span><span class="w"> </span><span class="n">send_alert</span><span class="p">(</span><span class="n">b</span><span class="o">[</span><span class="ss">:symbol?</span><span class="o">]</span><span class="p">)</span><span class="w"> </span><span class="p">}</span>
 </span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="k">end</span>
 </span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="n">kb</span><span class="o">.</span><span class="n">run</span><span class="w">  </span><span class="c1"># Automatically fires for all matching facts</span>
@@ -2581,12 +2583,11 @@
 </span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">    </span><span class="n">on</span><span class="w"> </span><span class="ss">:inventory</span><span class="p">,</span><span class="w"> </span><span class="ss">available</span><span class="p">:</span><span class="w"> </span><span class="n">greater_than</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 </span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>
 </span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">    </span><span class="n">perform</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">facts</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="o">|</span>
-</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">      </span><span class="n">order</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">query</span><span class="p">(</span><span class="ss">:order</span><span class="p">,</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="n">b</span><span class="o">[</span><span class="ss">:oid?</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">first</span>
-</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">      </span><span class="n">retract</span><span class="w"> </span><span class="n">order</span>
-</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">      </span><span class="n">fact</span><span class="w"> </span><span class="ss">:order</span><span class="p">,</span><span class="w"> </span><span class="nb">id</span><span class="p">:</span><span class="w"> </span><span class="n">b</span><span class="o">[</span><span class="ss">:oid?</span><span class="o">]</span><span class="p">,</span><span class="w"> </span><span class="ss">status</span><span class="p">:</span><span class="w"> </span><span class="s2">"shipping"</span>
-</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="w">    </span><span class="k">end</span>
-</span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-9-12"><a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="k">end</span>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">      </span><span class="n">order</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">facts</span><span class="o">.</span><span class="n">first</span>
+</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">      </span><span class="n">kb</span><span class="o">.</span><span class="n">modify</span><span class="p">(</span><span class="n">order</span><span class="p">,</span><span class="w"> </span><span class="ss">status</span><span class="p">:</span><span class="w"> </span><span class="s2">"shipping"</span><span class="p">)</span><span class="w">   </span><span class="c1"># inside perform, call the knowledge base through kb</span>
+</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">    </span><span class="k">end</span>
+</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="w">  </span><span class="k">end</span>
+</span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="k">end</span>
 </span></code></pre></div>
 <h2 id="relationship-to-other-components">Relationship to Other Components<a class="headerlink" href="#relationship-to-other-components" title="Permanent link">&para;</a></h2>
 <p>A knowledge base integrates several KBS components:</p>
@@ -2651,7 +2652,7 @@
 <ul>
 <li>Rules are stable (compiled once)</li>
 <li>Facts change frequently (efficient incremental matching)</li>
-<li>Multiple rules share patterns (network node sharing)</li>
+<li>Multiple rules share patterns (identical patterns share one alpha memory)</li>
 </ul>
 <p><strong>Optimization Tips:</strong></p>
 <ol>

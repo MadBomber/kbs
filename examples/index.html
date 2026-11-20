@@ -535,7 +535,7 @@
   <span class="md-ellipsis">
     
   
-    What is aKnowledge Base?
+    What is a Knowledge Base?
   
 
     
@@ -2314,7 +2314,7 @@
 
 
 <h1 id="examples">Examples<a class="headerlink" href="#examples" title="Permanent link">&para;</a></h1>
-<p>Real-world applications demonstrating KBS capabilities. Each example is available in both low-level API and DSL versions.</p>
+<p>Real-world applications demonstrating KBS capabilities. Each example except the IoT demo is available in both low-level API and DSL versions.</p>
 <h2 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">&para;</a></h2>
 <h3 id="working-demo">Working Demo<a class="headerlink" href="#working-demo" title="Permanent link">&para;</a></h3>
 <p><strong>Files:</strong> <a href="https://github.com/madbomber/kbs/blob/main/examples/working_demo.rb"><code>working_demo.rb</code></a> | <a href="https://github.com/madbomber/kbs/blob/main/examples/working_demo_dsl.rb"><code>working_demo_dsl.rb</code></a></p>
@@ -2328,11 +2328,11 @@
 </ul>
 <h3 id="advanced-example">Advanced Example<a class="headerlink" href="#advanced-example" title="Permanent link">&para;</a></h3>
 <p><strong>Files:</strong> <a href="https://github.com/madbomber/kbs/blob/main/examples/advanced_example.rb"><code>advanced_example.rb</code></a> | <a href="https://github.com/madbomber/kbs/blob/main/examples/advanced_example_dsl.rb"><code>advanced_example_dsl.rb</code></a></p>
-<p>More complex patterns including multi-condition rules, variable bindings, and negation patterns. Shows advanced RETE features and rule chaining.</p>
+<p>Two expert systems in one file: stock trading (bull market buys, oversold bounces, stop losses, earnings surprises, price/volume divergence) and network diagnostics (DDoS, bandwidth saturation, latency anomalies).</p>
 <p><strong>Features:</strong></p>
 <ul>
 <li>Multi-condition pattern matching</li>
-<li>Variable binding and join tests</li>
+<li>Lambda predicates</li>
 <li>Negation (NOT conditions)</li>
 <li>Rule priorities</li>
 </ul>
@@ -2397,8 +2397,9 @@
 <li>Redis-backed persistence</li>
 <li>High-frequency market data processing</li>
 <li>Fast fact lookup and updates</li>
-<li>Distributed knowledge base support</li>
+<li>Hybrid store: Redis facts with a SQLite audit trail</li>
 </ul>
+<p>The demo flushes Redis databases 1 and 2 on <code>localhost:6379</code>.</p>
 <h2 id="expert-systems">Expert Systems<a class="headerlink" href="#expert-systems" title="Permanent link">&para;</a></h2>
 <h3 id="car-diagnostic-system">Car Diagnostic System<a class="headerlink" href="#car-diagnostic-system" title="Permanent link">&para;</a></h3>
 <p><strong>Files:</strong> <a href="https://github.com/madbomber/kbs/blob/main/examples/car_diagnostic.rb"><code>car_diagnostic.rb</code></a> | <a href="https://github.com/madbomber/kbs/blob/main/examples/car_diagnostic_dsl.rb"><code>car_diagnostic_dsl.rb</code></a></p>
@@ -2441,44 +2442,49 @@
 <h3 id="blackboard-memory-system">Blackboard Memory System<a class="headerlink" href="#blackboard-memory-system" title="Permanent link">&para;</a></h3>
 <p><strong>Files:</strong> <a href="https://github.com/madbomber/kbs/blob/main/examples/blackboard_demo.rb"><code>blackboard_demo.rb</code></a> | <a href="https://github.com/madbomber/kbs/blob/main/examples/blackboard_demo_dsl.rb"><code>blackboard_demo_dsl.rb</code></a></p>
 <p>Demonstrates persistent blackboard architecture with SQLite storage, message queues, audit logs, and fact history tracking.</p>
-<p><strong>Features:</strong>
-+
-- SQLite-backed persistence
-- UUID-based fact tracking
-- Message queue (priority-based)
-- Complete audit trail
-- Fact update history
-- Database statistics</p>
+<p><strong>Features:</strong></p>
+<ul>
+<li>SQLite-backed persistence</li>
+<li>UUID-based fact tracking</li>
+<li>Message queue (priority-based)</li>
+<li>Complete audit trail</li>
+<li>Fact update history</li>
+<li>Database statistics</li>
+</ul>
 <h3 id="concurrent-inference-patterns">Concurrent Inference Patterns<a class="headerlink" href="#concurrent-inference-patterns" title="Permanent link">&para;</a></h3>
 <p><strong>Files:</strong> <a href="https://github.com/madbomber/kbs/blob/main/examples/concurrent_inference_demo.rb"><code>concurrent_inference_demo.rb</code></a> | <a href="https://github.com/madbomber/kbs/blob/main/examples/concurrent_inference_demo_dsl.rb"><code>concurrent_inference_demo_dsl.rb</code></a></p>
-<p>Advanced patterns for multi-threaded knowledge bases including reactive engines, background inference, and event-driven architectures.</p>
+<p>Advanced patterns for multi-threaded knowledge bases including reactive engines, background inference, event-driven callbacks and queue-based batches. Each pattern is a <code>KBS::Engine</code> subclass defined in the example.</p>
 <p><strong>Features:</strong></p>
 <ul>
 <li>Auto-inference mode (reactive)</li>
 <li>Background thread inference</li>
 <li>Event-driven processing</li>
-<li>Thread-safe fact addition</li>
+<li>Fact addition guarded by a <code>Mutex</code> (the engine has no locking of its own)</li>
 <li>Continuous reasoning loops</li>
 </ul>
 <h2 id="running-examples">Running Examples<a class="headerlink" href="#running-examples" title="Permanent link">&para;</a></h2>
 <h3 id="run-individual-examples">Run Individual Examples<a class="headerlink" href="#run-individual-examples" title="Permanent link">&para;</a></h3>
-<p>Each example is executable from the command line:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Run a specific example</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>ruby<span class="w"> </span>examples/working_demo.rb
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Run DSL version</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>ruby<span class="w"> </span>examples/working_demo_dsl.rb
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># Run AI-enhanced example (requires Ollama)</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="nv">OLLAMA_MODEL</span><span class="o">=</span>gpt-oss:latest<span class="w"> </span>ruby<span class="w"> </span>examples/ai_enhanced_kbs.rb
+<p>Run examples from inside <code>examples/</code>: the CSV and portfolio examples read <code>sample_stock_data.csv</code> from the current directory, and the blackboard demo writes <code>knowledge_base.db</code> there.</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">cd</span><span class="w"> </span>examples
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># Run a specific example</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>bundle<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ruby<span class="w"> </span>working_demo.rb
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="c1"># Run DSL version</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>bundle<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ruby<span class="w"> </span>working_demo_dsl.rb
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="c1"># Run AI-enhanced example (requires Ollama, ruby_llm and ruby_llm-mcp)</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="nv">OLLAMA_MODEL</span><span class="o">=</span>gpt-oss:latest<span class="w"> </span>ruby<span class="w"> </span>ai_enhanced_kbs.rb
 </span></code></pre></div>
 <h3 id="run-all-examples">Run All Examples<a class="headerlink" href="#run-all-examples" title="Permanent link">&para;</a></h3>
-<p>Run all examples at once:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># Run all low-level API examples</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>ruby<span class="w"> </span>examples/run_all.rb
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="c1"># Run all DSL examples</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>ruby<span class="w"> </span>examples/run_all_dsl.rb
+<p>Run all examples at once. These include the Redis demo, which flushes Redis databases 1 and 2, and the AI demo, which needs Ollama:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nb">cd</span><span class="w"> </span>examples
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="c1"># Run all low-level API examples</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>bundle<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ruby<span class="w"> </span>run_all.rb
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="c1"># Run all DSL examples</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>bundle<span class="w"> </span><span class="nb">exec</span><span class="w"> </span>ruby<span class="w"> </span>run_all_dsl.rb
 </span></code></pre></div>
 <h2 id="example-organization">Example Organization<a class="headerlink" href="#example-organization" title="Permanent link">&para;</a></h2>
 <ul>

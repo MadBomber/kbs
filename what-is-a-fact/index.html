@@ -540,7 +540,7 @@
   <span class="md-ellipsis">
     
   
-    What is aKnowledge Base?
+    What is a Knowledge Base?
   
 
     
@@ -729,10 +729,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#4-updates-blackboard-only" class="md-nav__link">
+  <a href="#4-updates" class="md-nav__link">
     <span class="md-ellipsis">
       
-        4. Updates (Blackboard Only)
+        4. Updates
       
     </span>
   </a>
@@ -2423,10 +2423,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#4-updates-blackboard-only" class="md-nav__link">
+  <a href="#4-updates" class="md-nav__link">
     <span class="md-ellipsis">
       
-        4. Updates (Blackboard Only)
+        4. Updates
       
     </span>
   </a>
@@ -3025,7 +3025,7 @@
 </tr>
 <tr>
 <td><strong>Identity</strong></td>
-<td>By content &amp; type</td>
+<td>By object (UUID when persisted)</td>
 <td>By reference</td>
 <td>By primary key</td>
 <td>By reference</td>
@@ -3075,8 +3075,9 @@
 </span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="k">end</span>
 </span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
 </span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="c1"># Blackboard (persistent)</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="n">engine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Engine</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">db_path</span><span class="p">:</span><span class="w"> </span><span class="s1">'kb.db'</span><span class="p">)</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">location</span><span class="p">:</span><span class="w"> </span><span class="s2">"server_room"</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span><span class="p">)</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="nb">require</span><span class="w"> </span><span class="s1">'kbs/blackboard'</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">engine</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Engine</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">db_path</span><span class="p">:</span><span class="w"> </span><span class="s1">'kb.db'</span><span class="p">)</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="n">fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">location</span><span class="p">:</span><span class="w"> </span><span class="s2">"server_room"</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span><span class="p">)</span>
 </span></code></pre></div>
 <h3 id="2-pattern-matching">2. Pattern Matching<a class="headerlink" href="#2-pattern-matching" title="Permanent link">&para;</a></h3>
 <p>Once added, facts are automatically matched against rule patterns:</p>
@@ -3090,12 +3091,13 @@
 <p>When all conditions of a rule match, the rule fires:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">kb</span><span class="o">.</span><span class="n">run</span><span class="w">  </span><span class="c1"># → "Alert!" (rule fires because fact matches)</span>
 </span></code></pre></div>
-<h3 id="4-updates-blackboard-only">4. Updates (Blackboard Only)<a class="headerlink" href="#4-updates-blackboard-only" title="Permanent link">&para;</a></h3>
-<p>Persistent facts can be updated:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">fact</span><span class="o">[</span><span class="ss">:value</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">90</span><span class="w">  </span><span class="c1"># Update persisted immediately</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">fact</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">90</span><span class="p">,</span><span class="w"> </span><span class="ss">timestamp</span><span class="p">:</span><span class="w"> </span><span class="no">Time</span><span class="o">.</span><span class="n">now</span><span class="p">)</span><span class="w">  </span><span class="c1"># Bulk update</span>
+<h3 id="4-updates">4. Updates<a class="headerlink" href="#4-updates" title="Permanent link">&para;</a></h3>
+<p>Use <code>modify</code> to change a fact and match it again:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">kb</span><span class="o">.</span><span class="n">modify</span><span class="p">(</span><span class="n">fact</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">90</span><span class="p">)</span><span class="w">       </span><span class="c1"># DSL</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">engine</span><span class="o">.</span><span class="n">modify</span><span class="p">(</span><span class="n">fact</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">90</span><span class="p">)</span><span class="w">   </span><span class="c1"># Engine</span>
 </span></code></pre></div>
-<p><strong>Note</strong>: Updates do NOT trigger rule re-evaluation. To re-trigger rules, retract and re-add.</p>
+<p><code>modify</code> acts as a retraction followed by an assertion: matches that depended on the old values go away, and rules the new values satisfy are activated again, including rules that already fired for this fact. It returns the fact, or <code>nil</code> when the fact is not in working memory.</p>
+<p><strong>Note</strong>: Setting attributes directly (<code>fact[:value] = 90</code>, or <code>fact.update(...)</code> on a persistent fact) changes the stored values but does NOT trigger rule re-evaluation.</p>
 <h3 id="5-retraction">5. Retraction<a class="headerlink" href="#5-retraction" title="Permanent link">&para;</a></h3>
 <p>Facts can be removed from working memory:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># DSL</span>
@@ -3148,7 +3150,7 @@
 </span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>
 </span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="c1"># Restart process</span>
 </span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="n">engine2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Blackboard</span><span class="o">::</span><span class="no">Engine</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">db_path</span><span class="p">:</span><span class="w"> </span><span class="s1">'kb.db'</span><span class="p">)</span>
-</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="n">reloaded</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">engine2</span><span class="o">.</span><span class="n">blackboard</span><span class="o">.</span><span class="n">get_facts_by_type</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">)</span><span class="o">.</span><span class="n">first</span>
+</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="n">reloaded</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">engine2</span><span class="o">.</span><span class="n">blackboard</span><span class="o">.</span><span class="n">get_facts</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">)</span><span class="o">.</span><span class="n">first</span>
 </span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="nb">puts</span><span class="w"> </span><span class="n">reloaded</span><span class="o">[</span><span class="ss">:value</span><span class="o">]</span><span class="w">  </span><span class="c1"># =&gt; 90 (persisted)</span>
 </span></code></pre></div>
 <p><strong>Best for</strong>:</p>
@@ -3248,8 +3250,8 @@
 </span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a><span class="w">  </span><span class="n">without</span><span class="w"> </span><span class="ss">:alert</span><span class="p">,</span><span class="w"> </span><span class="ss">location</span><span class="p">:</span><span class="w"> </span><span class="ss">:loc?</span><span class="w">  </span><span class="c1"># No existing alert</span>
 </span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>
 </span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a><span class="w">  </span><span class="n">perform</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">facts</span><span class="p">,</span><span class="w"> </span><span class="n">bindings</span><span class="o">|</span>
-</span><span id="__span-17-6"><a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="w">    </span><span class="c1"># Add derived fact</span>
-</span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="w">    </span><span class="n">fact</span><span class="w"> </span><span class="ss">:alert</span><span class="p">,</span>
+</span><span id="__span-17-6"><a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a><span class="w">    </span><span class="c1"># Add derived fact (kb is the knowledge base; inside perform, self is the rule builder)</span>
+</span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a><span class="w">    </span><span class="n">kb</span><span class="o">.</span><span class="n">fact</span><span class="w"> </span><span class="ss">:alert</span><span class="p">,</span>
 </span><span id="__span-17-8"><a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a><span class="w">         </span><span class="ss">location</span><span class="p">:</span><span class="w"> </span><span class="n">bindings</span><span class="o">[</span><span class="ss">:loc?</span><span class="o">]</span><span class="p">,</span>
 </span><span id="__span-17-9"><a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a><span class="w">         </span><span class="ss">level</span><span class="p">:</span><span class="w"> </span><span class="s2">"high"</span><span class="p">,</span>
 </span><span id="__span-17-10"><a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a><span class="w">         </span><span class="ss">source</span><span class="p">:</span><span class="w"> </span><span class="s2">"temperature_monitor"</span>
@@ -3293,7 +3295,7 @@
 </span><span id="__span-19-15"><a id="__codelineno-19-15" name="__codelineno-19-15" href="#__codelineno-19-15"></a>
 </span><span id="__span-19-16"><a id="__codelineno-19-16" name="__codelineno-19-16" href="#__codelineno-19-16"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="n">shares</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span>
 </span><span id="__span-19-17"><a id="__codelineno-19-17" name="__codelineno-19-17" href="#__codelineno-19-17"></a><span class="w">      </span><span class="c1"># Action may create new facts</span>
-</span><span id="__span-19-18"><a id="__codelineno-19-18" name="__codelineno-19-18" href="#__codelineno-19-18"></a><span class="w">      </span><span class="n">fact</span><span class="w"> </span><span class="ss">:order</span><span class="p">,</span>
+</span><span id="__span-19-18"><a id="__codelineno-19-18" name="__codelineno-19-18" href="#__codelineno-19-18"></a><span class="w">      </span><span class="n">kb</span><span class="o">.</span><span class="n">fact</span><span class="w"> </span><span class="ss">:order</span><span class="p">,</span>
 </span><span id="__span-19-19"><a id="__codelineno-19-19" name="__codelineno-19-19" href="#__codelineno-19-19"></a><span class="w">           </span><span class="ss">symbol</span><span class="p">:</span><span class="w"> </span><span class="n">bindings</span><span class="o">[</span><span class="ss">:sym?</span><span class="o">]</span><span class="p">,</span>
 </span><span id="__span-19-20"><a id="__codelineno-19-20" name="__codelineno-19-20" href="#__codelineno-19-20"></a><span class="w">           </span><span class="ss">shares</span><span class="p">:</span><span class="w"> </span><span class="n">shares</span><span class="p">,</span>
 </span><span id="__span-19-21"><a id="__codelineno-19-21" name="__codelineno-19-21" href="#__codelineno-19-21"></a><span class="w">           </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="s2">"market_buy"</span>
@@ -3321,7 +3323,7 @@
 </span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="c1"># No :volume attribute</span>
 </span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>
 </span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="c1"># Fails - fact missing required :volume</span>
-</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="n">fact</span><span class="o">.</span><span class="n">matches?</span><span class="p">(</span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:stock</span><span class="p">,</span><span class="w"> </span><span class="ss">volume</span><span class="p">:</span><span class="w"> </span><span class="n">greater_than</span><span class="p">(</span><span class="mi">1000</span><span class="p">))</span><span class="w">  </span><span class="c1"># =&gt; false</span>
+</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a><span class="n">fact</span><span class="o">.</span><span class="n">matches?</span><span class="p">(</span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:stock</span><span class="p">,</span><span class="w"> </span><span class="ss">volume</span><span class="p">:</span><span class="w"> </span><span class="o">-&gt;</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">v</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">1000</span><span class="w"> </span><span class="p">})</span><span class="w">  </span><span class="c1"># =&gt; false</span>
 </span></code></pre></div>
 <h3 id="type-safety">Type Safety<a class="headerlink" href="#type-safety" title="Permanent link">&para;</a></h3>
 <p>Type is always checked first:</p>
@@ -3334,34 +3336,30 @@
 </span><span id="__span-22-7"><a id="__codelineno-22-7" name="__codelineno-22-7" href="#__codelineno-22-7"></a><span class="n">fact</span><span class="o">.</span><span class="n">matches?</span><span class="p">(</span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:stock</span><span class="p">)</span><span class="w">  </span><span class="c1"># =&gt; true</span>
 </span></code></pre></div>
 <h3 id="value-immutability-transient-facts">Value Immutability (Transient Facts)<a class="headerlink" href="#value-immutability-transient-facts" title="Permanent link">&para;</a></h3>
-<p>Transient facts should be treated as immutable. Changing attributes doesn't trigger re-evaluation:</p>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="n">fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Fact</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span><span class="p">)</span>
-</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span>
-</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>
-</span><span id="__span-23-4"><a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="c1"># Don't do this - change not tracked</span>
-</span><span id="__span-23-5"><a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a><span class="n">fact</span><span class="o">[</span><span class="ss">:value</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">90</span><span class="w">  </span><span class="c1"># Rules won't re-fire</span>
-</span><span id="__span-23-6"><a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a>
-</span><span id="__span-23-7"><a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a><span class="c1"># Instead, retract and re-add</span>
-</span><span id="__span-23-8"><a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a><span class="n">engine</span><span class="o">.</span><span class="n">remove_fact</span><span class="p">(</span><span class="n">fact</span><span class="p">)</span>
-</span><span id="__span-23-9"><a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a><span class="n">new_fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Fact</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">90</span><span class="p">)</span>
-</span><span id="__span-23-10"><a id="__codelineno-23-10" name="__codelineno-23-10" href="#__codelineno-23-10"></a><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="n">new_fact</span><span class="p">)</span>
+<p>Transient facts should be treated as immutable. Changing attributes directly doesn't trigger re-evaluation:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="n">fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span><span class="p">)</span>
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>
+</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="c1"># Don't do this - change not tracked</span>
+</span><span id="__span-23-4"><a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a><span class="n">fact</span><span class="o">[</span><span class="ss">:value</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">90</span><span class="w">  </span><span class="c1"># Rules won't re-fire</span>
+</span><span id="__span-23-5"><a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a>
+</span><span id="__span-23-6"><a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a><span class="c1"># Instead, modify the fact</span>
+</span><span id="__span-23-7"><a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a><span class="n">engine</span><span class="o">.</span><span class="n">modify</span><span class="p">(</span><span class="n">fact</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">90</span><span class="p">)</span>
 </span></code></pre></div>
 <h3 id="value-mutability-persistent-facts">Value Mutability (Persistent Facts)<a class="headerlink" href="#value-mutability-persistent-facts" title="Permanent link">&para;</a></h3>
-<p>Persistent facts track updates but don't re-trigger rules:</p>
+<p>Persistent facts track direct updates but don't re-trigger rules:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="n">fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">85</span><span class="p">)</span>
 </span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>
 </span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a><span class="c1"># This persists but doesn't re-fire rules</span>
 </span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a><span class="n">fact</span><span class="o">[</span><span class="ss">:value</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">90</span>
 </span><span id="__span-24-5"><a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>
-</span><span id="__span-24-6"><a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="c1"># To re-trigger rules, retract and re-add</span>
-</span><span id="__span-24-7"><a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a><span class="n">fact</span><span class="o">.</span><span class="n">retract</span>
-</span><span id="__span-24-8"><a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a><span class="n">new_fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">90</span><span class="p">)</span>
+</span><span id="__span-24-6"><a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a><span class="c1"># To re-trigger rules, modify the fact (it keeps its UUID; the audit log records an UPDATE)</span>
+</span><span id="__span-24-7"><a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a><span class="n">engine</span><span class="o">.</span><span class="n">modify</span><span class="p">(</span><span class="n">fact</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">90</span><span class="p">)</span>
 </span></code></pre></div>
 <h2 id="performance-considerations">Performance Considerations<a class="headerlink" href="#performance-considerations" title="Permanent link">&para;</a></h2>
 <h3 id="fact-count-impact">Fact Count Impact<a class="headerlink" href="#fact-count-impact" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>RETE strength</strong>: Efficient with many facts and stable rules</li>
-<li><strong>Alpha memories</strong>: Facts indexed by type</li>
+<li><strong>Alpha memories</strong>: Facts routed by type and by constant attribute values</li>
 <li><strong>Beta network</strong>: Partial matches cached as tokens</li>
 <li><strong>Unlinking</strong>: Empty nodes deactivated automatically</li>
 </ul>
@@ -3428,13 +3426,12 @@
 </span><span id="__span-28-6"><a id="__codelineno-28-6" name="__codelineno-28-6" href="#__codelineno-28-6"></a><span class="w">  </span><span class="n">perform</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"High!"</span><span class="w"> </span><span class="p">}</span>
 </span><span id="__span-28-7"><a id="__codelineno-28-7" name="__codelineno-28-7" href="#__codelineno-28-7"></a><span class="k">end</span>
 </span><span id="__span-28-8"><a id="__codelineno-28-8" name="__codelineno-28-8" href="#__codelineno-28-8"></a>
-</span><span id="__span-28-9"><a id="__codelineno-28-9" name="__codelineno-28-9" href="#__codelineno-28-9"></a><span class="c1"># Update doesn't re-fire rule</span>
+</span><span id="__span-28-9"><a id="__codelineno-28-9" name="__codelineno-28-9" href="#__codelineno-28-9"></a><span class="c1"># Direct update doesn't re-fire rule</span>
 </span><span id="__span-28-10"><a id="__codelineno-28-10" name="__codelineno-28-10" href="#__codelineno-28-10"></a><span class="n">fact</span><span class="o">[</span><span class="ss">:value</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">90</span><span class="w">  </span><span class="c1"># Rule doesn't fire again</span>
 </span><span id="__span-28-11"><a id="__codelineno-28-11" name="__codelineno-28-11" href="#__codelineno-28-11"></a>
-</span><span id="__span-28-12"><a id="__codelineno-28-12" name="__codelineno-28-12" href="#__codelineno-28-12"></a><span class="c1"># Must retract and re-add to re-trigger</span>
-</span><span id="__span-28-13"><a id="__codelineno-28-13" name="__codelineno-28-13" href="#__codelineno-28-13"></a><span class="n">fact</span><span class="o">.</span><span class="n">retract</span>
-</span><span id="__span-28-14"><a id="__codelineno-28-14" name="__codelineno-28-14" href="#__codelineno-28-14"></a><span class="n">engine</span><span class="o">.</span><span class="n">add_fact</span><span class="p">(</span><span class="ss">:temperature</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">90</span><span class="p">)</span>
-</span><span id="__span-28-15"><a id="__codelineno-28-15" name="__codelineno-28-15" href="#__codelineno-28-15"></a><span class="n">engine</span><span class="o">.</span><span class="n">run</span><span class="w">  </span><span class="c1"># Now rule fires</span>
+</span><span id="__span-28-12"><a id="__codelineno-28-12" name="__codelineno-28-12" href="#__codelineno-28-12"></a><span class="c1"># Use modify to re-trigger</span>
+</span><span id="__span-28-13"><a id="__codelineno-28-13" name="__codelineno-28-13" href="#__codelineno-28-13"></a><span class="n">engine</span><span class="o">.</span><span class="n">modify</span><span class="p">(</span><span class="n">fact</span><span class="p">,</span><span class="w"> </span><span class="ss">value</span><span class="p">:</span><span class="w"> </span><span class="mi">90</span><span class="p">)</span>
+</span><span id="__span-28-14"><a id="__codelineno-28-14" name="__codelineno-28-14" href="#__codelineno-28-14"></a><span class="n">engine</span><span class="o">.</span><span class="n">run</span><span class="w">  </span><span class="c1"># Now rule fires</span>
 </span></code></pre></div>
 <h3 id="3-side-effects-in-predicates">3. Side Effects in Predicates<a class="headerlink" href="#3-side-effects-in-predicates" title="Permanent link">&para;</a></h3>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="c1"># Wrong - side effects</span>

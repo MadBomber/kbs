@@ -535,7 +535,7 @@
   <span class="md-ellipsis">
     
   
-    What is aKnowledge Base?
+    What is a Knowledge Base?
   
 
     
@@ -2189,16 +2189,17 @@
 <h3 id="step-3-run-rules">Step 3: Run Rules<a class="headerlink" href="#step-3-run-rules" title="Permanent link">&para;</a></h3>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">kb</span><span class="o">.</span><span class="n">run</span>
 </span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># Output:</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># =&gt; ⚠️  HIGH TEMP Alert: Sensor server_rack at 82°F</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># =&gt; 🚨 CRITICAL: Sensor server_rack at 82°F with cooling OFFLINE!</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># =&gt; 🚨 CRITICAL: Sensor server_rack at 82°F with cooling OFFLINE!</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># =&gt; ⚠️  HIGH TEMP Alert: Sensor server_rack at 82°F</span>
 </span></code></pre></div>
 <h2 id="understanding-what-happened">Understanding What Happened<a class="headerlink" href="#understanding-what-happened" title="Permanent link">&para;</a></h2>
 <ol>
 <li><strong>Knowledge Base Creation</strong>: <code>KBS.knowledge_base do...end</code> creates the RETE network and defines rules</li>
 <li><strong>Rule Definition</strong>: Rules are compiled into the discrimination network using the DSL</li>
 <li><strong>Fact Assertion</strong>: <code>kb.fact</code> adds facts that propagate through the network, creating partial matches</li>
-<li><strong>Rule Firing</strong>: <code>kb.run</code> executes actions for all complete matches</li>
+<li><strong>Rule Firing</strong>: <code>kb.run</code> fires every complete match waiting on the agenda, highest priority first, until none are left, and returns the number of rules fired</li>
 </ol>
+<p><code>critical_condition</code> fires first because its priority (10) is higher than the default (0).</p>
 <p>The critical rule fires because:
 - Sensor "server_rack" temp (82°F) &gt; 75
 - Cooling system for "server_rack" is offline
@@ -2317,8 +2318,8 @@
 </span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">    </span><span class="n">without</span><span class="w"> </span><span class="ss">:state</span><span class="p">,</span><span class="w"> </span><span class="ss">current</span><span class="p">:</span><span class="w"> </span><span class="s2">"ready"</span>
 </span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>
 </span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="w">    </span><span class="n">perform</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">facts</span><span class="o">|</span>
-</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="w">      </span><span class="c1"># Note: For state transitions, you'd typically use engine methods</span>
-</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="w">      </span><span class="c1"># This is a simplified example</span>
+</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="w">      </span><span class="c1"># Simplified: to change the state, capture the knowledge base</span>
+</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="w">      </span><span class="c1"># (kb = self) and call kb.modify from the action</span>
 </span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="w">      </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Transitioning to ready state"</span>
 </span><span id="__span-7-13"><a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="w">    </span><span class="k">end</span>
 </span><span id="__span-7-14"><a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="w">  </span><span class="k">end</span>

@@ -535,7 +535,7 @@
   <span class="md-ellipsis">
     
   
-    What is aKnowledge Base?
+    What is a Knowledge Base?
   
 
     
@@ -1717,10 +1717,10 @@
 <p>Complete class documentation for KBS.</p>
 <h2 id="core-classes">Core Classes<a class="headerlink" href="#core-classes" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong><a href="engine/">Engine</a></strong> - Main RETE engine</li>
-<li><strong><a href="facts/">Facts &amp; Conditions</a></strong> - Pattern matching</li>
-<li><strong><a href="rules/">Rules</a></strong> - Production rules</li>
-<li><strong><a href="blackboard/">Blackboard</a></strong> - Persistent memory</li>
+<li><strong><a href="engine/">Engine</a></strong> - <code>KBS::Engine</code>, the RETE engine: rules, facts, <code>modify</code>, duplicate-fact rejection, the agenda and truth maintenance; also <code>KBS::Blackboard::Engine</code></li>
+<li><strong><a href="facts/">Facts &amp; Conditions</a></strong> - <code>KBS::Fact</code>, <code>KBS::Blackboard::Fact</code>, <code>KBS::WorkingMemory</code> and <code>KBS::Condition</code>; pattern matching</li>
+<li><strong><a href="rules/">Rules</a></strong> - <code>KBS::Rule</code>, production rules</li>
+<li><strong><a href="blackboard/">Blackboard</a></strong> - <code>KBS::Blackboard::Memory</code>, message queues, audit logs and the persistence stores (<code>SqliteStore</code>, <code>RedisStore</code>, <code>HybridStore</code>). Load with <code>require 'kbs/blackboard'</code></li>
 </ul>
 <h2 id="architecture">Architecture<a class="headerlink" href="#architecture" title="Permanent link">&para;</a></h2>
 <p>See <a href="../architecture/">Architecture Overview</a> for system design.</p>

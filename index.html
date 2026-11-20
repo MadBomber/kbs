@@ -538,7 +538,7 @@
   <span class="md-ellipsis">
     
   
-    What is aKnowledge Base?
+    What is a Knowledge Base?
   
 
     
@@ -1892,7 +1892,7 @@
 <h1 id="kbs-knowledge-based-systems-for-ruby">KBS - Knowledge-Based Systems for Ruby<a class="headerlink" href="#kbs-knowledge-based-systems-for-ruby" title="Permanent link">&para;</a></h1>
 <p><strong>A Ruby implementation of the RETE algorithm for building intelligent, rule-based systems with persistent memory.</strong></p>
 <p><a href="https://badge.fury.io/rb/kbs"><img alt="Gem Version" src="https://badge.fury.io/rb/kbs.svg" /></a>
-<a href="https://www.ruby-lang.org/"><img alt="Ruby" src="https://img.shields.io/badge/ruby-%3E%3D%202.7-ruby.svg" /></a>
+<a href="https://www.ruby-lang.org/"><img alt="Ruby" src="https://img.shields.io/badge/ruby-%3E%3D%204.0-ruby.svg" /></a>
 <a href="https://opensource.org/licenses/MIT"><img alt="License" src="https://img.shields.io/badge/license-MIT-blue.svg" /></a></p>
 <h2 id="what-is-kbs">What is KBS?<a class="headerlink" href="#what-is-kbs" title="Permanent link">&para;</a></h2>
 <p>KBS (Knowledge-Based Systems) is a powerful Ruby gem that brings production rule systems to your applications. At its core is the <strong>RETE algorithm</strong>, a highly optimized pattern-matching engine originally developed for expert systems and now used in modern applications ranging from trading systems to IoT automation.</p>
@@ -1903,9 +1903,10 @@
 <li><strong>🎯 Declarative DSL</strong>: Write rules in natural, readable Ruby syntax</li>
 <li><strong>🔄 Incremental Matching</strong>: Process only changes, not entire fact sets</li>
 <li><strong>🚫 Negation Support</strong>: Express "absence of pattern" conditions naturally</li>
+<li><strong>🧠 Agenda &amp; Truth Maintenance</strong>: Rules fire to quiescence by priority and strategy; facts asserted under <code>logical</code> conditions are retracted when their support goes away</li>
 <li><strong>📊 Multi-Agent Systems</strong>: Build collaborative systems with message passing</li>
 <li><strong>🔍 Full Auditability</strong>: Complete history of fact changes and rule firings</li>
-<li><strong>⚡ High Performance</strong>: Handle millions of facts with sub-millisecond updates</li>
+<li><strong>⚡ High Performance</strong>: Hash-indexed joins and alpha memories give sub-millisecond fact updates</li>
 </ul>
 <h2 id="quick-example">Quick Example<a class="headerlink" href="#quick-example" title="Permanent link">&para;</a></h2>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">require</span><span class="w"> </span><span class="s1">'kbs'</span>
@@ -1981,10 +1982,10 @@
 <li><strong>Fact Addition</strong>: O(N) where N = activated nodes (typically &lt;&lt; total nodes)</li>
 <li><strong>Rule Firing</strong>: O(M) where M = matched tokens</li>
 <li><strong>Memory Efficient</strong>: Network sharing reduces redundant storage</li>
-<li><strong>Scalable</strong>: Tested with millions of facts, thousands of rules</li>
+<li><strong>Scalable</strong>: Alpha memories are found by fact type and constant, and joins on shared variables are hash-indexed (see <code>benchmarks/</code>)</li>
 </ul>
 <p>Benchmarks on M2 Max:
-- Add 100,000 facts: ~500ms
+- Add 100,000 facts to a two-rule network (one join, one negation): ~1s
 - Match complex 5-condition rule: &lt;1ms per fact
 - Redis backend: 100x faster than SQLite for high-frequency updates</p>
 <h2 id="project-status">Project Status<a class="headerlink" href="#project-status" title="Permanent link">&para;</a></h2>

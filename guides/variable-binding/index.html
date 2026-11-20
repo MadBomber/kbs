@@ -535,7 +535,7 @@
   <span class="md-ellipsis">
     
   
-    What is aKnowledge Base?
+    What is a Knowledge Base?
   
 
     
@@ -1515,10 +1515,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#trace-join-tests" class="md-nav__link">
+  <a href="#inspect-join-tests" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Trace Join Tests
+        Inspect Join Tests
       
     </span>
   </a>
@@ -2508,10 +2508,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#trace-join-tests" class="md-nav__link">
+  <a href="#inspect-join-tests" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Trace Join Tests
+        Inspect Join Tests
       
     </span>
   </a>
@@ -2680,6 +2680,9 @@
 </span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="c1"># Does not match:</span>
 </span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="p">{</span><span class="w"> </span><span class="ss">type</span><span class="p">:</span><span class="w"> </span><span class="ss">:watchlist</span><span class="p">,</span><span class="w"> </span><span class="ss">symbol</span><span class="p">:</span><span class="w"> </span><span class="s2">"GOOGL"</span><span class="w"> </span><span class="p">}</span><span class="w">  </span><span class="c1"># ✗</span>
 </span></code></pre></div>
+<p><strong>Scope rules:</strong>
+- A variable used twice in one condition compares two attributes of the same fact: <code>{ min: :v?, max: :v? }</code> matches only when <code>min == max</code>.
+- A variable that first appears in a negated (<code>without</code>) or <code>exists</code> condition is local to that condition. Such conditions add no fact to the match, so they bind nothing for later conditions or for the action.</p>
 <h3 id="3-action-access">3. Action: Access<a class="headerlink" href="#3-action-access" title="Permanent link">&para;</a></h3>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">r</span><span class="o">.</span><span class="n">action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">lambda</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">facts</span><span class="p">,</span><span class="w"> </span><span class="n">bindings</span><span class="o">|</span>
 </span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="c1"># Access bound variables</span>
@@ -2706,6 +2709,7 @@
 </span><span id="__span-10-12"><a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="p">}</span>
 </span></code></pre></div>
 <h3 id="join-test-execution">Join Test Execution<a class="headerlink" href="#join-test-execution" title="Permanent link">&para;</a></h3>
+<p>A simplified version of <code>KBS::JoinTests#join_test_passes?</code>:</p>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">perform_join_test</span><span class="p">(</span><span class="n">token</span><span class="p">,</span><span class="w"> </span><span class="n">new_fact</span><span class="p">,</span><span class="w"> </span><span class="nb">test</span><span class="p">)</span>
 </span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">  </span><span class="c1"># Get value from token (previous facts)</span>
 </span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">  </span><span class="n">token_fact</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">token</span><span class="o">.</span><span class="n">fact_at</span><span class="p">(</span><span class="nb">test</span><span class="o">[</span><span class="ss">:token_field_index</span><span class="o">]</span><span class="p">)</span>
@@ -2731,7 +2735,7 @@
 </span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>
 </span><span id="__span-12-11"><a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="c1"># Join execution:</span>
 </span><span id="__span-12-12"><a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a><span class="c1"># 1. sensor matches → token created</span>
-</span><span id="__span-12-13"><a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a><span class="n">token</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">Token</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">parent</span><span class="p">:</span><span class="w"> </span><span class="n">root</span><span class="p">,</span><span class="w"> </span><span class="ss">fact</span><span class="p">:</span><span class="w"> </span><span class="n">sensor</span><span class="p">)</span>
+</span><span id="__span-12-13"><a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a><span class="n">token</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">Token</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">root_token</span><span class="p">,</span><span class="w"> </span><span class="n">sensor</span><span class="p">,</span><span class="w"> </span><span class="n">join_node</span><span class="p">)</span>
 </span><span id="__span-12-14"><a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a><span class="c1"># Bindings: { :id? =&gt; "bedroom", :temp? =&gt; 28 }</span>
 </span><span id="__span-12-15"><a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a>
 </span><span id="__span-12-16"><a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a><span class="c1"># 2. threshold tested against token</span>
@@ -2936,18 +2940,12 @@
 </span><span id="__span-25-6"><a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a><span class="w">  </span><span class="k">end</span>
 </span><span id="__span-25-7"><a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a><span class="k">end</span>
 </span></code></pre></div>
-<h3 id="trace-join-tests">Trace Join Tests<a class="headerlink" href="#trace-join-tests" title="Permanent link">&para;</a></h3>
-<div class="language-ruby highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">DebugJoinNode</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="no">KBS</span><span class="o">::</span><span class="no">JoinNode</span>
-</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="w">  </span><span class="k">def</span><span class="w"> </span><span class="nf">perform_join_tests</span><span class="p">(</span><span class="n">token</span><span class="p">,</span><span class="w"> </span><span class="n">fact</span><span class="p">)</span>
-</span><span id="__span-26-3"><a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a><span class="w">    </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">super</span>
-</span><span id="__span-26-4"><a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"Join test: </span><span class="si">#{</span><span class="vi">@tests</span><span class="o">.</span><span class="n">inspect</span><span class="si">}</span><span class="s2">"</span>
-</span><span id="__span-26-5"><a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"  Token: </span><span class="si">#{</span><span class="n">token</span><span class="o">.</span><span class="n">inspect</span><span class="si">}</span><span class="s2">"</span>
-</span><span id="__span-26-6"><a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"  Fact: </span><span class="si">#{</span><span class="n">fact</span><span class="o">.</span><span class="n">inspect</span><span class="si">}</span><span class="s2">"</span>
-</span><span id="__span-26-7"><a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a><span class="w">    </span><span class="nb">puts</span><span class="w"> </span><span class="s2">"  Result: </span><span class="si">#{</span><span class="n">result</span><span class="si">}</span><span class="s2">"</span>
-</span><span id="__span-26-8"><a id="__codelineno-26-8" name="__codelineno-26-8" href="#__codelineno-26-8"></a><span class="w">    </span><span class="n">result</span>
-</span><span id="__span-26-9"><a id="__codelineno-26-9" name="__codelineno-26-9" href="#__codelineno-26-9"></a><span class="w">  </span><span class="k">end</span>
-</span><span id="__span-26-10"><a id="__codelineno-26-10" name="__codelineno-26-10" href="#__codelineno-26-10"></a><span class="k">end</span>
+<h3 id="inspect-join-tests">Inspect Join Tests<a class="headerlink" href="#inspect-join-tests" title="Permanent link">&para;</a></h3>
+<p><code>KBS::JoinTestBuilder</code> compiles a rule's conditions into the join tests the network uses, one array per condition:</p>
+<div class="language-ruby highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="no">KBS</span><span class="o">::</span><span class="no">JoinTestBuilder</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">rule</span><span class="o">.</span><span class="n">conditions</span><span class="p">)</span><span class="o">.</span><span class="n">tests</span>
+</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a><span class="c1"># =&gt; [[], [{token_field_index: 0, token_field: :id, fact_field: :sensor_id, operation: :eq}]]</span>
 </span></code></pre></div>
+<p>Equality tests between a token field and a fact field become hash-index keys on the join node's memories, so they are looked up rather than evaluated per candidate.</p>
 <h3 id="validate-bindings">Validate Bindings<a class="headerlink" href="#validate-bindings" title="Permanent link">&para;</a></h3>
 <div class="language-ruby highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="n">r</span><span class="o">.</span><span class="n">action</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">lambda</span><span class="w"> </span><span class="k">do</span><span class="w"> </span><span class="o">|</span><span class="n">facts</span><span class="p">,</span><span class="w"> </span><span class="n">bindings</span><span class="o">|</span>
 </span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a><span class="w">  </span><span class="c1"># Ensure expected bindings exist</span>
