@@ -11,6 +11,7 @@ module KBS
       @working_memory = WorkingMemory.new
       @rules = []
       @alpha_memories = {}
+      @fact_memories = {}
       @production_nodes = {}
       @root_beta_memory = BetaMemory.new
 
@@ -42,14 +43,39 @@ module KBS
 
     def update(action, fact)
       if action == :add
-        @alpha_memories.each do |pattern, memory|
-          memory.activate(fact) if fact.matches?(pattern)
-        end
+        match_fact(fact)
       elsif action == :remove
-        @alpha_memories.each do |pattern, memory|
-          memory.deactivate(fact) if fact.matches?(pattern)
-        end
+        unmatch_fact(fact)
       end
+    end
+
+    # Sends a new fact to every alpha memory whose pattern it matches,
+    # and remembers which ones, so that retracting it needs no matching.
+    def match_fact(fact)
+      memories = matching_alpha_memories(fact)
+      return if memories.empty?
+
+      @fact_memories[fact] = memories
+      memories.each { |memory| memory.activate(fact) }
+    end
+
+    # Takes a fact out of the alpha memories it went into. The fact is
+    # not matched again, so this works even if its attributes changed.
+    def unmatch_fact(fact)
+      memories = @fact_memories.delete(fact)
+      memories&.each { |memory| memory.deactivate(fact) }
+    end
+
+    # The alpha memories whose pattern `fact` matches.
+    def matching_alpha_memories(fact)
+      memories = []
+      @alpha_memories.each_value { |memory| memories << memory if fact.matches?(memory.pattern) }
+      memories
+    end
+
+    # The alpha memories that hold `fact`.
+    def alpha_memories_for(fact)
+      @fact_memories.fetch(fact, []).dup
     end
 
     # Fires activations from the agenda until it is empty: the highest
@@ -114,7 +140,8 @@ module KBS
     # root beta memory's dummy token (needed for first-condition joins).
     def reset
       # 1. Clear working memory directly (bypass observer — we clear everything)
-      @working_memory.facts.clear
+      @working_memory.clear if @working_memory.respond_to?(:clear)
+      @fact_memories.clear
 
       # 2. Clear alpha memories and their downstream beta memories
       @alpha_memories.each_value do |alpha_mem|
@@ -125,7 +152,7 @@ module KBS
         # The root beta memory is never a join node successor, so
         # its dummy token is preserved.
         alpha_mem.successors.each do |join_node|
-          join_node.reset if join_node.is_a?(NegationNode)
+          join_node.reset if join_node.respond_to?(:reset)
           next unless join_node.respond_to?(:successors)
           join_node.successors.each do |beta_or_prod|
             beta_or_prod.clear if beta_or_prod.is_a?(BetaMemory)
@@ -138,7 +165,7 @@ module KBS
       @agenda.clear
 
       # 4. Clear stale child references from the root dummy token
-      @root_beta_memory.tokens.each { |t| t.children.clear }
+      @root_beta_memory.each_token { |t| t.clear_children }
 
       # 5. Restore leading negation matches for the now-empty working memory
       @root_beta_memory.successors.grep(NegationNode).each do |node|
@@ -187,7 +214,12 @@ module KBS
     # and existing alpha memories already hold their facts.
     def get_or_create_alpha_memory(pattern)
       @alpha_memories[pattern] ||= AlphaMemory.new(pattern).tap do |memory|
-        @working_memory.facts.each { |fact| memory.add_item(fact) if fact.matches?(pattern) }
+        @working_memory.facts.each do |fact|
+          next unless fact.matches?(pattern)
+
+          memory.add_item(fact)
+          (@fact_memories[fact] ||= []) << memory
+        end
       end
     end
   end

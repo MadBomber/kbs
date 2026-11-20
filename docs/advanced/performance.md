@@ -68,6 +68,17 @@ arm64-darwin (median of 3), for `n` orders joined with `n` payments on `?id`:
 | 1000 | 7,949 facts/sec | 327,279 facts/sec |
 | 2000 | 4,120 facts/sec | 360,101 facts/sec |
 
+Retraction follows links instead of searching. The engine records which
+alpha memories each fact went into, each join records the tokens it built
+from each fact, and each token records its children, so removing a fact
+touches only its own matches. Removing `n` joined payments:
+
+| n | Memory scan | Linked |
+|--:|------------:|-------:|
+| 500 | 16,576 facts/sec | 500,500 facts/sec |
+| 1000 | 8,566 facts/sec | 392,311 facts/sec |
+| 2000 | 4,251 facts/sec | 484,848 facts/sec |
+
 Only equality between two conditions is indexed. A condition with no shared
 variable, or one that only uses predicates, still scans its memories, so put
 a shared variable on the join where the data allows it.

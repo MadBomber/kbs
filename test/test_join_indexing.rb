@@ -47,7 +47,7 @@ class TestJoinIndexing < Minitest::Test
     other = KBS::Fact.new(:payment, order_id: 2)
     [match, other].each { |fact| @alpha.add_item(fact) }
 
-    assert_equal [match], node.candidate_facts(order_token(id: 1))
+    assert_equal [match], node.candidate_facts(order_token(id: 1)).to_a
     assert_empty node.candidate_facts(order_token(id: 3))
   end
 
@@ -57,7 +57,7 @@ class TestJoinIndexing < Minitest::Test
     other = order_token(id: 2)
     [match, other].each { |token| @beta.add_token(token) }
 
-    assert_equal [match], node.candidate_tokens(KBS::Fact.new(:payment, order_id: 1))
+    assert_equal [match], node.candidate_tokens(KBS::Fact.new(:payment, order_id: 1)).to_a
   end
 
   def test_unindexed_node_scans_its_memories
@@ -67,8 +67,8 @@ class TestJoinIndexing < Minitest::Test
     @alpha.add_item(fact)
     @beta.add_token(token)
 
-    assert_equal [fact], node.candidate_facts(token)
-    assert_equal [token], node.candidate_tokens(fact)
+    assert_equal [fact], node.candidate_facts(token).to_a
+    assert_equal [token], node.candidate_tokens(fact).to_a
   end
 
   def test_matching_facts_apply_the_residual_tests
@@ -97,8 +97,8 @@ class TestJoinIndexing < Minitest::Test
 
     node = KBS::JoinNode.new(@alpha, @beta, [EQ])
 
-    assert_equal [fact], node.candidate_facts(token)
-    assert_equal [token], node.candidate_tokens(fact)
+    assert_equal [fact], node.candidate_facts(token).to_a
+    assert_equal [token], node.candidate_tokens(fact).to_a
   end
 
   def test_setting_tests_rebuilds_the_index

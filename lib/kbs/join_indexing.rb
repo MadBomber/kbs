@@ -47,12 +47,18 @@ module KBS
 
     # Facts that join with `token`.
     def matching_facts(token)
-      candidate_facts(token).select { |fact| join_tests_pass?(@residual_tests, token, fact) }
+      candidates = candidate_facts(token)
+      return candidates.to_a if @residual_tests.empty?
+
+      candidates.select { |fact| join_tests_pass?(@residual_tests, token, fact) }
     end
 
     # Tokens that join with `fact`.
     def matching_tokens(fact)
-      candidate_tokens(fact).select { |token| join_tests_pass?(@residual_tests, token, fact) }
+      candidates = candidate_tokens(fact)
+      return candidates.to_a if @residual_tests.empty?
+
+      candidates.select { |token| join_tests_pass?(@residual_tests, token, fact) }
     end
 
     # An equality test between a token field and a fact field.

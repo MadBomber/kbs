@@ -7,8 +7,10 @@ module KBS
   #
   # The key is computed once, when the item is added, and remembered:
   # removing an item finds its bucket even if its attributes changed since.
+  # Buckets are Sets, so adding and removing an item do not depend on the
+  # size of the bucket.
   class MemoryIndex
-    EMPTY = [].freeze
+    EMPTY = Set.new.freeze
 
     # @yield [item] returns the key to file the item under
     def initialize(&key_for)
@@ -20,7 +22,7 @@ module KBS
     def add(item)
       key = @key_for.call(item)
       @keys[item] = key
-      (@buckets[key] ||= []) << item
+      (@buckets[key] ||= Set.new) << item
     end
 
     def remove(item)
@@ -32,7 +34,8 @@ module KBS
       @buckets.delete(key) if bucket.empty?
     end
 
-    # @return [Array] the items filed under `key`; do not modify it
+    # @return [Set] the items filed under `key`, in the order they were
+    #   added; do not modify it
     def lookup(key)
       @buckets[key] || EMPTY
     end

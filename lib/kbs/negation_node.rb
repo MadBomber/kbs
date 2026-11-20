@@ -40,7 +40,7 @@ module KBS
 
       if matches.empty?
         new_token = Token.new(token, nil, self)
-        token.children << new_token
+        token.add_child(new_token)
         @successors.each { |s| s.activate(new_token) }
       else
         @tokens_with_matches[token] = matches
@@ -57,13 +57,13 @@ module KBS
     end
 
     def right_deactivate(fact)
-      @beta_memory.tokens.each do |token|
+      @beta_memory.each_token do |token|
         if @tokens_with_matches[token].include?(fact)
           @tokens_with_matches[token].delete(fact)
 
           if @tokens_with_matches[token].empty?
             new_token = Token.new(token, nil, self)
-            token.children << new_token
+            token.add_child(new_token)
             @successors.each { |s| s.activate(new_token) }
           end
         end
@@ -71,9 +71,9 @@ module KBS
     end
 
     def left_deactivate(token)
-      token.children.select { |child| child.node == self }.each do |child|
+      token.children.select { |child| child.node.equal?(self) }.each do |child|
         @successors.each { |s| s.deactivate(child) if s.respond_to?(:deactivate) }
-        token.children.delete(child)
+        token.remove_child(child)
       end
       @tokens_with_matches.delete(token)
     end

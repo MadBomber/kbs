@@ -14,7 +14,7 @@ class TestToken < Minitest::Test
     assert_nil token.parent
     assert_equal @fact1, token.fact
     assert_nil token.node
-    assert_equal [], token.children
+    assert_empty token.children
   end
 
   def test_facts_with_single_fact
@@ -76,11 +76,32 @@ class TestToken < Minitest::Test
     parent = KBS::Token.new(nil, @fact1, nil)
     child = KBS::Token.new(parent, @fact2, nil)
 
-    assert_equal [], parent.children
+    assert_empty parent.children
 
-    parent.children << child
-    assert_equal 1, parent.children.length
-    assert_equal child, parent.children[0]
+    parent.add_child(child)
+    assert_equal 1, parent.children.size
+    assert_equal child, parent.children.first
+  end
+
+  def test_children_are_empty_and_frozen_until_a_child_is_added
+    token = KBS::Token.new(nil, @fact1, nil)
+
+    assert_empty token.children
+    assert_predicate token.children, :frozen?
+  end
+
+  def test_remove_child_and_clear_children
+    parent = KBS::Token.new(nil, @fact1, nil)
+    first = KBS::Token.new(parent, @fact2, nil)
+    second = KBS::Token.new(parent, @fact2, nil)
+    parent.remove_child(first)
+    [first, second].each { |child| parent.add_child(child) }
+
+    parent.remove_child(first)
+    assert_equal [second], parent.children.to_a
+
+    parent.clear_children
+    assert_empty parent.children
   end
 
   def test_to_s

@@ -15,6 +15,7 @@ module KBS
       @tests = tests
       @left_linked = true
       @right_linked = true
+      @tokens_by_fact = {}
 
       alpha_memory.successors << self if alpha_memory
       beta_memory.successors << self if beta_memory
@@ -69,26 +70,34 @@ module KBS
       parent_tokens.each { |token| emit(token, fact) }
     end
 
+    # A token left the beta memory: remove the tokens this node built
+    # from it. They are among the token's children, so nothing is searched.
     def left_deactivate(token)
-      token.children.each do |child|
-        @successors.each { |s| s.deactivate(child) if s.respond_to?(:deactivate) }
+      token.children.select { |child| child.node.equal?(self) }.each do |child|
+        token.remove_child(child)
+        forget(child)
+        retract(child)
       end
-      token.children.clear
     end
 
+    # A fact left the alpha memory: remove the tokens this node built
+    # from it. The node keeps them by fact, so the beta memory is not
+    # scanned.
     def right_deactivate(fact)
-      tokens_to_remove = []
-
-      if @beta_memory
-        @beta_memory.tokens.each do |token|
-          token.children.select { |child| child.fact == fact }.each do |child|
-            tokens_to_remove << child
-            @successors.each { |s| s.deactivate(child) if s.respond_to?(:deactivate) }
-          end
-        end
+      tokens_for(@tokens_by_fact.delete(fact)).each do |child|
+        child.parent&.remove_child(child)
+        retract(child)
       end
+    end
 
-      tokens_to_remove.each { |token| token.parent.children.delete(token) if token.parent }
+    # The tokens this node has built from `fact`.
+    def tokens_built_from(fact)
+      tokens_for(@tokens_by_fact[fact])
+    end
+
+    # Forgets the tokens this node has built, without telling the successors.
+    def reset
+      @tokens_by_fact.clear
     end
 
     private
@@ -96,8 +105,43 @@ module KBS
     # Passes the match of `token` and `fact` on to the successors.
     def emit(token, fact)
       new_token = Token.new(token, fact, self)
-      token.children << new_token
+      token.add_child(new_token)
+      remember(new_token)
       @successors.each { |s| s.activate(new_token) }
+    end
+
+    def retract(child)
+      @successors.each { |s| s.deactivate(child) if s.respond_to?(:deactivate) }
+    end
+
+    # @tokens_by_fact maps a fact to the tokens built from it: the token
+    # itself while there is one, which is the common case, and a Set once
+    # there are more.
+    def remember(token)
+      entry = @tokens_by_fact[token.fact]
+      case entry
+      when nil then @tokens_by_fact[token.fact] = token
+      when Set then entry << token
+      else @tokens_by_fact[token.fact] = Set[entry, token]
+      end
+    end
+
+    def forget(token)
+      entry = @tokens_by_fact[token.fact]
+      if entry.is_a?(Set)
+        entry.delete(token)
+        @tokens_by_fact.delete(token.fact) if entry.empty?
+      elsif entry.equal?(token)
+        @tokens_by_fact.delete(token.fact)
+      end
+    end
+
+    def tokens_for(entry)
+      case entry
+      when nil then []
+      when Set then entry.to_a
+      else [entry]
+      end
     end
   end
 end
