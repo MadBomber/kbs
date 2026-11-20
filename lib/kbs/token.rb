@@ -2,15 +2,37 @@
 
 module KBS
   class Token
-    attr_accessor :parent, :fact, :node, :children
+    attr_accessor :parent, :fact, :node
+
+    EMPTY_CHILDREN = Set.new.freeze
 
     def initialize(parent, fact, node)
       @parent = parent
       @fact = fact
       @node = node
-      @children = []
+      @children = nil
       @fired = false
+      @retracted = false
       @slots = build_slots
+    end
+
+    # @return [Set<KBS::Token>] the tokens that extend this one, so that
+    #   removing this token can remove them without a search. Frozen and
+    #   empty until the first #add_child.
+    def children
+      @children || EMPTY_CHILDREN
+    end
+
+    def add_child(token)
+      (@children ||= Set.new) << token
+    end
+
+    def remove_child(token)
+      @children&.delete(token)
+    end
+
+    def clear_children
+      @children = nil
     end
 
     # The matched facts, one per positive condition.
@@ -34,6 +56,16 @@ module KBS
 
     def mark_fired!
       @fired = true
+    end
+
+    # Whether the engine has seen this token leave its beta memory. Only
+    # recorded for tokens that can logically support facts.
+    def retracted?
+      @retracted
+    end
+
+    def mark_retracted!
+      @retracted = true
     end
 
     protected

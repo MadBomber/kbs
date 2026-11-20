@@ -189,16 +189,76 @@ engine.remove_fact(old_fact) if old_fact
 
 ---
 
-#### `run()`
+#### `modify(fact, changes)`
 
-Executes all activated rules by firing production nodes.
+Changes a fact's attributes and matches it against the rules again.
 
-**Parameters**: None
+`modify` works as a retraction followed by an assertion. Matches that depended on the old values go away, and every rule the new values satisfy is activated, including rules that already fired for this fact.
 
-**Returns**: `nil`
+**Parameters**:
+- `fact` - a fact in working memory (`KBS::Blackboard::Engine` also accepts a uuid)
+- `changes` (Hash) - attributes to merge into the fact's
+
+**Returns**: the fact with its new attributes, or `nil` when the fact is not in working memory. `KBS::Engine` returns the same object; `KBS::Blackboard::Engine` returns a new object with the same uuid and records an `UPDATE` in the audit log.
+
+```ruby
+reading = engine.add_fact(:sensor, id: 1, temp: 20)
+engine.run                       # "hot" rule does not fire
+engine.modify(reading, temp: 45)
+engine.run                       # "hot" rule fires
+```
+
+Setting an attribute directly (`fact[:temp] = 45`, or `Blackboard::Fact#update`) does **not** match the fact again: the network keeps the matches it made from the values the fact had when it was added.
+
+A rule whose action modifies a fact that the same rule matches is activated again by the change. Guard it with a condition the change makes false, or the rule runs until `run(limit)` stops it.
+
+---
+
+#### `fact_duplication` / `fact_duplication=`
+
+Whether working memory may hold two facts with the same type and attributes. `true` by default.
+
+```ruby
+engine = KBS::Engine.new(fact_duplication: false)
+first = engine.add_fact(:sensor, id: 1)
+again = engine.add_fact(:sensor, id: 1)   # not added
+again.equal?(first)                        # => true
+```
+
+With duplication off, `add_fact` returns the existing fact instead of adding an equal one, and no rule is activated a second time. `modify` that would make a fact equal to another removes the modified fact and returns the other. Turning it off later keeps any duplicates already in working memory.
+
+---
+
+#### Changing facts while a fact is being matched
+
+`add_fact`, `remove_fact` and `modify` raise `KBS::MatchInProgressError` when called while the engine is matching another fact. That only happens from code the engine calls during a match: a predicate in a pattern (`temp: ->(t) { ... }`) or a working-memory observer. Change facts from rule actions, which run between matches.
+
+---
+
+#### `run(limit = nil)`
+
+Fires activations from the agenda until it is empty.
+
+Every complete match of a rule is an *activation*. Activations wait on the agenda (`engine.agenda`) until `run`. Each step of `run` takes the next activation, fires its rule, and looks at the agenda again, so a fact that an action adds or removes takes effect before the next firing: rules chain within one `run`, and an activation whose facts were retracted never fires. An activation fires once.
+
+**Parameters**:
+- `limit` (Integer, optional) - stop after this many firings. Use it to bound a rule set that can feed itself.
+
+**Returns**: `Integer` - the number of rules fired
+
+**Order**: highest `priority` first. Among equal priorities the strategy decides:
+
+| Strategy | Order |
+|---|---|
+| `:definition` (default) | rules in the order they were added; each rule's matches oldest first |
+| `:depth` | newest match first |
+| `:breadth` | oldest match first |
+
+Set it with `KBS::Engine.new(strategy: :depth)` or `engine.strategy = :depth`.
+
+**Stopping early**: `engine.halt`, called from a rule action, stops the run after that rule. The remaining activations stay on the agenda for the next `run`.
 
 **Side Effects**:
-- Fires actions for all tokens in production nodes
 - Rule actions may add/remove facts
 - Rule actions may modify external state
 
@@ -544,19 +604,18 @@ puts audit.last[:action]  # => "retract"
 
 ---
 
-#### `run()`
+#### `run(limit = nil)`
 
-Executes activated rules with audit logging.
+Fires activations from the agenda until it is empty, with audit logging. Order, `limit`, `halt` and strategies work as in `KBS::Engine#run`.
 
-**Parameters**: None
+**Parameters**:
+- `limit` (Integer, optional) - stop after this many firings
 
-**Returns**: `nil`
+**Returns**: `Integer` - the number of rules fired
 
 **Side Effects**:
-- Fires rules in production nodes
 - Logs each rule firing to audit trail
 - Records fact UUIDs and variable bindings
-- Marks tokens as fired (prevents duplicate firing)
 
 **Example**:
 ```ruby
@@ -912,7 +971,7 @@ end
 
 ### Rule Ordering
 
-`run` fires production nodes in priority order, highest first. Rules with equal priority fire in the order they were defined. Both `KBS::Engine` and `KBS::Blackboard::Engine` behave this way.
+`run` fires activations in priority order, highest first. With the default `:definition` strategy, rules with equal priority fire in the order they were defined. Both `KBS::Engine` and `KBS::Blackboard::Engine` behave this way.
 
 ```ruby
 # Both rules activated by same fact

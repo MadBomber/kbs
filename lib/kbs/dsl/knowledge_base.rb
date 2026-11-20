@@ -42,8 +42,20 @@ module KBS
         @engine.remove_fact(fact)
       end
 
-      def run
-        @engine.run
+      # Changes a fact's attributes and matches it against the rules again.
+      # See KBS::Engine#modify.
+      def modify(fact, changes)
+        @engine.modify(fact, changes)
+      end
+
+      # @param limit [Integer, nil] stop after this many rule firings
+      # @return [Integer] the number of rules fired
+      def run(limit = nil)
+        @engine.run(limit)
+      end
+
+      def halt
+        @engine.halt
       end
 
       def reset
@@ -107,7 +119,7 @@ module KBS
           puts "  Priority: #{builder.priority}"
           puts "  Conditions: #{builder.conditions.size}"
           builder.conditions.each_with_index do |cond, i|
-            negated = cond.negated ? "NOT " : ""
+            negated = { "without" => "NOT ", "exists" => "EXISTS " }.fetch(cond.keyword, "")
             puts "    #{i + 1}. #{negated}#{cond.type}(#{reconstruct_pattern(cond.pattern)})"
           end
           puts ""
@@ -126,15 +138,19 @@ module KBS
         lines << "  desc #{builder.description.inspect}" if builder.description
         lines << "  priority #{builder.priority}" if builder.priority != 0
 
-        builder.conditions.each do |cond|
-          keyword = cond.negated ? "without" : "on"
+        logical = builder.conditions.take_while(&:logical).size
+        lines << "  logical do" if logical.positive?
+        builder.conditions.each_with_index do |cond, index|
+          lines << "  end" if index == logical && logical.positive?
+          indent = index < logical ? "    " : "  "
           pattern_str = reconstruct_pattern(cond.pattern)
           if pattern_str.empty?
-            lines << "  #{keyword} #{cond.type.inspect}"
+            lines << "#{indent}#{cond.keyword} #{cond.type.inspect}"
           else
-            lines << "  #{keyword} #{cond.type.inspect}, #{pattern_str}"
+            lines << "#{indent}#{cond.keyword} #{cond.type.inspect}, #{pattern_str}"
           end
         end
+        lines << "  end" if logical.positive? && logical == builder.conditions.size
 
         if builder.action_block
           block_str = decompile_proc_block(builder.action_block)

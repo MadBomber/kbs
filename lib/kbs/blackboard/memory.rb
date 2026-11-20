@@ -94,6 +94,40 @@ module KBS
         end
       end
 
+      # The fact with this uuid as the store holds it now, or nil.
+      #
+      # @param fact [KBS::Blackboard::Fact, String] a fact or its uuid
+      def find_fact(fact)
+        uuid = fact.is_a?(Fact) ? fact.uuid : fact
+        data = @store.get_fact(uuid)
+        data && Fact.new(uuid, data[:type], data[:attributes], self)
+      end
+
+      # Merges `changes` into a fact's attributes and tells the observers
+      # it was removed and added again, so an engine matches the new
+      # values. The uuid is kept.
+      #
+      # @return [KBS::Blackboard::Fact, nil] the fact with its new
+      #   attributes, or nil when it is not in the store
+      def modify_fact(fact, changes)
+        current = find_fact(fact)
+        return nil unless current
+
+        # A Fact passed in still has its attributes as they were given;
+        # the store's copy has been through JSON, which turns Symbol
+        # values into Strings.
+        attributes = (fact.is_a?(Fact) ? fact.attributes : current.attributes).merge(changes)
+        @store.transaction do
+          @store.update_fact(current.uuid, attributes)
+          @audit_log.log_fact_change(current.uuid, current.type, attributes, 'UPDATE')
+        end
+
+        notify_observers(:remove, current)
+        modified = Fact.new(current.uuid, current.type, attributes, self)
+        notify_observers(:add, modified)
+        modified
+      end
+
       def get_facts(type = nil, pattern = {})
         fact_data = @store.get_facts(type, pattern)
 

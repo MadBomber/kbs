@@ -44,6 +44,70 @@ other. These are environment-specific baseline observations, not performance
 targets. Re-run the benchmark on the target Ruby/runtime before evaluating a
 regex engine change.
 
+### RETE Scaling
+
+`benchmarks/rete_scaling.rb` measures how the network scales as facts and
+rules are added: a two-condition join on a shared variable, the same join
+negated, retraction, and fact assertion against many alpha memories.
+
+```bash
+ruby -Ilib benchmarks/rete_scaling.rb
+SIZES=500,1000,2000 REPEATS=5 ruby -Ilib benchmarks/rete_scaling.rb
+```
+
+A scenario that scales linearly keeps its rate as the size grows.
+
+Joins on a shared `?variable` are hash joins. The alpha memory is indexed on
+the fact's fields and the beta memory on the token's fields, so a new fact or
+token only visits the entries that share its value. Recorded on Ruby 4.0.9,
+arm64-darwin (median of 3), for `n` orders joined with `n` payments on `?id`:
+
+| n | Memory scan | Hash index |
+|--:|------------:|-----------:|
+| 500 | 15,294 facts/sec | 313,873 facts/sec |
+| 1000 | 7,949 facts/sec | 327,279 facts/sec |
+| 2000 | 4,120 facts/sec | 360,101 facts/sec |
+
+Retraction follows links instead of searching. The engine records which
+alpha memories each fact went into, each join records the tokens it built
+from each fact, and each token records its children, so removing a fact
+touches only its own matches. Removing `n` joined payments:
+
+| n | Memory scan | Linked |
+|--:|------------:|-------:|
+| 500 | 16,576 facts/sec | 500,500 facts/sec |
+| 1000 | 8,566 facts/sec | 392,311 facts/sec |
+| 2000 | 4,251 facts/sec | 484,848 facts/sec |
+
+Asserting a fact does not test it against every pattern. Alpha memories are
+grouped by fact type, and those that test an attribute against a constant are
+hashed on that value, so the cost does not grow with the number of rules.
+2000 asserts against `n` rules:
+
+| n | Each on its own type, scan | Indexed | Each on its own constant, scan | Indexed |
+|--:|--:|--:|--:|--:|
+| 500 | 32,965 facts/sec | 292,912 facts/sec | 7,877 facts/sec | 315,657 facts/sec |
+| 1000 | 17,316 facts/sec | 336,361 facts/sec | 3,960 facts/sec | 300,661 facts/sec |
+| 2000 | 8,770 facts/sec | 321,492 facts/sec | 1,996 facts/sec | 310,029 facts/sec |
+
+A pattern is hashed on its first attribute compared with a plain value. A
+pattern that only uses predicates or variables is tested for every fact of
+its type, so put a constant test in the pattern when the rule has one.
+
+`without` and `exists` conditions link each partial match to the facts that
+satisfy it, and each fact to the matches it affects. Retracting `n` payments
+that each block one order in a `without`:
+
+| n | Memory scan | Linked |
+|--:|------------:|-------:|
+| 500 | 21,668 facts/sec | 302,847 facts/sec |
+| 1000 | 10,445 facts/sec | 235,405 facts/sec |
+| 2000 | 4,915 facts/sec | 244,439 facts/sec |
+
+Only equality between two conditions is indexed. A condition with no shared
+variable, or one that only uses predicates, still scans its memories, so put
+a shared variable on the join where the data allows it.
+
 ### Basic Benchmark
 
 ```ruby

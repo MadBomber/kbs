@@ -18,6 +18,10 @@ module KBS
   # The including class supplies the tests through a `tests` reader.
   module JoinTests
     def perform_join_tests(token, fact)
+      join_tests_pass?(tests, token, fact)
+    end
+
+    def join_tests_pass?(tests, token, fact)
       tests.all? { |test| join_test_passes?(test, token, fact) }
     end
 
