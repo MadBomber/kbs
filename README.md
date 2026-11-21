@@ -332,6 +332,20 @@ Facts → Alpha Network → Beta Network → Production Nodes
 
 ## ⚡ Performance
 
+### Run with YJIT
+
+Turn on YJIT, the JIT compiler built into CRuby. It makes KBS roughly 1.5 to 2.5 times faster with no code changes:
+
+```bash
+ruby --yjit app.rb              # or set RUBY_YJIT_ENABLE=1
+```
+
+```ruby
+RubyVM::YJIT.enable             # or from code, early in boot
+```
+
+`benchmarks/rete_scaling.rb` measures the network with and without it; see [Performance Tuning](docs/advanced/performance.md#running-with-yjit).
+
 ### Benchmarks
 - **Rule Compilation**: ~1ms per rule for typical patterns
 - **Fact Addition**: ~0.1ms per fact (warm network)

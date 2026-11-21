@@ -1,5 +1,24 @@
 ## [Unreleased]
 
+## [0.4.0] - Unreleased
+
+Faster matching and rule firing. What matches and the order rules fire in are unchanged for every strategy.
+
+### Breaking changes
+- The facts an action receives (`Token#facts`) are frozen; copy them with `dup` before changing them.
+- `Token#children` for a token with a single child returns a frozen one-element Set; change children through `add_child` / `remove_child` as before.
+- `Activation#sort_key` is computed when called, from the new `Activation#strategy` the agenda sets; `Activation#sort_key=` is gone.
+- `MemoryIndex.fact_key` and `MemoryIndex.token_key` return the value itself for a single field, and `MemoryIndex#lookup` may return an Array.
+
+### Changed
+- **Agenda grouped by salience, as in CLIPS.** Activations are filed by salience and, under `:definition`, by rule; within a group `:depth` takes the newest first and `:breadth` / `:definition` the oldest first. Adding and popping no longer compare sort keys, which took about 40% of CPU in an assert-and-`run` profile. Firing 3n activations from three rules runs about 3 to 3.7 times faster (see `docs/advanced/performance.md`).
+- **Fewer allocations per fact and per match.** A join index keys a single field by its value instead of an Array, and a bucket holds a lone fact or token without a `Set`. Each alpha memory prepares its pattern's tests once and skips the `?variables`. `Fact#matches?` no longer builds a pair per pattern entry, joins hand on their candidates without copying them, and the alpha network builds a candidate list only when more than one applies. A token with one child keeps it without a `Set`, and the Sets that hold tokens compare by identity. Joins, negation and retraction run about 15% to 45% faster at n=2000 (25% to 70% with YJIT).
+
+### Added
+- `benchmarks/rete_scaling.rb` measures firing (`run`) under the `:definition` and `:depth` strategies.
+- Fasterer is in the development bundle, so the `asgard quality` Fasterer gate runs instead of being skipped; `.fasterer.yml` records the one speedup turned off.
+- README and the performance guide recommend running with YJIT (`ruby --yjit` or `RUBY_YJIT_ENABLE=1`), which is roughly 1.5 to 2.5 times faster on these benchmarks.
+
 ## [0.3.0] - 2026-11-20
 
 The engine now works like CLIPS: an agenda with conflict resolution, truth maintenance, `exists`, `modify`, and joins on shared `?variables`. Matching and retraction use indexes instead of scans.

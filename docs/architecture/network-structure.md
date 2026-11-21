@@ -210,7 +210,7 @@ A complete match becomes an `Activation` on the engine's `Agenda`. If the match 
 
 **Purpose**: Hold pending activations in firing order
 
-`KBS::Agenda` is a binary heap ordered by rule priority, then by the conflict resolution strategy (`:definition`, `:depth` or `:breadth`). `engine.run(limit = nil)` pops and fires one activation at a time until the agenda is empty, so facts asserted by an action can fire other rules in the same run.
+`KBS::Agenda` groups activations as CLIPS does: by rule priority (salience), and under the `:definition` strategy also by rule. Within a group the conflict resolution strategy decides the order: `:depth` takes the newest activation first (a stack), `:definition` and `:breadth` the oldest first (a queue), so adding or popping an activation compares nothing. `engine.run(limit = nil)` pops and fires one activation at a time until the agenda is empty, so facts asserted by an action can fire other rules in the same run.
 
 ## Complete Example
 

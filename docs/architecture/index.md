@@ -187,7 +187,7 @@ engine.add_rule(rule)
 | Add rule | O(C × F) | C = conditions, F = existing facts |
 | Add fact | O(N) | N = activated nodes; alpha memories found by type/constant hash, joins on shared `?variables` by hash index |
 | Remove fact | O(T) | T = tokens built from the fact (followed by recorded links, no memory scan) |
-| Fire rules | O(M log M) | M = activations; the agenda is a binary heap |
+| Fire rules | O(M) | M = activations; the agenda groups them by salience and rule, as CLIPS does |
 | Network sharing | O(1) | Same pattern → same alpha memory |
 
 ## Design Principles

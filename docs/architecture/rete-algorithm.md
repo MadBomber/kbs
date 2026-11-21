@@ -707,7 +707,7 @@ first_memory.successors.each { |node| walk_beta_network(node) }
 | Add rule | O(C × F) | C = conditions, F = existing facts |
 | Add fact | O(N) | N = activated nodes (avg << total nodes) |
 | Remove fact | O(T) | T = tokens containing fact (found by recorded links) |
-| Run rules | O(M log M) | M = activations on the agenda (binary heap) |
+| Run rules | O(M) | M = activations on the agenda (grouped by salience and rule, as in CLIPS) |
 
 ### Space Complexity
 

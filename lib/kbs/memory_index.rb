@@ -7,8 +7,12 @@ module KBS
   #
   # The key is computed once, when the item is added, and remembered:
   # removing an item finds its bucket even if its attributes changed since.
-  # Buckets are Sets, so adding and removing an item do not depend on the
-  # size of the bucket.
+  #
+  # A join on an id usually files one item per key, so a bucket holds a
+  # lone item itself and becomes a Set only for the second. Sets compare
+  # with eql?, as the index's own key table does, so a blackboard fact
+  # read again from its store is the same item. Adding and removing an
+  # item do not depend on the size of the bucket.
   class MemoryIndex
     EMPTY = Set.new.freeze
 
@@ -22,7 +26,12 @@ module KBS
     def add(item)
       key = @key_for.call(item)
       @keys[item] = key
-      (@buckets[key] ||= Set.new) << item
+      bucket = @buckets[key]
+      case bucket
+      when nil then @buckets[key] = item
+      when Set then bucket << item
+      else @buckets[key] = Set[bucket, item] unless bucket.eql?(item)
+      end
     end
 
     def remove(item)
@@ -30,14 +39,22 @@ module KBS
 
       key = @keys.delete(item)
       bucket = @buckets[key]
-      bucket.delete(item)
-      @buckets.delete(key) if bucket.empty?
+      if bucket.is_a?(Set)
+        bucket.delete(item)
+        return unless bucket.empty?
+      end
+      @buckets.delete(key)
     end
 
-    # @return [Set] the items filed under `key`, in the order they were
-    #   added; do not modify it
+    # @return [Enumerable] the items filed under `key`, in the order they
+    #   were added; do not modify it
     def lookup(key)
-      @buckets[key] || EMPTY
+      bucket = @buckets[key]
+      case bucket
+      when nil then EMPTY
+      when Set then bucket
+      else [bucket]
+      end
     end
 
     def clear
@@ -49,15 +66,27 @@ module KBS
       @keys.size
     end
 
-    # The index key for a fact: its values for `fields`.
+    # The index key for a fact: its value for the field, or its values for
+    # several fields. A single field is the common case and needs no Array.
     def self.fact_key(fact, fields)
-      fields.map { |field| normalize(fact.attributes[field]) }
+      attributes = fact.attributes
+      return normalize(attributes[fields.first]) if fields.size == 1
+
+      fields.map { |field| normalize(attributes[field]) }
     end
 
-    # The index key for a token: for each [condition index, field] pair,
-    # that attribute of the fact the condition matched.
+    # The index key for a token, built like #fact_key: for each [condition
+    # index, field] pair, that attribute of the fact the condition matched.
     def self.token_key(token, specs)
-      specs.map { |index, field| normalize(token.fact_at(index)&.attributes&.[](field)) }
+      return token_value(token, *specs.first) if specs.size == 1
+
+      specs.map { |index, field| token_value(token, index, field) }
+    end
+
+    # The normalized attribute `field` of the fact the condition at
+    # `index` matched; nil when that condition matched no fact.
+    def self.token_value(token, index, field)
+      normalize(token.fact_at(index)&.attributes&.[](field))
     end
 
     # Join tests compare with ==, and a Hash key with eql?. They differ

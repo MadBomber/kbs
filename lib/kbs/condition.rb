@@ -6,6 +6,9 @@ module KBS
   class Condition
     attr_reader :type, :pattern, :variable_bindings, :negated, :exists, :logical
 
+    # What #summary puts before a negated or exists condition.
+    SUMMARY_PREFIXES = { "without" => "NOT ", "exists" => "EXISTS " }.freeze
+
     # @param negated [Boolean] match when no fact fits the pattern
     # @param exists [Boolean] match once when at least one fact fits the
     #   pattern, instead of once for each fact
@@ -24,7 +27,7 @@ module KBS
 
     # One line for listings: the type and pattern, marked NOT or EXISTS.
     def summary
-      prefix = { "without" => "NOT ", "exists" => "EXISTS " }.fetch(keyword, "")
+      prefix = SUMMARY_PREFIXES[keyword] || ""
       "#{prefix}#{@type}(#{RuleSource.pattern_source(@pattern)})"
     end
 

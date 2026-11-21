@@ -20,26 +20,42 @@ module KBS
 
     # @return [Set<KBS::Token>] the tokens that extend this one, so that
     #   removing this token can remove them without a search. Frozen and
-    #   empty until the first #add_child.
+    #   empty while there are none. Use #add_child and #remove_child to
+    #   change them.
     def children
-      @children || EMPTY_CHILDREN
+      case @children
+      when nil then EMPTY_CHILDREN
+      when Set then @children
+      else Set[@children].freeze
+      end
     end
 
+    # Most tokens have one child or none, so @children holds a lone child
+    # itself and becomes a Set only for the second.
     def add_child(token)
-      (@children ||= Set.new) << token
+      case @children
+      when nil then @children = token
+      when Set then @children << token
+      else @children = Set.new.compare_by_identity << @children << token unless @children.equal?(token)
+      end
     end
 
     def remove_child(token)
-      @children&.delete(token)
+      case @children
+      when Set then @children.delete(token)
+      when token then @children = nil
+      end
     end
 
     def clear_children
       @children = nil
     end
 
-    # The matched facts, one per positive condition.
+    # The matched facts, one per positive condition. Frozen: the slots
+    # themselves when every condition matched a fact, so that firing a
+    # rule allocates nothing for them.
     def facts
-      @slots.compact
+      @slots.include?(nil) ? @slots.compact.freeze : @slots
     end
 
     # One entry per condition matched so far: the matched fact, or nil
@@ -81,7 +97,7 @@ module KBS
     def build_slots
       return (@fact ? [@fact] : []).freeze unless @parent
 
-      (@parent.slots + [@fact]).freeze
+      [*@parent.slots, @fact].freeze
     end
   end
 end

@@ -14,7 +14,7 @@ module KBS
     # @param order [Integer] the rule's position among the engine's rules
     def initialize(rule, agenda = nil, order: 0)
       @rule = rule
-      @tokens = Set.new
+      @tokens = Set.new.compare_by_identity
       @agenda = agenda
       @order = order
       @activations = {}.compare_by_identity
