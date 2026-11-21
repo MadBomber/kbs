@@ -7,6 +7,7 @@ gemspec
 
 gem "irb"
 
+gem "fasterer", require: false
 gem "minitest", "~> 5.16"
 gem "redis", "~> 5.0"
 gem "rubocop", require: false

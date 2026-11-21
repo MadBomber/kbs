@@ -104,6 +104,31 @@ class TestToken < Minitest::Test
     assert_empty parent.children
   end
 
+  # A lone child is kept without a Set; the second one makes a Set.
+  def test_children_move_between_one_and_many
+    parent = KBS::Token.new(nil, @fact1, nil)
+    first = KBS::Token.new(parent, @fact2, nil)
+    second = KBS::Token.new(parent, @fact2, nil)
+
+    parent.add_child(first)
+    parent.add_child(first)
+    assert_equal [first], parent.children.to_a
+    parent.remove_child(second)
+    assert_equal [first], parent.children.to_a
+
+    parent.add_child(second)
+    assert_equal [first, second], parent.children.to_a
+    parent.remove_child(first)
+    parent.remove_child(second)
+    assert_empty parent.children
+
+    lone = KBS::Token.new(nil, @fact1, nil)
+    lone.add_child(first)
+    lone.remove_child(first)
+    assert_empty lone.children
+    assert_predicate lone.children, :frozen?
+  end
+
   def test_to_s
     token1 = KBS::Token.new(nil, @fact1, nil)
     token2 = KBS::Token.new(token1, @fact2, nil)

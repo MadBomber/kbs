@@ -12,7 +12,7 @@ module KBS
     attr_accessor :listener
 
     def initialize
-      @tokens = Set.new
+      @tokens = Set.new.compare_by_identity
       @successors = []
       @linked = true
       @indexes = {}

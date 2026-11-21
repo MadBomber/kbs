@@ -67,11 +67,122 @@ module KBS
   #   :depth       newest activation first
   #   :breadth     oldest activation first
   #
-  # Activations sit in a binary heap. Removing one marks it cancelled and
-  # it is dropped when it reaches the top, so add, remove and pop are
-  # O(log n).
+  # Activations are grouped the way CLIPS groups them: by salience, and
+  # under :definition also by rule. Groups are kept in firing order, and
+  # within a group the order follows from where an activation is put:
+  # :depth takes the newest first (a stack), the others the oldest first
+  # (a queue). Nothing is compared to add or pop an activation; only an
+  # add that opens a new group finds its place, by binary search on a
+  # number. Removing an activation marks it cancelled, and it is dropped
+  # when it reaches the front of its group.
   class Agenda
+    # Activations taken oldest first.
+    class Fifo
+      def initialize
+        @items = []
+      end
+
+      def <<(activation)
+        @items << activation
+        self
+      end
+
+      # self when an activation is pending, after dropping the cancelled
+      # ones in front of it; nil otherwise.
+      def front
+        @items.shift while @items.first&.cancelled?
+        self unless @items.empty?
+      end
+
+      # The activation to take next. Call #front first.
+      def next
+        @items.first
+      end
+
+      def take
+        @items.shift
+      end
+
+      def each_activation(&)
+        @items.each(&)
+      end
+
+      private
+
+      attr_reader :items
+    end
+
+    # Activations taken newest first.
+    class Lifo < Fifo
+      def front
+        items.pop while items.last&.cancelled?
+        self unless items.empty?
+      end
+
+      def next
+        items.last
+      end
+
+      def take
+        items.pop
+      end
+    end
+
+    # Members filed under numeric keys and kept in key order: the salience
+    # levels of an agenda, or the rules within one level. A member is
+    # made by the block when its key is first used, and is a Fifo, a Lifo
+    # or another Groups.
+    class Groups
+      def initialize(&make)
+        @make = make
+        @members = {}
+        @keys = []
+      end
+
+      # The member for `key`, made and filed in order if it is new.
+      def fetch(key)
+        @members[key] || file(key)
+      end
+
+      # The first queue with an activation pending, found through the
+      # members in key order. Members left with nothing pending are
+      # dropped on the way. nil when nothing is pending.
+      def front
+        until @keys.empty?
+          queue = @members[@keys.first].front
+          return queue if queue
+
+          @members.delete(@keys.shift)
+        end
+        nil
+      end
+
+      def each_activation(&)
+        @members.each_value { |member| member.each_activation(&) }
+      end
+
+      private
+
+      # Activations mostly arrive for keys after the existing ones, so
+      # the last key is checked before searching.
+      def file(key)
+        last = @keys.last
+        position = last.nil? || last < key ? @keys.size : @keys.bsearch_index { |other| other >= key }
+        @keys.insert(position, key)
+        @members[key] = @make.call
+      end
+    end
+
     STRATEGIES = %i[definition depth breadth].freeze
+
+    # For each strategy: the queue its groups use, and the key that files
+    # an activation into a group within its salience level (the position
+    # of its rule under :definition, one key for all otherwise).
+    LAYOUTS = {
+      definition: [Fifo, :rule_order.to_proc],
+      depth: [Lifo, proc { 0 }],
+      breadth: [Fifo, proc { 0 }]
+    }.freeze
 
     attr_reader :strategy, :size
 
@@ -84,16 +195,20 @@ module KBS
       @listener = nil
       validate_strategy(strategy)
       @strategy = strategy
-      @heap = []
       @size = 0
       @timetag = 0
+      @levels = self.class.levels_for(strategy)
+      @rule_key = LAYOUTS.fetch(strategy).last
     end
 
+    # Regroups the pending activations, oldest first, so each new group
+    # is in timetag order whatever the old strategy was.
     def strategy=(strategy)
       validate_strategy(strategy)
+      pending = to_a.sort_by(&:timetag)
       @strategy = strategy
-      pending = to_a
-      @heap = []
+      @levels = self.class.levels_for(strategy)
+      @rule_key = LAYOUTS.fetch(strategy).last
       pending.each { |activation| push(activation) }
     end
 
@@ -115,18 +230,16 @@ module KBS
 
     # Removes and returns the next activation to fire, or nil when empty.
     def pop
-      drop_cancelled
-      return nil if @heap.empty?
+      activation = @levels.front&.take
+      return nil unless activation
 
-      activation = pop_top
       activation.cancel!
       @size -= 1
       activation
     end
 
     def peek
-      drop_cancelled
-      @heap.first
+      @levels.front&.next
     end
 
     def empty?
@@ -134,18 +247,32 @@ module KBS
     end
 
     def clear
-      @heap.each(&:cancel!)
-      @heap = []
+      @levels.each_activation(&:cancel!)
+      @levels = self.class.levels_for(@strategy)
       @size = 0
     end
 
     # Pending activations in firing order.
     def to_a
-      @heap.reject(&:cancelled?).sort_by(&:sort_key)
+      @levels.enum_for(:each_activation).reject(&:cancelled?).sort_by(&:sort_key)
     end
 
     def sort_key_for(activation)
       activation.key_for(@strategy)
+    end
+
+    # Empty salience levels for `strategy`. Each level holds one group per
+    # rule under :definition, and a single group otherwise.
+    def self.levels_for(strategy)
+      queue = LAYOUTS.fetch(strategy).first
+      Groups.new { Groups.new { queue.new } }
+    end
+
+    # The key of the salience level an activation is filed under: its
+    # salience negated, so that higher salience sorts first, and
+    # normalized, so that 1 and 1.0 share a level.
+    def self.level_key(activation)
+      -MemoryIndex.normalize(activation.salience)
     end
 
     private
@@ -156,53 +283,9 @@ module KBS
       raise ArgumentError, "unknown strategy #{strategy.inspect}; use one of #{STRATEGIES.inspect}"
     end
 
-    def drop_cancelled
-      pop_top while @heap.first&.cancelled?
-    end
-
     def push(activation)
       activation.sort_key = sort_key_for(activation)
-      @heap << activation
-      sift_up(@heap.size - 1)
-    end
-
-    def pop_top
-      top = @heap.first
-      last = @heap.pop
-      unless @heap.empty?
-        @heap[0] = last
-        sift_down(0)
-      end
-      top
-    end
-
-    # Whether the activation at heap position `index` sorts before the one
-    # at `other`.
-    def before?(index, other)
-      (@heap[index].sort_key <=> @heap[other].sort_key).negative?
-    end
-
-    def sift_up(index)
-      while index.positive?
-        parent = (index - 1) / 2
-        break unless before?(index, parent)
-
-        @heap[index], @heap[parent] = @heap[parent], @heap[index]
-        index = parent
-      end
-    end
-
-    def sift_down(index)
-      loop do
-        smallest = index
-        [(2 * index) + 1, (2 * index) + 2].each do |child|
-          smallest = child if child < @heap.size && before?(child, smallest)
-        end
-        break if smallest == index
-
-        @heap[index], @heap[smallest] = @heap[smallest], @heap[index]
-        index = smallest
-      end
+      @levels.fetch(self.class.level_key(activation)).fetch(@rule_key.call(activation)) << activation
     end
   end
 end

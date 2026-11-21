@@ -122,7 +122,7 @@ module KBS
       case entry
       when nil then @tokens_by_fact[fact] = token
       when Set then entry << token
-      else @tokens_by_fact[fact] = Set[entry, token]
+      else @tokens_by_fact[fact] = Set.new.compare_by_identity << entry << token
       end
     end
 

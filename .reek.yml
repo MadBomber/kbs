@@ -154,11 +154,14 @@ detectors:
       - 'KBS::Blackboard::Memory#self.check_store'
 
   # Each store method checks that the row or hash it fetched exists and
-  # is not retracted before using it.
+  # is not retracted before using it. A Token holds no child, a lone
+  # child, or a Set of them, so that most tokens never allocate a Set;
+  # each child method dispatches on which.
   RepeatedConditional:
     exclude:
       - 'KBS::Blackboard::Persistence::RedisStore'
       - 'KBS::Blackboard::Persistence::SqliteStore'
+      - 'KBS::Token'
 
   # The lambda is the predicate handed back; the block is its body.
   NestedIterators:

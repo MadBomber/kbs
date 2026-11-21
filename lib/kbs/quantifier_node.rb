@@ -111,7 +111,7 @@ module KBS
 
     def link(token, fact)
       (@facts_matching[token] ||= Set.new) << fact
-      (@tokens_matched_by[fact] ||= Set.new) << token
+      (@tokens_matched_by[fact] ||= Set.new.compare_by_identity) << token
     end
 
     def unlink_token(fact, token)

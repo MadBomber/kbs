@@ -48,7 +48,8 @@ regex engine change.
 
 `benchmarks/rete_scaling.rb` measures how the network scales as facts and
 rules are added: a two-condition join on a shared variable, the same join
-negated, retraction, and fact assertion against many alpha memories.
+negated, firing the matches with `run`, retraction, and fact assertion
+against many alpha memories.
 
 ```bash
 ruby -Ilib benchmarks/rete_scaling.rb
@@ -124,6 +125,42 @@ the same variable names: a pattern includes its variable names, so
 Only equality between two conditions is indexed. A condition with no shared
 variable, or one that only uses predicates, still scans its memories, so put
 a shared variable on the join where the data allows it.
+
+Firing does not sort the agenda. As in CLIPS, activations are grouped by
+salience, and under the `:definition` strategy also by rule; within a group,
+`:depth` takes the newest first and the other strategies the oldest first, so
+adding and popping an activation compare nothing. Three rules at different
+priorities on the same join of `n` orders and `n` payments, asserted and then
+`run` (3n firings, `:definition` strategy):
+
+| n | 0.3.0 (binary heap) | 0.3.1 (salience groups) | 0.3.0, YJIT | 0.3.1, YJIT |
+|--:|--:|--:|--:|--:|
+| 500 | 110,726 firings/sec | 274,273 firings/sec | 140,845 firings/sec | 463,822 firings/sec |
+| 1000 | 108,980 firings/sec | 257,003 firings/sec | 175,757 firings/sec | 482,160 firings/sec |
+| 2000 | 97,575 firings/sec | 270,234 firings/sec | 152,858 firings/sec | 552,181 firings/sec |
+
+### Running with YJIT
+
+YJIT, the JIT compiler built into CRuby, speeds up KBS by roughly 1.5 to 2.5
+times on these benchmarks with no code changes. Turn it on with any of:
+
+```bash
+ruby --yjit app.rb            # one process
+RUBY_YJIT_ENABLE=1 ruby app.rb  # through the environment, e.g. in a Procfile
+```
+
+```ruby
+RubyVM::YJIT.enable           # from code, early in boot
+RubyVM::YJIT.enabled?         # => true
+```
+
+Compare both ways on your own rules by running the benchmark with and without
+the flag:
+
+```bash
+ruby -Ilib benchmarks/rete_scaling.rb
+ruby --yjit -Ilib benchmarks/rete_scaling.rb
+```
 
 ### Basic Benchmark
 

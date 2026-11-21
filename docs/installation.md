@@ -81,7 +81,7 @@ Verify the installation:
 require 'kbs'
 
 puts "KBS version: #{KBS::VERSION}"
-# => KBS version: 0.3.0
+# => KBS version: 0.3.1
 
 # Test basic functionality
 engine = KBS::Engine.new

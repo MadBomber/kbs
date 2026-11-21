@@ -266,7 +266,7 @@ module KBS
 
     # The alpha memories that hold `fact`.
     def alpha_memories_for(fact)
-      @fact_memories.fetch(fact, []).dup
+      @fact_memories[fact]&.dup || []
     end
 
     # Fires activations from the agenda until it is empty: the highest

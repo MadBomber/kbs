@@ -1,0 +1,11 @@
+# Fasterer configuration for kbs.
+#
+# The gate (fasterer_check in ../dev/quality.loki) scans lib/. Every
+# speedup is left on except the ones below, each of which is a deliberate
+# choice rather than a missed optimization.
+speedups:
+  # each_with_index is used only where rules are built, printed or
+  # queried (Engine#build_network_for_rule, JoinTestBuilder, Decompiler,
+  # RuleSource, the DSL), never while facts are matched. A while loop
+  # would make that code harder to read and not change a benchmark.
+  each_with_index_vs_while: false

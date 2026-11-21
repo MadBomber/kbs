@@ -1,5 +1,19 @@
 ## [Unreleased]
 
+## [0.3.1] - Unreleased
+
+Faster rule firing. Matching is unchanged; firing order is unchanged for every strategy.
+
+### Changed
+- **Agenda grouped by salience, as in CLIPS.** Activations are filed by salience and, under `:definition`, by rule; within a group `:depth` takes the newest first and `:breadth` / `:definition` the oldest first. Adding and popping no longer compare sort keys, which took about 40% of CPU in an assert-and-`run` profile. Firing 3n activations from three rules runs about 2.5 to 3.5 times faster (see `docs/advanced/performance.md`).
+- Fewer allocations per match: a token with one child keeps it without a `Set`, token slots are built in one array, and the Sets that hold tokens compare by identity.
+- `Token#children` for a token with a single child returns a frozen one-element Set; change children through `add_child` / `remove_child` as before.
+
+### Added
+- `benchmarks/rete_scaling.rb` measures firing (`run`) under the `:definition` and `:depth` strategies.
+- Fasterer is in the development bundle, so the `asgard quality` Fasterer gate runs instead of being skipped; `.fasterer.yml` records the one speedup turned off.
+- README and the performance guide recommend running with YJIT (`ruby --yjit` or `RUBY_YJIT_ENABLE=1`), which is roughly 1.5 to 2.5 times faster on these benchmarks.
+
 ## [0.3.0] - 2026-11-20
 
 The engine now works like CLIPS: an agenda with conflict resolution, truth maintenance, `exists`, `modify`, and joins on shared `?variables`. Matching and retraction use indexes instead of scans.

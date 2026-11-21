@@ -53,6 +53,36 @@ def negation_engine
   engine
 end
 
+# Three rules on the same join, at different priorities, each with an
+# action, so that #run has an agenda of 3n activations to order.
+def firing_engine(strategy)
+  engine = KBS::Engine.new(strategy: strategy)
+  [0, 5, 10].each do |priority|
+    engine.add_rule(KBS::Rule.new(
+      "paid_#{priority}",
+      priority: priority,
+      conditions: [
+        KBS::Condition.new(:order, { id: :id? }),
+        KBS::Condition.new(:payment, { order_id: :id? })
+      ]
+    ) { |_facts| nil })
+  end
+  engine
+end
+
+# Asserts n joined pairs into firing_engine(strategy) and runs it.
+def firing_scenario(strategy)
+  {
+    setup: ->(_n) { firing_engine(strategy) },
+    work: lambda do |engine, n|
+      n.times { |i| engine.add_fact(:order, id: i) }
+      n.times { |i| engine.add_fact(:payment, order_id: i) }
+      engine.run
+    end,
+    operations: ->(n) { 3 * n }
+  }
+end
+
 # `count` single-condition rules, each on its own fact type.
 def many_rules_engine(count)
   engine = KBS::Engine.new
@@ -105,6 +135,8 @@ scenarios = {
     end,
     operations: ->(n) { 2 * n }
   },
+  "fire: n orders + n payments, 3 rules, run (3n firings)" => firing_scenario(:definition),
+  "fire, depth strategy: same as above" => firing_scenario(:depth),
   "retract: remove n joined payments" => {
     setup: lambda do |n|
       engine = join_engine
