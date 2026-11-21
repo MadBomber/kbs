@@ -133,11 +133,11 @@ adding and popping an activation compare nothing. Three rules at different
 priorities on the same join of `n` orders and `n` payments, asserted and then
 `run` (3n firings, `:definition` strategy):
 
-| n | 0.3.0 (binary heap) | 0.3.1 (salience groups) | 0.3.0, YJIT | 0.3.1, YJIT |
+| n | 0.3.0 (binary heap) | 0.3.1 (salience groups, fewer allocations) | 0.3.0, YJIT | 0.3.1, YJIT |
 |--:|--:|--:|--:|--:|
-| 500 | 110,726 firings/sec | 274,273 firings/sec | 140,845 firings/sec | 463,822 firings/sec |
-| 1000 | 108,980 firings/sec | 257,003 firings/sec | 175,757 firings/sec | 482,160 firings/sec |
-| 2000 | 97,575 firings/sec | 270,234 firings/sec | 152,858 firings/sec | 552,181 firings/sec |
+| 500 | 110,726 firings/sec | 346,420 firings/sec | 140,845 firings/sec | 750,375 firings/sec |
+| 1000 | 108,980 firings/sec | 368,415 firings/sec | 175,757 firings/sec | 853,728 firings/sec |
+| 2000 | 97,575 firings/sec | 360,382 firings/sec | 152,858 firings/sec | 835,073 firings/sec |
 
 ### Running with YJIT
 

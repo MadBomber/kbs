@@ -33,22 +33,34 @@ module KBS
     # @return [Array<KBS::AlphaMemory>] the memories whose pattern `fact`
     #   matches, in the order they were created
     def memories_for(fact)
-      matches = candidates_for(fact).select { |memory| fact.matches?(memory.pattern) }
+      matches = candidates_for(fact).select { |memory| memory.admits?(fact) }
       matches.size > 1 ? matches.sort_by { |memory| @sequence[memory] } : matches
     end
 
     # @return [Array<KBS::AlphaMemory>] the memories that have to be
-    #   checked for `fact`
+    #   checked for `fact`. It may be one of the network's own lists, so
+    #   do not modify it: a new Array is built only when more than one
+    #   list applies.
     def candidates_for(fact)
       type = @types[fact.type]
-      return @untyped.dup unless type
+      return @untyped unless type
 
-      candidates = @untyped + type[:unselected]
-      type[:selectors].each do |attribute, table|
-        selected = table[MemoryIndex.normalize(fact.attributes[attribute])]
-        candidates.concat(selected) if selected
+      candidates = self.class.join_lists(@untyped, type[:unselected])
+      attributes = fact.attributes
+      type[:selectors].each_pair do |attribute, table|
+        selected = table[MemoryIndex.normalize(attributes[attribute])]
+        candidates = self.class.join_lists(candidates, selected) if selected
       end
       candidates
+    end
+
+    # `first` followed by `second`: one of them as it is when the other is
+    # empty, a new Array otherwise.
+    def self.join_lists(first, second)
+      return second if first.empty?
+      return first if second.empty?
+
+      first + second
     end
 
     # The attribute and constant a pattern is filed under: its first

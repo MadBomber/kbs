@@ -4,7 +4,10 @@ module KBS
   # A rule matched by a token, waiting on the agenda to fire.
   class Activation
     attr_reader :node, :token, :salience, :rule_order, :timetag
-    attr_accessor :sort_key
+
+    # The conflict resolution strategy of the agenda the activation is on,
+    # which #sort_key follows. Set by the agenda; :definition until then.
+    attr_accessor :strategy
 
     def initialize(node, token, rule_order:, timetag:)
       @node = node
@@ -13,6 +16,13 @@ module KBS
       @rule_order = rule_order
       @timetag = timetag
       @cancelled = false
+      @strategy = :definition
+    end
+
+    # Where the activation sorts on its agenda, lowest first. Built when
+    # asked for: the agenda orders activations without it.
+    def sort_key
+      key_for(@strategy)
     end
 
     def rule
@@ -284,7 +294,7 @@ module KBS
     end
 
     def push(activation)
-      activation.sort_key = sort_key_for(activation)
+      activation.strategy = @strategy
       @levels.fetch(self.class.level_key(activation)).fetch(@rule_key.call(activation)) << activation
     end
   end

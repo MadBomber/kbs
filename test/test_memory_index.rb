@@ -70,7 +70,8 @@ class TestMemoryIndex < Minitest::Test
     fact = KBS::Fact.new(:order, id: 1, region: "eu")
 
     assert_equal [1, "eu"], KBS::MemoryIndex.fact_key(fact, %i[id region])
-    assert_equal [nil], KBS::MemoryIndex.fact_key(fact, %i[missing])
+    assert_equal 1, KBS::MemoryIndex.fact_key(fact, %i[id])
+    assert_nil KBS::MemoryIndex.fact_key(fact, %i[missing])
   end
 
   def test_token_key_reads_facts_by_condition_position
@@ -79,7 +80,48 @@ class TestMemoryIndex < Minitest::Test
     third = KBS::Token.new(negated, KBS::Fact.new(:c, y: 2), nil)
 
     assert_equal [1, 2], KBS::MemoryIndex.token_key(third, [[0, :x], [2, :y]])
-    assert_equal [nil], KBS::MemoryIndex.token_key(third, [[1, :x]])
+    assert_equal 2, KBS::MemoryIndex.token_key(third, [[2, :y]])
+    assert_nil KBS::MemoryIndex.token_key(third, [[1, :x]])
+  end
+
+  def test_a_bucket_goes_from_one_item_to_a_set_and_back
+    @index.add(@a)
+    assert_equal [@a], @index.lookup([1]).to_a
+
+    @index.add(@b)
+    assert_kind_of Set, @index.lookup([1])
+    assert_equal [@a, @b], @index.lookup([1]).to_a
+
+    @index.remove(@a)
+    assert_equal [@b], @index.lookup([1]).to_a
+    @index.remove(@b)
+    assert_empty @index.lookup([1])
+  end
+
+  def test_adding_the_same_item_twice_files_it_once
+    2.times { @index.add(@a) }
+
+    assert_equal [@a], @index.lookup([1]).to_a
+    assert_equal 1, @index.size
+  end
+
+  # A blackboard fact read again from its store is a new object equal to
+  # the one filed, and has to be found and removed as that one.
+  def test_items_compare_with_eql
+    index = KBS::MemoryIndex.new { |fact| fact[:id] }
+    first = KBS::Blackboard::Fact.new("u1", :order, { id: 1 })
+    again = KBS::Blackboard::Fact.new("u1", :order, { id: 1 })
+    other = KBS::Blackboard::Fact.new("u2", :order, { id: 1 })
+
+    index.add(first)
+    index.add(again)
+    assert_equal [first], index.lookup(1).to_a
+
+    index.add(other)
+    index.remove(again)
+    assert_equal [other], index.lookup(1).to_a
+    index.remove(other)
+    assert_empty index.lookup(1)
   end
 
   def test_normalize_makes_equal_numbers_the_same_key

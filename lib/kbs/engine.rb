@@ -452,12 +452,12 @@ module KBS
     # Facts go straight into its items: the memory has no successors yet,
     # and existing alpha memories already hold their facts.
     def get_or_create_alpha_memory(pattern)
-      @alpha_network.fetch(pattern) { |memory| seed_alpha_memory(memory, pattern) }
+      @alpha_network.fetch(pattern) { |memory| seed_alpha_memory(memory) }
     end
 
-    def seed_alpha_memory(memory, pattern)
+    def seed_alpha_memory(memory)
       @working_memory.facts.each do |fact|
-        next unless fact.matches?(pattern)
+        next unless memory.admits?(fact)
 
         memory.add_item(fact)
         (@fact_memories[fact] ||= []) << memory

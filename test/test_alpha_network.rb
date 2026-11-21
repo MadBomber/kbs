@@ -188,3 +188,14 @@ class TestEngineAlphaNetwork < Minitest::Test
     assert_equal ["late"], @fired
   end
 end
+
+class TestAlphaNetworkJoinLists < Minitest::Test
+  def test_join_lists_returns_a_list_as_it_is_when_the_other_is_empty
+    list = [1, 2]
+
+    assert_same list, KBS::AlphaNetwork.join_lists(list, [])
+    assert_same list, KBS::AlphaNetwork.join_lists([], list)
+    assert_equal [1, 2, 3], KBS::AlphaNetwork.join_lists(list, [3])
+    assert_equal [1, 2], list
+  end
+end

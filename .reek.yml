@@ -54,7 +54,7 @@ detectors:
   # Rule#action. They are published, writable API.
   Attribute:
     exclude:
-      - 'KBS::Activation#sort_key'
+      - 'KBS::Activation#strategy'   # the agenda sets it when it files the activation
       - 'KBS::Agenda#listener'   # the engine sets it while activations are watched
       - 'KBS::Tracer#output'     # published as Engine#trace_output=
       - 'KBS::AlphaMemory'

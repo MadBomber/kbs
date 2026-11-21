@@ -914,7 +914,7 @@ All of these are **aliases**:
 
 ### Action Block
 
-An action can take no arguments, one (`facts`) or two (`facts, bindings`). `facts` holds one fact per positive condition, in condition order (`without` and `exists` conditions add none); `bindings` maps each `?variable` to its value:
+An action can take no arguments, one (`facts`) or two (`facts, bindings`). `facts` holds one fact per positive condition, in condition order (`without` and `exists` conditions add none) and is frozen, so copy it with `facts.dup` before changing it; `bindings` maps each `?variable` to its value:
 
 ```ruby
 rule "example" do

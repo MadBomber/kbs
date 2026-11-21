@@ -70,10 +70,12 @@ module KBS
       @left_index.lookup(MemoryIndex.fact_key(fact, @fact_fields))
     end
 
-    # Facts that join with `token`.
+    # Facts that join with `token`. Without residual tests the candidates
+    # are the matches, handed on without a copy: joining a match never
+    # changes the memory it came from.
     def matching_facts(token)
       candidates = candidate_facts(token)
-      matches = @residual_tests.empty? ? candidates.to_a : candidates.select { |fact| join_tests_pass?(@residual_tests, token, fact) }
+      matches = @residual_tests.empty? ? candidates : candidates.select { |fact| join_tests_pass?(@residual_tests, token, fact) }
       @left_activations += 1
       count(candidates, matches)
     end
@@ -81,7 +83,7 @@ module KBS
     # Tokens that join with `fact`.
     def matching_tokens(fact)
       candidates = candidate_tokens(fact)
-      matches = @residual_tests.empty? ? candidates.to_a : candidates.select { |token| join_tests_pass?(@residual_tests, token, fact) }
+      matches = @residual_tests.empty? ? candidates : candidates.select { |token| join_tests_pass?(@residual_tests, token, fact) }
       @right_activations += 1
       count(candidates, matches)
     end

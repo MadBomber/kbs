@@ -4,15 +4,38 @@ module KBS
   # The facts that fit one condition pattern. Shared by every rule that
   # uses the pattern; tells its join nodes when a fact arrives or leaves.
   class AlphaMemory
-    attr_accessor :successors, :pattern
-    attr_reader :linked
+    attr_accessor :successors
+    attr_reader :pattern, :linked
 
     def initialize(pattern = {})
       @items = Set.new
       @successors = []
-      @pattern = pattern
       @linked = true
       @indexes = {}
+      @pattern = pattern
+      @fact_type, @tests = self.class.compile(pattern)
+    end
+
+    # Sets the pattern and prepares the tests #admits? runs.
+    def pattern=(pattern)
+      @pattern = pattern
+      @fact_type, @tests = self.class.compile(pattern)
+    end
+
+    # The fact type a pattern requires (nil for any) and the tests from
+    # PatternMatching.tests_for.
+    def self.compile(pattern)
+      [pattern[:type], PatternMatching.tests_for(pattern)]
+    end
+
+    # Whether `fact` fits the pattern: the answer of
+    # fact.matches?(pattern), found without looking at the pattern's
+    # ?variables, which fit anything.
+    def admits?(fact)
+      fact_type = @fact_type
+      return false if fact_type && fact_type != fact.type
+
+      PatternMatching.passes?(@tests, fact.attributes)
     end
 
     # @return [Array] the facts in this memory, in the order they arrived.

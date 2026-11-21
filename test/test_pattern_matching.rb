@@ -175,3 +175,28 @@ class TestListings < Minitest::Test
     assert_nil KBS.knowledge_base.close
   end
 end
+
+class TestPatternMatchingTests < Minitest::Test
+  def test_tests_for_leaves_out_the_type_and_variables
+    predicate = ->(value) { value > 1 }
+    tests = KBS::PatternMatching.tests_for(type: :order, id: :id?, status: :open, total: predicate)
+
+    assert_equal [%i[status open], [:total, predicate]], tests
+    assert_predicate tests, :frozen?
+  end
+
+  def test_passes
+    tests = KBS::PatternMatching.tests_for(status: :open, total: ->(value) { value > 1 })
+
+    assert KBS::PatternMatching.passes?(tests, { status: :open, total: 2 })
+    refute KBS::PatternMatching.passes?(tests, { status: :open, total: 1 })
+    refute KBS::PatternMatching.passes?(tests, { status: :open })
+    assert KBS::PatternMatching.passes?([], {})
+  end
+
+  def test_variable
+    assert KBS::PatternMatching.variable?(:id?)
+    refute KBS::PatternMatching.variable?(:id)
+    refute KBS::PatternMatching.variable?("id?")
+  end
+end

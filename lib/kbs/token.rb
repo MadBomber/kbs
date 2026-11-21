@@ -51,9 +51,11 @@ module KBS
       @children = nil
     end
 
-    # The matched facts, one per positive condition.
+    # The matched facts, one per positive condition. Frozen: the slots
+    # themselves when every condition matched a fact, so that firing a
+    # rule allocates nothing for them.
     def facts
-      @slots.compact
+      @slots.include?(nil) ? @slots.compact.freeze : @slots
     end
 
     # One entry per condition matched so far: the matched fact, or nil

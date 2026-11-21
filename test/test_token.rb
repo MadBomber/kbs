@@ -148,3 +148,21 @@ class TestToken < Minitest::Test
     assert_equal 6, facts.length
   end
 end
+
+class TestTokenFacts < Minitest::Test
+  def test_facts_are_the_slots_when_every_condition_matched_a_fact
+    first = KBS::Token.new(nil, KBS::Fact.new(:a), nil)
+    second = KBS::Token.new(first, KBS::Fact.new(:b), nil)
+
+    assert_same second.slots, second.facts
+    assert_predicate second.facts, :frozen?
+  end
+
+  def test_facts_leave_out_negated_conditions_and_are_frozen
+    fact = KBS::Fact.new(:a)
+    token = KBS::Token.new(KBS::Token.new(nil, fact, nil), nil, nil)
+
+    assert_equal [fact], token.facts
+    assert_predicate token.facts, :frozen?
+  end
+end
