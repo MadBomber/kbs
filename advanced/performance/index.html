@@ -3001,7 +3001,7 @@ priorities on the same join of <code>n</code> orders and <code>n</code> payments
 <tr>
 <th style="text-align: right;">n</th>
 <th style="text-align: right;">0.3.0 (binary heap)</th>
-<th style="text-align: right;">0.3.1 (salience groups)</th>
+<th style="text-align: right;">0.3.1 (salience groups, fewer allocations)</th>
 <th style="text-align: right;">0.3.0, YJIT</th>
 <th style="text-align: right;">0.3.1, YJIT</th>
 </tr>
@@ -3010,23 +3010,23 @@ priorities on the same join of <code>n</code> orders and <code>n</code> payments
 <tr>
 <td style="text-align: right;">500</td>
 <td style="text-align: right;">110,726 firings/sec</td>
-<td style="text-align: right;">274,273 firings/sec</td>
+<td style="text-align: right;">346,420 firings/sec</td>
 <td style="text-align: right;">140,845 firings/sec</td>
-<td style="text-align: right;">463,822 firings/sec</td>
+<td style="text-align: right;">750,375 firings/sec</td>
 </tr>
 <tr>
 <td style="text-align: right;">1000</td>
 <td style="text-align: right;">108,980 firings/sec</td>
-<td style="text-align: right;">257,003 firings/sec</td>
+<td style="text-align: right;">368,415 firings/sec</td>
 <td style="text-align: right;">175,757 firings/sec</td>
-<td style="text-align: right;">482,160 firings/sec</td>
+<td style="text-align: right;">853,728 firings/sec</td>
 </tr>
 <tr>
 <td style="text-align: right;">2000</td>
 <td style="text-align: right;">97,575 firings/sec</td>
-<td style="text-align: right;">270,234 firings/sec</td>
+<td style="text-align: right;">360,382 firings/sec</td>
 <td style="text-align: right;">152,858 firings/sec</td>
-<td style="text-align: right;">552,181 firings/sec</td>
+<td style="text-align: right;">835,073 firings/sec</td>
 </tr>
 </tbody>
 </table>
