@@ -13,7 +13,6 @@ gem "redis", "~> 5.0"
 gem "rubocop", require: false
 gem "simplecov", "~> 0.22", require: false
 
-gem 'aigcm'
 gem 'debug_me'
 
 # The CSV trading examples require csv, a bundled (not default) gem since Ruby 3.4.
