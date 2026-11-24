@@ -267,7 +267,7 @@ The `examples/` directory contains 13 comprehensive examples demonstrating all f
 
 ### Advanced Features
 - **concurrent_inference_demo.rb** - Auto-inference and background threads
-- **ai_enhanced_kbs.rb** - LLM integration with Ollama
+- **ai_enhanced_kbs.rb** - LLM integration with LM Studio or Apple's on-device model (Apfel)
 
 See [examples/README.md](examples/README.md) for detailed documentation of each example.
 
@@ -416,7 +416,7 @@ See the [DSL guide](docs/guides/dsl.md#pattern-helpers) for examples.
 - Ruby >= 4.0
 - SQLite3 (bundled with most systems)
 - Redis (optional, for Redis storage)
-- RubyLLM plus Ollama or LM Studio (optional, for AI integration)
+- RubyLLM plus LM Studio or Apfel (optional, for AI integration)
 
 ## 🤝 Contributing
 

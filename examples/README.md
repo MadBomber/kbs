@@ -38,7 +38,7 @@ Every example except `iot_demo_using_dsl.rb` also has a DSL version, `example_na
 
 Some examples require additional dependencies:
 - **redis_trading_demo.rb**: Requires Redis server running (`redis-server`); it flushes Redis databases 1 and 2
-- **ai_enhanced_kbs.rb**: Requires Ollama with a model installed, and the `ruby_llm` and `ruby_llm-mcp` gems
+- **ai_enhanced_kbs.rb**: Requires a local LLM server: LM Studio (`lms server start`) or Apple's on-device model (`apfel --serve`)
 
 ---
 
@@ -368,7 +368,7 @@ Fires three rules:
 
 ### ai_enhanced_kbs.rb
 
-**Description:** Cutting-edge integration of LLM AI (via Ollama) with rule-based reasoning, demonstrating hybrid AI systems.
+**Description:** Cutting-edge integration of a local LLM (via LM Studio or Apfel) with rule-based reasoning, demonstrating hybrid AI systems.
 
 **Demonstrates:**
 - LLM integration with RubyLLM
@@ -399,14 +399,17 @@ Fires three rules:
 - Pattern recognition
 
 **Requirements:**
-- Ollama installed with a model (e.g., `gpt-oss:latest`)
-- Model configured via `OLLAMA_MODEL` environment variable (default `gpt-oss:latest`); server via `OLLAMA_API_BASE` (default `http://localhost:11434`)
-- `ruby_llm` and `ruby_llm-mcp` gems
+- A local LLM server, chosen with `KBS_LLM_PROVIDER`:
+  - `lms` (default): [LM Studio](https://lmstudio.ai) with its server running (`lms server start`); default model `openai/gpt-oss-20b`
+  - `apfel`: Apple's on-device Foundation Model through [Apfel](https://apfel.franzai.com/) (`brew install apfel`, then `apfel --serve`); default model `apple-foundationmodel`; needs an Apple Silicon Mac with macOS 26 and Apple Intelligence
+- `KBS_LLM_MODEL` overrides the model; `LMS_API_BASE` (default `http://localhost:1234/v1`) and `APFEL_API_BASE` (default `http://127.0.0.1:11434/v1`) override the server address
+- The `ruby_llm`, `ruby_llm-providers-lms` and `ruby_llm-providers-apfel` gems, which are in the project Gemfile
 
 **Configuration:**
 ```bash
-export OLLAMA_MODEL=gpt-oss:latest
-cd examples && ruby ai_enhanced_kbs.rb
+cd examples
+bundle exec ruby ai_enhanced_kbs.rb                          # LM Studio
+KBS_LLM_PROVIDER=apfel bundle exec ruby ai_enhanced_kbs.rb   # Apple on-device model
 ```
 
 ---
@@ -481,9 +484,8 @@ bundle exec ruby stock_trading_advanced.rb
 redis-server &
 bundle exec ruby redis_trading_demo.rb
 
-# AI integration (requires Ollama, ruby_llm and ruby_llm-mcp)
-export OLLAMA_MODEL=gpt-oss:latest
-ruby ai_enhanced_kbs.rb
+# AI integration (requires LM Studio's server, or `apfel --serve` with KBS_LLM_PROVIDER=apfel)
+bundle exec ruby ai_enhanced_kbs.rb
 ```
 
 ### Viewing Output

@@ -144,13 +144,12 @@ Integration with Large Language Models (LLMs) for AI-powered sentiment analysis,
 - LLM integration via `ruby_llm` gem
 - News sentiment analysis
 - AI-powered market insights
-- MCP agent support
 - Hybrid AI + rule-based reasoning
 
 **Requirements:**
 
-- Ollama running locally (or compatible LLM provider)
-- `ruby_llm` and `ruby_llm-mcp` gems
+- A local LLM server: LM Studio (`lms server start`, the default) or Apple's on-device model through Apfel (`apfel --serve`, with `KBS_LLM_PROVIDER=apfel`)
+- `ruby_llm`, `ruby_llm-providers-lms` and `ruby_llm-providers-apfel` gems (in the project Gemfile)
 
 ## Advanced Features
 
@@ -196,13 +195,13 @@ bundle exec ruby working_demo.rb
 # Run DSL version
 bundle exec ruby working_demo_dsl.rb
 
-# Run AI-enhanced example (requires Ollama, ruby_llm and ruby_llm-mcp)
-OLLAMA_MODEL=gpt-oss:latest ruby ai_enhanced_kbs.rb
+# Run AI-enhanced example (requires LM Studio's server; KBS_LLM_PROVIDER=apfel uses Apple's on-device model)
+bundle exec ruby ai_enhanced_kbs.rb
 ```
 
 ### Run All Examples
 
-Run all examples at once. These include the Redis demo, which flushes Redis databases 1 and 2, and the AI demo, which needs Ollama:
+Run all examples at once. These include the Redis demo, which flushes Redis databases 1 and 2, and the AI demo, which needs LM Studio's server (or Apfel):
 
 ```bash
 cd examples

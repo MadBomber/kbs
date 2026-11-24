@@ -1,14 +1,26 @@
 #!/usr/bin/env ruby
 
+# Talks to a local LLM through RubyLLM. Pick the server with KBS_LLM_PROVIDER:
+#   lms   - LM Studio (default); start it with `lms server start`
+#   apfel - Apple's on-device Foundation Model; start it with `apfel --serve`
+# KBS_LLM_MODEL overrides the model; LMS_API_BASE / APFEL_API_BASE override the server address.
+
 require 'ruby_llm'
-require 'ruby_llm/mcp'
+require 'ruby_llm/providers/lms'
+require 'ruby_llm/providers/apfel'
 require_relative '../lib/kbs'
 require 'json'
 require 'date'
 
-# Configure RubyLLM for Ollama
+DEFAULT_LLM_MODELS = { lms: 'openai/gpt-oss-20b', apfel: 'apple-foundationmodel' }.freeze
+LLM_PROVIDER = ENV.fetch('KBS_LLM_PROVIDER', 'lms').to_sym
+LLM_MODEL = ENV.fetch('KBS_LLM_MODEL') do
+  DEFAULT_LLM_MODELS.fetch(LLM_PROVIDER) { abort "KBS_LLM_PROVIDER must be one of: #{DEFAULT_LLM_MODELS.keys.join(', ')}" }
+end
+
 RubyLLM.configure do |config|
-  config.ollama_api_base = ENV['OLLAMA_API_BASE'] || 'http://localhost:11434'
+  config.lms_api_base   = ENV['LMS_API_BASE']   if ENV['LMS_API_BASE']
+  config.apfel_api_base = ENV['APFEL_API_BASE'] if ENV['APFEL_API_BASE']
 end
 
 module AIEnhancedKBS
@@ -19,28 +31,19 @@ module AIEnhancedKBS
 
     def initialize
       @kb = nil
-      @ai_client = setup_ai_client
-      @mcp_agent = setup_mcp_agent
       @sentiment_cache = {}
       @explanation_cache = {}
       setup_ai_enhanced_rules
     end
 
-    def setup_ai_client
-      model = ENV['OLLAMA_MODEL'] || 'gpt-oss:latest'
-      puts "🤖 Initializing RubyLLM::Chat with Ollama model: #{model}"
-      RubyLLM::Chat.new(provider: :ollama, model: model)
+    # Each prompt gets a fresh chat so requests stay independent and fit small
+    # context windows (Apple's on-device model has only a few thousand tokens).
+    def new_chat
+      RubyLLM.chat(model: LLM_MODEL, provider: LLM_PROVIDER, assume_model_exists: true)
     end
 
-    def setup_mcp_agent
-      if defined?(RubyLLM::MCP::Agent)
-        RubyLLM::MCP::Agent.new(
-          name: "market_analyst",
-          description: "AI agent for market analysis and trading insights"
-        )
-      else
-        nil
-      end
+    def ask_llm(prompt)
+      new_chat.ask(prompt).content.to_s
     end
 
     def setup_ai_enhanced_rules
@@ -206,9 +209,8 @@ module AIEnhancedKBS
       prompt = build_sentiment_prompt(headline, content)
       puts "\n🔗 Calling RubyLLM for sentiment analysis..."
 
-      message = @ai_client.ask(prompt)
-      response_text = message.content.to_s
-      puts "✅ Got response from Ollama (#{response_text.length} chars)"
+      response_text = ask_llm(prompt)
+      puts "✅ Got response from #{LLM_PROVIDER} (#{response_text.length} chars)"
       puts "📝 Response: #{response_text[0..200]}..." if response_text.length > 200
 
       result = parse_sentiment_response(response_text)
@@ -221,9 +223,8 @@ module AIEnhancedKBS
       prompt = build_strategy_prompt(market_conditions, portfolio_state)
       puts "\n🔗 Calling RubyLLM for trading strategy..."
 
-      message = @ai_client.ask(prompt)
-      response_text = message.content.to_s
-      puts "✅ Got response from Ollama (#{response_text.length} chars)"
+      response_text = ask_llm(prompt)
+      puts "✅ Got response from #{LLM_PROVIDER} (#{response_text.length} chars)"
       puts "📝 Response: #{response_text[0..200]}..." if response_text.length > 200
 
       parse_strategy_response(response_text)
@@ -233,9 +234,8 @@ module AIEnhancedKBS
       prompt = build_rule_generation_prompt(anomaly_data)
       puts "\n🔗 Calling RubyLLM for rule generation..."
 
-      message = @ai_client.ask(prompt)
-      response_text = message.content.to_s
-      puts "✅ Got response from Ollama (#{response_text.length} chars)"
+      response_text = ask_llm(prompt)
+      puts "✅ Got response from #{LLM_PROVIDER} (#{response_text.length} chars)"
       puts "📝 Response: #{response_text[0..200]}..." if response_text.length > 200
 
       parse_rule_specification(response_text)
@@ -245,9 +245,8 @@ module AIEnhancedKBS
       prompt = build_risk_analysis_prompt(position, market_data)
       puts "\n🔗 Calling RubyLLM for risk analysis..."
 
-      message = @ai_client.ask(prompt)
-      response_text = message.content.to_s
-      puts "✅ Got response from Ollama (#{response_text.length} chars)"
+      response_text = ask_llm(prompt)
+      puts "✅ Got response from #{LLM_PROVIDER} (#{response_text.length} chars)"
       puts "📝 Response: #{response_text[0..200]}..." if response_text.length > 200
 
       parse_risk_analysis(response_text)
@@ -260,9 +259,8 @@ module AIEnhancedKBS
       prompt = build_explanation_prompt(recommendation, context_facts)
       puts "\n🔗 Calling RubyLLM for trade explanation..."
 
-      message = @ai_client.ask(prompt)
-      response_text = message.content.to_s
-      puts "✅ Got response from Ollama (#{response_text.length} chars)"
+      response_text = ask_llm(prompt)
+      puts "✅ Got response from #{LLM_PROVIDER} (#{response_text.length} chars)"
       puts "📝 Response: #{response_text[0..200]}..." if response_text.length > 200
 
       result = parse_explanation_response(response_text)
@@ -275,9 +273,8 @@ module AIEnhancedKBS
       prompt = build_pattern_recognition_prompt(price_data)
       puts "\n🔗 Calling RubyLLM for pattern recognition..."
 
-      message = @ai_client.ask(prompt)
-      response_text = message.content.to_s
-      puts "✅ Got response from Ollama (#{response_text.length} chars)"
+      response_text = ask_llm(prompt)
+      puts "✅ Got response from #{LLM_PROVIDER} (#{response_text.length} chars)"
       puts "📝 Response: #{response_text[0..200]}..." if response_text.length > 200
 
       parse_pattern_response(response_text)
@@ -447,7 +444,7 @@ module AIEnhancedKBS
     def demonstrate_ai_enhancements
       puts "🤖 AI-ENHANCED KNOWLEDGE-BASED SYSTEM"
       puts "=" * 70
-      puts "Integrating #{@ai_client.class.name} and #{@mcp_agent.class.name if @mcp_agent}"
+      puts "Integrating KBS with RubyLLM (#{LLM_PROVIDER}: #{LLM_MODEL})"
       puts "=" * 70
 
       # Scenario 1: AI Sentiment Analysis
